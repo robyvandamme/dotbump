@@ -1,3 +1,5 @@
+// Copyright © 2025 Roby Van Damme.
+
 namespace DotBump.Tests;
 
 public class UnitTest1
