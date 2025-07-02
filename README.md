@@ -36,3 +36,20 @@ Enable debug logging:
 ````shell
 dotnet dotbump tools --debug true
 ````
+
+## Dependencies
+
+* Serilog: trialing Serilog without Microsoft logging extensions, might change in the future.
+
+### Code Style
+
+* [.editorconfig](.editorconfig) (current default)
+* StyleCop Analyzers (Unstable) (current default)
+* Roslynator.Analyzers: trialing
+
+### Testing
+
+* xUnit (current default)
+* Shouldly (current default)
+* Moq (current default)
+* Coverlet (current default)
