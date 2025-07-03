@@ -1,6 +1,7 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Diagnostics;
+using DotBump.Commands.Sdk;
 using Serilog;
 using Spectre.Console.Cli;
 
@@ -20,8 +21,10 @@ internal static class CommandConfiguration
             config.PropagateExceptions();
             config.ValidateExamples();
 #endif
-            config.SetApplicationName("dotbot");
+            config.SetApplicationName("dotbump");
             config.Settings.Registrar.RegisterInstance(Log.Logger);
+
+            config.AddCommand<BumpSdkSettings>(name: "sdk");
         });
     }
 }
