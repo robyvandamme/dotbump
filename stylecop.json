@@ -8,8 +8,11 @@
       "documentExposedElements": false,
       "documentInternalElements": false,
       "documentInterfaces": false,
-      "copyrightText": "Copyright (c) {companyName}. All rights reserved.",
-      "companyName": "PlaceholderCompany",
+      "copyrightText": "Copyright © {year} {author}.",
+      "variables": {
+        "year": "2025",
+        "author": "Roby Van Damme"
+      },
       "xmlHeader": false
     }
   }
