@@ -1,6 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
-namespace DotBump.Common;
+namespace DotBump;
 
 internal static class ArgumentHandler
 {

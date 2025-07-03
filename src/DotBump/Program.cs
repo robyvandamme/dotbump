@@ -23,24 +23,22 @@ if (ArgumentHandler.IsDebugMode(args))
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.ControlledBy(defaultLevelSwitch)
-// #if DEBUG
+#if DEBUG
     .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
     .WriteTo.File(
-        "dotbumplog.txt", // TODO: what is a good log location and when do we log?
+        "dotbumplog.txt", // TODO: what is a good log location and when do we want to log?
         rollingInterval: RollingInterval.Day,
         formatProvider: CultureInfo.InvariantCulture)
-// #endif
+#endif
     .CreateLogger();
+
+var versionInfo = new VersionInfo(Assembly.GetExecutingAssembly());
+Log.Debug("DotBump version {@Version}", versionInfo);
+Log.Debug("Configuring app");
 
 var commandApp = new CommandApp();
 
-AnsiConsole.WriteLine("Initializing...");
-
-var versionInfo = new VersionInfo(Assembly.GetExecutingAssembly());
-Log.Debug("DotBump version {@Version}", versionInfo); // TODO: I was expecting this to show up in the console but it doesn't....
-Log.Debug("Configuring app");
-
-AnsiConsole.WriteLine($"DotBump version {versionInfo.ProductVersion}");
+AnsiConsole.WriteLine($"Initializing DotBump version {versionInfo.ProductVersion}");
 
 commandApp.Configure(Log.Logger);
 
