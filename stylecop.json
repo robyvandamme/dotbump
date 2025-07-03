@@ -8,10 +8,10 @@
       "documentExposedElements": false,
       "documentInternalElements": false,
       "documentInterfaces": false,
-      "copyrightText": "Copyright © {year} {name}.",
+      "copyrightText": "Copyright © {year} {author}.",
       "variables": {
         "year": "2025",
-        "name": "Roby Van Damme"
+        "author": "Roby Van Damme"
       },
       "xmlHeader": false
     }
