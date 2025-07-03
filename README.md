@@ -39,6 +39,8 @@ dotnet dotbump tools --debug true
 
 ## Dependencies
 
+### Application
+
 * Serilog: trialing Serilog without Microsoft logging extensions, might change in the future.
 
 ### Code Style
@@ -53,3 +55,11 @@ dotnet dotbump tools --debug true
 * Shouldly: current default
 * Moq: current default
 * Coverlet: current default
+
+### Build
+
+* Nuke: current default
+
+### Versioning
+
+* GitVersion: current default
