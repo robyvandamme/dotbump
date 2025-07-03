@@ -46,7 +46,6 @@ dotnet dotbump tools --debug true
 * [.editorconfig](.editorconfig) (current default)
 * StyleCop Analyzers (Unstable) (current default)
 * Roslynator.Analyzers: trialing
-* For spelling exceptions: configured the .idea dictionary (trialing)
 
 ### Testing
 
