@@ -31,5 +31,9 @@
     </AdditionalFiles>
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="DotBump.Tests"/>
+  </ItemGroup>
+
 
 </Project>
