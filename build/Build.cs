@@ -28,15 +28,6 @@ class Build : NukeBuild
     [PathVariable]
     readonly Tool dotnet;
 
-    [Parameter]
-    readonly string NuGetApiKey;
-
-    [Parameter]
-    readonly string NuGetFeed;
-
-    [Parameter]
-    readonly bool PackAndPublish;
-
     Target RestoreTools => t => t
         .Executes(() =>
         {
