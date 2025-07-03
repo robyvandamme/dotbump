@@ -1,7 +1,9 @@
-using System;
+// Copyright © 2025 Roby Van Damme.
+
 using System.ComponentModel;
-using System.Linq;
 using Nuke.Common.Tooling;
+
+namespace DotBump.Build;
 
 [TypeConverter(typeof(TypeConverter<Configuration>))]
 public class Configuration : Enumeration
