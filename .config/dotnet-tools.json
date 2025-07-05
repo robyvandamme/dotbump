@@ -8,6 +8,20 @@
         "dotnet-gitversion"
       ],
       "rollForward": false
+    },
+    "nuke.globaltool": {
+      "version": "9.0.4",
+      "commands": [
+        "nuke"
+      ],
+      "rollForward": false
+    },
+    "dotnet-reportgenerator-globaltool": {
+      "version": "5.4.8",
+      "commands": [
+        "reportgenerator"
+      ],
+      "rollForward": false
     }
   }
 }

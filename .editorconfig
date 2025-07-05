@@ -300,13 +300,6 @@ dotnet_diagnostic.SA1309.severity = none
 
 
 [build/*.{cs,vb}]
-# taken from the config that was created by nuke
-dotnet_style_require_accessibility_modifiers = never:warning
-csharp_style_expression_bodied_methods = true:silent
-csharp_style_expression_bodied_properties = true:warning
-csharp_style_expression_bodied_indexers = true:warning
-csharp_style_expression_bodied_accessors = true:warning
-
 # Allow Nuke style fields
 dotnet_naming_rule.instance_fields_should_be_camel_case.severity = suggestion
 dotnet_naming_rule.instance_fields_should_be_camel_case.symbols = instance_fields
