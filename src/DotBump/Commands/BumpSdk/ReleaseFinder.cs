@@ -27,7 +27,7 @@ public class ReleaseFinder(ILogger logger) : IReleaseFinder
                 return relevantRelease; // new minor version
             }
 
-            if (!relevantRelease.SupportPhase.Equals("preview", StringComparison.OrdinalIgnoreCase))
+            if (!relevantRelease.SupportPhase.Equals("preview", StringComparison.OrdinalIgnoreCase)) // TODO: why is this check here?
             {
                 if (relevantRelease.LatestSdkVersion.Patch > currentSdk.SemanticVersion.Patch)
                 {
