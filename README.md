@@ -1,7 +1,18 @@
-# dotbump
+# DotBump
 
 .NET Global Tool to automate dependency upgrade tasks in .NET solutions.
-I typically run this on a monthly basis after a .NET SDK update was published.
+
+## Why?
+
+I found myself manually updating the SDK version in the global.json file for a number of projects I was maintaining 
+and thought it would be nice to automate that. I had a look around but could not immediately find something that 
+matched  what I had in mind. I also never wrote a CLI or .NET Global tool before so this seemed like an interesting  
+side-project. And I also did not immediately find a tool that would upgrade the .NET Tools in a solution, so I thought 
+that would also be nice to have.
+
+#### Why not simply use the rollForward option?
+
+I like the idea of reproducible builds and using rollForward does not really align with that.
 
 ## Features
 
@@ -42,7 +53,7 @@ dotnet dotbump tools --debug true
 ### Application
 
 * Serilog: trialing Serilog without Microsoft logging extensions, might change in the future.
-* Spectre.Console.Cli: trialing
+* Spectre.Console.Cli: trialing. Probably the default for future CLI projects.
 
 ### Code Style
 
@@ -64,4 +75,4 @@ dotnet dotbump tools --debug true
 
 ### Versioning
 
-* GitVersion: current default
+* GitVersion: current default with Conventional Commits. Not sure if this will cover all possible scenario's yet for a CLI.
