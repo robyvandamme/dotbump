@@ -36,5 +36,9 @@
     <InternalsVisibleTo Include="DotBump.Tests"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="bin\Debug\net8.0\" />
+  </ItemGroup>
+
 
 </Project>

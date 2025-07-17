@@ -22,9 +22,14 @@ internal static class CommandConfiguration
             config.ValidateExamples();
 #endif
             config.SetApplicationName("dotbump");
-            config.Settings.Registrar.RegisterInstance(Log.Logger);
+            config.Settings.Registrar.RegisterInstance(logger); // TODO: review > changed from Log.Logger....
 
-            config.AddCommand<BumpSdkSettings>(name: "sdk");
+            config.Settings.Registrar.Register<ISdkFileService, SdkFileService>();
+            config.Settings.Registrar.Register<IReleaseService, ReleaseWebService>();
+            config.Settings.Registrar.Register<IReleaseFinder, ReleaseFinder>();
+            config.Settings.Registrar.Register<IBumpSdkHandler, BumpSdkHandler>();
+
+            config.AddCommand<BumpSdkCommand>(name: "sdk");
         });
     }
 }
