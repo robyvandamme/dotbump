@@ -42,6 +42,7 @@ dotnet dotbump tools --debug true
 ### Application
 
 * Serilog: trialing Serilog without Microsoft logging extensions, might change in the future.
+* Spectre.Console.Cli: trialing
 
 ### Code Style
 
