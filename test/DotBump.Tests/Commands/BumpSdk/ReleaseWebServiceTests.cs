@@ -1,11 +1,11 @@
 // Copyright © 2025 Roby Van Damme.
 
-using DotBump.Commands.Sdk;
+using DotBump.Commands.BumpSdk;
 using Moq;
 using Serilog;
 using Shouldly;
 
-namespace DotBump.Tests.Commands.Sdk;
+namespace DotBump.Tests.Commands.BumpSdk;
 
 public class ReleaseWebServiceTests
 {

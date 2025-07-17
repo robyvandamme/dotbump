@@ -1,8 +1,8 @@
 // Copyright © 2025 Roby Van Damme.
 
-using DotBump.Commands.Sdk.DataModel;
+using DotBump.Commands.BumpSdk.DataModel;
 
-namespace DotBump.Commands.Sdk;
+namespace DotBump.Commands.BumpSdk;
 
 public interface IReleaseFinder
 {

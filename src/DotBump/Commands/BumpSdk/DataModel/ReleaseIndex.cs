@@ -3,7 +3,7 @@
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
-namespace DotBump.Commands.Sdk.DataModel;
+namespace DotBump.Commands.BumpSdk.DataModel;
 
 public record ReleaseIndex(string Schema, Collection<Release> ReleasesIndex)
 {

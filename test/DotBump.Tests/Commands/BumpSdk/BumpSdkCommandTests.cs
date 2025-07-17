@@ -1,9 +1,9 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Text.Json;
-using DotBump.Commands.Sdk;
-using DotBump.Commands.Sdk.DataModel;
-using DotBump.Tests.Commands.Sdk.Fakes;
+using DotBump.Commands.BumpSdk;
+using DotBump.Commands.BumpSdk.DataModel;
+using DotBump.Tests.Commands.BumpSdk.Fakes;
 using DotBump.Tests.Common;
 using Moq;
 using Serilog;
@@ -11,7 +11,7 @@ using Shouldly;
 using Spectre.Console.Cli;
 using Spectre.Console.Testing;
 
-namespace DotBump.Tests.Commands.Sdk;
+namespace DotBump.Tests.Commands.BumpSdk;
 
 public class BumpSdkCommandTests
 {
@@ -20,7 +20,7 @@ public class BumpSdkCommandTests
         [Fact]
         public async Task Sdk_Version_Updated_Returns_0()
         {
-            var json = new GlobalJson(new DotBump.Commands.Sdk.DataModel.Sdk("8.0.405", "disable"));
+            var json = new GlobalJson(new DotBump.Commands.BumpSdk.DataModel.Sdk("8.0.405", "disable"));
             var directory = new LocalDirectory("./temp");
             directory.EnsureFileDeleted("global.json");
             directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
@@ -50,7 +50,7 @@ public class BumpSdkCommandTests
         [Fact]
         public async Task Sdk_Version_Not_Updated_Returns_0()
         {
-            var json = new GlobalJson(new DotBump.Commands.Sdk.DataModel.Sdk("8.0.406", "disable"));
+            var json = new GlobalJson(new DotBump.Commands.BumpSdk.DataModel.Sdk("8.0.406", "disable"));
             var directory = new LocalDirectory("./temp");
             directory.EnsureFileDeleted("global.json");
             directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
@@ -105,7 +105,7 @@ public class BumpSdkCommandTests
         [Fact]
         public async Task With_Output_Parameter_Writes_Result_To_File()
         {
-            var json = new GlobalJson(new DotBump.Commands.Sdk.DataModel.Sdk("8.0.405", "disable"));
+            var json = new GlobalJson(new DotBump.Commands.BumpSdk.DataModel.Sdk("8.0.405", "disable"));
             var directory = new LocalDirectory("./temp");
             directory.EnsureFileDeleted("global.json");
             directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));

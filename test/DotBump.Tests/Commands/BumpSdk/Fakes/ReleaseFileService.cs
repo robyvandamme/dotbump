@@ -1,11 +1,11 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Text.Json;
-using DotBump.Commands.Sdk;
-using DotBump.Commands.Sdk.DataModel;
+using DotBump.Commands.BumpSdk;
+using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Common;
 
-namespace DotBump.Tests.Commands.Sdk.Fakes;
+namespace DotBump.Tests.Commands.BumpSdk.Fakes;
 
 public class ReleaseFileService : IReleaseService
 {

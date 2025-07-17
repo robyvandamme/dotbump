@@ -1,11 +1,11 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Text.Json;
-using DotBump.Commands.Sdk.DataModel;
+using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Common;
 using Serilog;
 
-namespace DotBump.Commands.Sdk;
+namespace DotBump.Commands.BumpSdk;
 
 public class ReleaseWebService(ILogger logger) : IReleaseService
 {

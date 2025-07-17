@@ -3,7 +3,7 @@
 using System.Text.Json.Serialization;
 using DotBump.Common;
 
-namespace DotBump.Commands.Sdk.DataModel;
+namespace DotBump.Commands.BumpSdk.DataModel;
 
 public record Release(string ChannelVersion, string LatestSdk, string SupportPhase)
 {

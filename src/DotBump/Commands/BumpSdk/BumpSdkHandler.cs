@@ -3,7 +3,7 @@
 using DotBump.Common;
 using Serilog;
 
-namespace DotBump.Commands.Sdk;
+namespace DotBump.Commands.BumpSdk;
 
 internal class BumpSdkHandler(
     ISdkFileService fileService,

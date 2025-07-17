@@ -3,7 +3,7 @@
 using System.ComponentModel;
 using Spectre.Console.Cli;
 
-namespace DotBump.Commands.Sdk;
+namespace DotBump.Commands.BumpSdk;
 
 /// <summary>
 /// The settings for the Bump SDK command.

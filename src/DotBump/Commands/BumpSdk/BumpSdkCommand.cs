@@ -7,7 +7,7 @@ using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
-namespace DotBump.Commands.Sdk;
+namespace DotBump.Commands.BumpSdk;
 
 public class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHandler bumpSdkHandler)
     : AsyncCommand<BumpSdkSettings>()

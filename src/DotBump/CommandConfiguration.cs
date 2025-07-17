@@ -1,7 +1,7 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Diagnostics;
-using DotBump.Commands.Sdk;
+using DotBump.Commands.BumpSdk;
 using Serilog;
 using Spectre.Console.Cli;
 

@@ -1,10 +1,10 @@
 // Copyright © 2025 Roby Van Damme.
 
-using DotBump.Commands.Sdk.DataModel;
+using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Common;
 using Serilog;
 
-namespace DotBump.Commands.Sdk;
+namespace DotBump.Commands.BumpSdk;
 
 public class ReleaseFinder(ILogger logger) : IReleaseFinder
 {
