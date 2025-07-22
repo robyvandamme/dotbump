@@ -5,6 +5,7 @@ using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Tests.Commands.BumpSdk.Fakes;
 using DotBump.Tests.Common;
+using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
 using Shouldly;

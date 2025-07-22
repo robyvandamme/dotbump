@@ -1,6 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
-namespace DotBump.Tests;
+namespace DotBump.Tests.TestHelpers;
 
 public record LocalDirectory(string RelativePath)
 {

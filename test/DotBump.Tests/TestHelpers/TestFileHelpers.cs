@@ -1,8 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
-using DotBump.Tests.Common;
-
-namespace DotBump.Tests;
+namespace DotBump.Tests.TestHelpers;
 
 public static class TestFileHelpers
 {
