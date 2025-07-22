@@ -6,7 +6,7 @@
 
 I found myself manually updating the SDK version in the global.json file for a number of projects I was maintaining 
 and thought it would be nice to automate that. I had a look around but could not immediately find something that 
-matched  what I had in mind. I also never wrote a CLI or .NET Global tool before so this seemed like an interesting  
+matched what I had in mind. I also never wrote a CLI or .NET Global tool before so this seemed like an interesting  
 side-project. And I also did not immediately find a tool that would upgrade the .NET Tools in a solution, so I thought 
 that would also be nice to have.
 
