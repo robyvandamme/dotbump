@@ -22,7 +22,7 @@ internal static class CommandConfiguration
             config.ValidateExamples();
 #endif
             config.SetApplicationName("dotbump");
-            config.Settings.Registrar.RegisterInstance(logger); // TODO: review > changed from Log.Logger....
+            config.Settings.Registrar.RegisterInstance(logger);
 
             config.Settings.Registrar.Register<ISdkFileService, SdkFileService>();
             config.Settings.Registrar.Register<IReleaseService, ReleaseWebService>();
