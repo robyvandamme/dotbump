@@ -22,4 +22,13 @@ internal abstract class BumpSettings : CommandSettings
     [CommandOption("--debug")]
     [DefaultValue(false)]
     public bool? Debug { get; set; }
+
+    /// <summary>
+    /// Gets or sets the file to log to.
+    /// Note that this particular Spectre command setting is not required since the argument gets picked up by the
+    /// <see cref="ArgumentHandler"/> when the application is starting up.
+    /// </summary>
+    [Description("File to send to log output to.")]
+    [CommandOption("--logfile")]
+    public string? LogFile { get; set; }
 }
