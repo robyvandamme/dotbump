@@ -22,24 +22,6 @@ public record Sdk
     [JsonPropertyName("rollForward")]
     public string RollForward { get; set; }
 
-    // public SemanticVersion? SemanticVersion
-    // {
-    //     get
-    //     {
-    //         if (string.IsNullOrWhiteSpace(this.Version))
-    //         {
-    //             return null;
-    //         }
-    //
-    //         if (this._semanticVersion != null)
-    //         {
-    //             return this._semanticVersion;
-    //         }
-    //
-    //         this._semanticVersion = new SemanticVersion(this.Version);
-    //         return this._semanticVersion;
-    //     }
-    // }
     [JsonIgnore]
     public SemanticVersion SemanticVersion { get; set; }
 }
