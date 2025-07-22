@@ -27,14 +27,11 @@ public class ReleaseFinder(ILogger logger) : IReleaseFinder
                 return relevantRelease; // new minor version
             }
 
-            if (!relevantRelease.SupportPhase.Equals("preview", StringComparison.OrdinalIgnoreCase)) // TODO: why is this check here?
+            if (relevantRelease.LatestSdkVersion.Patch > currentSdk.SemanticVersion.Patch)
             {
-                if (relevantRelease.LatestSdkVersion.Patch > currentSdk.SemanticVersion.Patch)
-                {
-                    logger.Debug("Found new patch release {Release}", relevantRelease.LatestSdkVersion.ToString());
-                    logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindNewRelease), relevantRelease);
-                    return relevantRelease; // new patch
-                }
+                logger.Debug("Found new patch release {Release}", relevantRelease.LatestSdkVersion.ToString());
+                logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindNewRelease), relevantRelease);
+                return relevantRelease; // new patch
             }
         }
 
