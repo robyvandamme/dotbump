@@ -35,7 +35,7 @@ public class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHandle
             logger.Debug("GlobalJson file path: {Path}", globalJsonPath);
             logger.Debug("Output file : {OutputFile}", outputFile);
 
-            console.MarkupLine($"Bumping SDK with settings: type={bumpType}, path={globalJsonPath}, Output: {outputFile}");
+            console.MarkupLine($"Bumping SDK with settings: type={bumpType}, file={globalJsonPath}, output: {outputFile ?? "none"}");
 
             var result = await bumpSdkHandler.HandleAsync(bumpType, globalJsonPath).ConfigureAwait(false);
 
