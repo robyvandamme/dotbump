@@ -2,6 +2,7 @@
 
 using System.Text;
 using System.Text.Json;
+using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Common;
 using Serilog;
 using Spectre.Console;

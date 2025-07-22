@@ -1,6 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
-namespace DotBump.Commands.BumpSdk;
+namespace DotBump.Commands.BumpSdk.Interfaces;
 
 public interface IBumpSdkHandler
 {

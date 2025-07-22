@@ -2,6 +2,7 @@
 
 using System.Text.Json;
 using DotBump.Commands.BumpSdk.DataModel;
+using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Common;
 using Serilog;
 

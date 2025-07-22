@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using DotBump.Commands.BumpSdk;
+using DotBump.Commands.BumpSdk.Interfaces;
 using Serilog;
 using Spectre.Console.Cli;
 

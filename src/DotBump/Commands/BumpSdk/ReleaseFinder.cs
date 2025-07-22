@@ -1,6 +1,7 @@
 // Copyright © 2025 Roby Van Damme.
 
 using DotBump.Commands.BumpSdk.DataModel;
+using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Common;
 using Serilog;
 

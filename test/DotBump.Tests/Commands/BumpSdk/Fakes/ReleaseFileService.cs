@@ -3,6 +3,7 @@
 using System.Text.Json;
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.DataModel;
+using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Common;
 
 namespace DotBump.Tests.Commands.BumpSdk.Fakes;

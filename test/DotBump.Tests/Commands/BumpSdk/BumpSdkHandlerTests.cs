@@ -2,6 +2,7 @@
 
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.DataModel;
+using DotBump.Commands.BumpSdk.Interfaces;
 using Moq;
 using Serilog;
 using Shouldly;
