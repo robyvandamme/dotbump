@@ -6,7 +6,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotBump.Tests", "test\DotBu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{51217487-86E0-4111-AAB4-B46B27CB9E4B}"
 	ProjectSection(SolutionItems) = preProject
-		README.md = README.md
 		stylecop.json = stylecop.json
 		global.json = global.json
 		Directory.Build.props = Directory.Build.props
@@ -16,6 +15,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{512174
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Build", "build\Build.csproj", "{2943EBB3-0066-4C3A-986C-6D48EC1BD694}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{E5E16BCA-FBE6-4CBB-AD17-01C756C36868}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
