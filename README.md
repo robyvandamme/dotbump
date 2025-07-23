@@ -1,24 +1,35 @@
 # DotBump
 
 .NET Global Tool to automate dependency upgrade tasks in .NET solutions.
+Currently only tested on MacOS and Linux.
 
 ## Features
 
 ### Bump the .NET SDK version
 
-Bumps the global.json SDK version to the latest minor or patch version.
+Bump the global.json SDK version to the latest minor or patch version.
 
-#### Examples
+```text
 
-```shell
-dotnet dotbump sdk
+DESCRIPTION:
+Bump SDK Version
+
+USAGE:
+    dotbump sdk [OPTIONS]
+
+EXAMPLES:
+    dotbump sdk -f ./other/global.json -o bump-sdk-result.json --debug true
+
+OPTIONS:
+    -h, --help      Prints help information                                     
+        --debug     Enable debug logging for troubleshooting                    
+    -t, --type      The bump type. Defaults to `minor`. The option is ignored   
+                    for now (only the minor option is implemented)              
+    -f, --file      The global.json file to update. Defaults to `./global.json` 
+    -o, --output    Output file name. The name of the file to write the result  
+                    to. The output format is json                               
+
 ```
-
-Enable debug logging:
-
-````shell
-dotnet dotbump sdk --debug true
-````
 
 ### Bump .NET Tools Versions
 
