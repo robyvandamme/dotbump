@@ -10,7 +10,7 @@ using Spectre.Console.Cli;
 
 namespace DotBump.Commands.BumpSdk;
 
-public class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHandler bumpSdkHandler)
+internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHandler bumpSdkHandler)
     : AsyncCommand<BumpSdkSettings>()
 {
     public override async Task<int> ExecuteAsync(CommandContext context, BumpSdkSettings settings)

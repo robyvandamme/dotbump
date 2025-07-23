@@ -4,4 +4,4 @@ using System.Text.Json.Serialization;
 
 namespace DotBump.Commands.BumpSdk.DataModel;
 
-public record GlobalJson([property: JsonPropertyName("sdk")] Sdk Sdk);
+internal record GlobalJson([property: JsonPropertyName("sdk")] Sdk Sdk);

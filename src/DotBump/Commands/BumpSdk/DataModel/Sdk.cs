@@ -5,7 +5,7 @@ using DotBump.Common;
 
 namespace DotBump.Commands.BumpSdk.DataModel;
 
-public record Sdk
+internal record Sdk
 {
     public Sdk(string version, string rollForward)
     {

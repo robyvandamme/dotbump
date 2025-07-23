@@ -2,7 +2,7 @@
 
 namespace DotBump.Commands.BumpSdk.Interfaces;
 
-public interface ISdkFileService
+internal interface ISdkFileService
 {
     void UpdateSdkVersion(string oldSdkVersion, string newSdkVersion, string filePath);
 

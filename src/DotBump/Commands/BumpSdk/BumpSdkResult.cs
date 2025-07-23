@@ -2,4 +2,4 @@
 
 namespace DotBump.Commands.BumpSdk;
 
-public record BumpSdkResult(bool Updated, string OldVersion, string NewVersion);
+internal record BumpSdkResult(bool Updated, string OldVersion, string NewVersion);

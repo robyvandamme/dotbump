@@ -10,7 +10,7 @@ namespace DotBump.Commands.BumpSdk;
 
 internal class SdkFileService(ILogger logger) : ISdkFileService
 {
-    public DataModel.Sdk GetCurrentSdkVersionFromFile(string filePath)
+    public Sdk GetCurrentSdkVersionFromFile(string filePath)
     {
         logger.MethodStart(nameof(SdkFileService), nameof(GetCurrentSdkVersionFromFile));
 

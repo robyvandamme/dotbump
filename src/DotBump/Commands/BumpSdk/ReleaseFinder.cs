@@ -7,7 +7,7 @@ using Serilog;
 
 namespace DotBump.Commands.BumpSdk;
 
-public class ReleaseFinder(ILogger logger) : IReleaseFinder
+internal class ReleaseFinder(ILogger logger) : IReleaseFinder
 {
     public Release? TryFindNewRelease(DataModel.Sdk currentSdk, IReadOnlyList<Release> releases, BumpType bumpType)
     {

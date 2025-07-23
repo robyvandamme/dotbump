@@ -8,7 +8,7 @@ using Serilog;
 
 namespace DotBump.Commands.BumpSdk;
 
-public class ReleaseWebService(ILogger logger) : IReleaseService
+internal class ReleaseWebService(ILogger logger) : IReleaseService
 {
     private readonly Uri _releaseUri = new Uri("https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json");
 

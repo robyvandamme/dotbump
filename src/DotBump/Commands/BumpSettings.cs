@@ -8,7 +8,7 @@ namespace DotBump.Commands;
 /// <summary>
 /// Base class for DotBump command settings.
 /// </summary>
-public abstract class BumpSettings : CommandSettings
+internal abstract class BumpSettings : CommandSettings
 {
     /// <summary>
     /// Gets or sets the debug flag.
@@ -18,5 +18,5 @@ public abstract class BumpSettings : CommandSettings
     [Description("Enable debug logging for troubleshooting")]
     [CommandOption("--debug")]
     [DefaultValue(false)]
-    public bool? Debug { get; set; }
+    private bool? Debug { get; set; }
 }

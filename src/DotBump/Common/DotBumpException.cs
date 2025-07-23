@@ -5,7 +5,7 @@ namespace DotBump.Common;
 /// <summary>
 /// Represents a DotBump specific exception.
 /// </summary>
-public class DotBumpException : Exception
+internal class DotBumpException : Exception
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="DotBumpException"/> class.

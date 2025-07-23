@@ -2,7 +2,7 @@
 
 namespace DotBump.Commands.BumpSdk.Interfaces;
 
-public interface IBumpSdkHandler
+internal interface IBumpSdkHandler
 {
     Task<BumpSdkResult> HandleAsync(BumpType bumpType, string filePath);
 }

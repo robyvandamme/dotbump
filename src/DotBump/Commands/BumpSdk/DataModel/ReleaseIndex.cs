@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace DotBump.Commands.BumpSdk.DataModel;
 
-public record ReleaseIndex(string Schema, Collection<Release> ReleasesIndex)
+internal record ReleaseIndex(string Schema, Collection<Release> ReleasesIndex)
 {
     [JsonPropertyName("$schema")]
     public string Schema { get; init; } = Schema;

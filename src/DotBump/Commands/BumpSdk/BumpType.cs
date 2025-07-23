@@ -2,7 +2,7 @@
 
 namespace DotBump.Commands.BumpSdk;
 
-public enum BumpType
+internal enum BumpType
 {
     /// <summary>
     /// Bumps the current SDK version to the latest minor or patch version.

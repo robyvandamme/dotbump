@@ -9,7 +9,7 @@ namespace DotBump.Common;
 /// Represents a semantic version according to Semantic Versioning 2.0.0 (https://semver.org/).
 /// Supports pre-release versions like alpha, beta, rc, preview, etc.
 /// </summary>
-public record SemanticVersion : IComparable<SemanticVersion>
+internal record SemanticVersion : IComparable<SemanticVersion>
 {
     private static readonly Regex s_versionPattern = new Regex(
         @"^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:-(?<prerelease>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$",

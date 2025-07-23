@@ -34,11 +34,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="DotBump.Tests"/>
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2"/>
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="bin\Debug\net8.0\" />
-  </ItemGroup>
-
-
+  
 </Project>

@@ -6,7 +6,7 @@ using Serilog.Events;
 namespace DotBump.Common;
 
 #pragma warning disable CA1062
-public static class LoggerExtensions
+internal static class LoggerExtensions
 {
     public static void MethodStart(this ILogger logger, string className, string methodName)
     {

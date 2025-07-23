@@ -4,7 +4,7 @@ using DotBump.Commands.BumpSdk.DataModel;
 
 namespace DotBump.Commands.BumpSdk.Interfaces;
 
-public interface IReleaseService
+internal interface IReleaseService
 {
     Task<IEnumerable<Release>> GetReleasesAsync();
 }

@@ -8,7 +8,7 @@ using DotBump.Common;
 
 namespace DotBump.Tests.Commands.BumpSdk.Fakes;
 
-public class ReleaseFileService : IReleaseService
+internal class ReleaseFileService : IReleaseService
 {
     private readonly string _filePath = Directory.GetCurrentDirectory() + "/Data/releases-index.json";
 
