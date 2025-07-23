@@ -30,7 +30,9 @@ internal static class CommandConfiguration
             config.Settings.Registrar.Register<IReleaseFinder, ReleaseFinder>();
             config.Settings.Registrar.Register<IBumpSdkHandler, BumpSdkHandler>();
 
-            config.AddCommand<BumpSdkCommand>(name: "sdk");
+            config.AddCommand<BumpSdkCommand>(name: "sdk")
+                .WithDescription("Bump SDK Version.")
+                .WithExample("sdk", "-f", "./other/global.json", "-o", "bump-sdk-result.json", "--debug", "true");
         });
     }
 }

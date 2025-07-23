@@ -13,10 +13,10 @@ internal abstract class BumpSettings : CommandSettings
     /// <summary>
     /// Gets or sets the debug flag.
     /// Note that this particular Spectre command setting is not required since the argument gets picked up by the
-    /// <see cref="ArgumentHandler"/> when the application is starting up.
+    /// <see cref="ArgumentHandler"/> when the application is starting up but is useful for documentation purposes.
     /// </summary>
     [Description("Enable debug logging for troubleshooting")]
     [CommandOption("--debug")]
     [DefaultValue(false)]
-    private bool? Debug { get; set; }
+    public bool? Debug { get; set; }
 }
