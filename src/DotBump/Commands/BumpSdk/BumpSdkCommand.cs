@@ -35,19 +35,17 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
             logger.Debug("GlobalJson file path: {Path}", globalJsonPath);
             logger.Debug("Output file : {OutputFile}", outputFile);
 
-            console.MarkupLine($"Bumping SDK with settings: type={bumpType}, file={globalJsonPath}, output: {outputFile ?? "none"}");
+            console.MarkupLine(
+                $"Bumping SDK with settings: type={bumpType}, file={globalJsonPath}, output: {outputFile ?? "none"}");
 
             var result = await bumpSdkHandler.HandleAsync(bumpType, globalJsonPath).ConfigureAwait(false);
 
-#pragma warning disable CA1849
-
-            // ReSharper disable once MethodHasAsyncOverload
             if (!string.IsNullOrWhiteSpace(outputFile))
             {
                 logger.Debug("Writing output to file {File}", outputFile);
                 File.WriteAllText(outputFile, JsonSerializer.Serialize(result), new UTF8Encoding());
             }
-#pragma warning restore CA1849
+
             console.MarkupLine(result.ToString());
         }
 #pragma warning disable CA1031
