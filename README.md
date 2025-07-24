@@ -1,7 +1,8 @@
 # DotBump
 
 .NET Global Tool to automate dependency upgrade tasks in .NET solutions.
-Currently only tested on MacOS and Linux.
+
+NOTE: Only tested on MacOS and Linux.
 
 ## Features
 
