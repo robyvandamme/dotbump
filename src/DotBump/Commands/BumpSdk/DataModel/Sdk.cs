@@ -1,0 +1,27 @@
+﻿// Copyright © 2025 Roby Van Damme.
+
+using System.Text.Json.Serialization;
+using DotBump.Common;
+
+namespace DotBump.Commands.BumpSdk.DataModel;
+
+internal record Sdk
+{
+    public Sdk(string version, string rollForward)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(version);
+
+        Version = version;
+        RollForward = rollForward;
+        SemanticVersion = new(version);
+    }
+
+    [JsonPropertyName("version")]
+    public string Version { get; set; }
+
+    [JsonPropertyName("rollForward")]
+    public string RollForward { get; set; }
+
+    [JsonIgnore]
+    public SemanticVersion SemanticVersion { get; set; }
+}
