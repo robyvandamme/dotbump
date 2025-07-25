@@ -92,6 +92,7 @@ class Build : NukeBuild
 
     Target RunTests => t => t
         .Requires(() => Solution)
+        .Triggers(Pack)
         .Executes(() =>
         {
             Log.Information("Looking for tests in solution");
@@ -145,23 +146,22 @@ class Build : NukeBuild
         });
 
     Target Publish => t => t
-
         // .Requires(() => NuGetFeed, () => NuGetApiKey)
         .Executes(() =>
         {
-            // Log.Information("Publishing...");
-            // var packagePath = $"{ArtifactsDirectory}/*.nupkg";
-            //
-            // if (!IsLocalBuild)
-            // {
-            //     // TODO: review - Ask copilot
-            //     // For pushing we use a PAT for now since passing in the GITHUB_TOKEN did not work in initial testing.
-            //     dotnet($"nuget push -s {NuGetFeed} -k {NuGetApiKey} {packagePath}");
-            // }
-            // else
-            // {
-            //     // push to the local package feed
-            //     dotnet($"nuget push -s http://localhost:9500/v3/index.json {packagePath} --skip-duplicate");
-            // }
+            Log.Information("Publishing...");
+            var packagePath = $"{ArtifactsDirectory}/*.nupkg";
+
+            if (!IsLocalBuild)
+            {
+                // TODO: review - Ask copilot
+                // For pushing we use a PAT for now since passing in the GITHUB_TOKEN did not work in initial testing.
+                dotnet($"nuget push -s {NuGetFeed} -k {NuGetApiKey} {packagePath}");
+            }
+            else
+            {
+                // push to the local package feed
+                dotnet($"nuget push -s http://localhost:9500/v3/index.json {packagePath} --skip-duplicate");
+            }
         });
 }
