@@ -4,6 +4,20 @@
     <OutputType>Exe</OutputType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>dotbump</ToolCommandName>
+    <Authors>Roby Van Damme</Authors>
+    <Copyright>Roby Van Damme</Copyright>
+    <PackageId>DotBump</PackageId>
+    <Product>DotBump</Product>
+    <Description>.NET Global Tool to automate dependency upgrade tasks in .NET solutions.</Description>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/robyvandamme/dotbump</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/robyvandamme/dotbump</RepositoryUrl>
+    
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,5 +50,12 @@
     <InternalsVisibleTo Include="DotBump.Tests"/>
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2"/>
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" Visible="false" PackagePath="\"/>
+    <None Include="../../icon.png" Pack="true" Visible="false" PackagePath="\"/>
+    <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="\"/>
+  </ItemGroup>
+  
   
 </Project>

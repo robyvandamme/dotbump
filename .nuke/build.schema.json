@@ -26,9 +26,12 @@
       "enum": [
         "Clean",
         "Compile",
+        "Pack",
+        "Publish",
         "Restore",
         "RestoreTools",
-        "RunTests"
+        "RunTests",
+        "SetVersion"
       ]
     },
     "Verbosity": {
@@ -109,6 +112,15 @@
             "Debug",
             "Release"
           ]
+        },
+        "NuGetApiKey": {
+          "type": "string"
+        },
+        "NuGetFeed": {
+          "type": "string"
+        },
+        "PackAndPublish": {
+          "type": "boolean"
         },
         "Solution": {
           "type": "string",

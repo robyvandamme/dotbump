@@ -28,11 +28,35 @@ class Build : NukeBuild
     [PathVariable]
     readonly Tool dotnet;
 
+    [Parameter]
+    readonly string NuGetApiKey;
+
+    [Parameter]
+    readonly string NuGetFeed;
+
+    [Parameter]
+    readonly bool PackAndPublish;
+
     Target RestoreTools => t => t
         .Executes(() =>
         {
             Log.Information("Restoring tools");
             DotNetTasks.DotNetToolRestore();
+        });
+
+    /// <summary>
+    /// Sets the version properties for all the projects using the current GitVersion projected version.
+    /// </summary>
+    Target SetVersion => t => t
+        .DependsOn(RestoreTools)
+        .OnlyWhenStatic(() => PackAndPublish)
+        .Executes(() =>
+        {
+            var result = dotnet($"gitversion /showvariable SemVer").StdToText();
+            Log.Information("Setting version: {Version}", result);
+
+            // NOTE: for some reason /updateprojectfiles only works (locally) when I add the verbosity argument...
+            dotnet($"gitversion path {Solution.Directory} /verbosity Normal /updateprojectfiles");
         });
 
     Target Clean => t => t
@@ -56,6 +80,7 @@ class Build : NukeBuild
     Target Compile => t => t
         .Requires(() => Solution)
         .DependsOn(Restore)
+        .DependsOn(SetVersion)
         .Triggers(RunTests)
         .Executes(() =>
         {
@@ -67,6 +92,7 @@ class Build : NukeBuild
 
     Target RunTests => t => t
         .Requires(() => Solution)
+        .Triggers(Pack)
         .Executes(() =>
         {
             Log.Information("Looking for tests in solution");
@@ -103,6 +129,37 @@ class Build : NukeBuild
             else
             {
                 Log.Information("No tests found in solution");
+            }
+        });
+
+    Target Pack => t => t
+        .Triggers(Publish)
+        .OnlyWhenStatic(() => PackAndPublish)
+        .Executes(() =>
+        {
+            Log.Information("Packing...");
+            DotNetTasks.DotNetPack(o => o
+                .SetNoBuild(true)
+                .SetConfiguration(Configuration)
+                .SetProject($"{Solution.Directory}/src/DotBump/DotBump.csproj")
+                .SetOutputDirectory(ArtifactsDirectory));
+        });
+
+    Target Publish => t => t
+        .Requires(() => NuGetFeed, () => NuGetApiKey)
+        .Executes(() =>
+        {
+            Log.Information("Publishing...");
+            var packagePath = $"{ArtifactsDirectory}/*.nupkg";
+
+            if (!IsLocalBuild)
+            {
+                dotnet($"nuget push -s {NuGetFeed} -k {NuGetApiKey} {packagePath}");
+            }
+            else
+            {
+                // push to the local package feed
+                dotnet($"nuget push -s http://localhost:9500/v3/index.json {packagePath} --skip-duplicate");
             }
         });
 }

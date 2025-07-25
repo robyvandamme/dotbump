@@ -362,3 +362,6 @@ MigrationBackup/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Local nuke parameter configuration
+.nuke/parameters.Local.json
