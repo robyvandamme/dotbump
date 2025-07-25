@@ -1,14 +1,6 @@
 name: Beta Release
 
 on:
-  push:
-    branches:
-      - 'main'
-    paths:
-      - '**'
-      - '!README.md'
-      - '!doc/**'
-      - '!.github/workflows/**'
   workflow_dispatch:
 
 jobs:
