@@ -52,10 +52,8 @@ class Build : NukeBuild
         .OnlyWhenStatic(() => PackAndPublish)
         .Executes(() =>
         {
-            // var version = GitVersionTasks.GitVersion().Result.SemVer;
-            // dotnet($"giversion"); // TODO: how can we get the correct version in here?
-
-            // Log.Information("Setting version: {Version}", version);
+            var result = dotnet($"gitversion /showvariable SemVer").StdToText();
+            Log.Information("Setting version: {Version}", result);
 
             // NOTE: for some reason /updateprojectfiles only works (locally) when I add the verbosity argument...
             dotnet($"gitversion path {Solution.Directory} /verbosity Normal /updateprojectfiles");
@@ -147,6 +145,7 @@ class Build : NukeBuild
         });
 
     Target Publish => t => t
+
         // .Requires(() => NuGetFeed, () => NuGetApiKey)
         .Executes(() =>
         {
