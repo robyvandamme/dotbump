@@ -154,8 +154,6 @@ class Build : NukeBuild
 
             if (!IsLocalBuild)
             {
-                // TODO: review - Ask copilot
-                // For pushing we use a PAT for now since passing in the GITHUB_TOKEN did not work in initial testing.
                 dotnet($"nuget push -s {NuGetFeed} -k {NuGetApiKey} {packagePath}");
             }
             else
