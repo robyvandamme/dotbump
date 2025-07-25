@@ -33,8 +33,8 @@ jobs:
       - name: 'Run: Compile'
         run: ./build.cmd Compile
         env:
-          NuGetApiKey: ${{ secrets.NUGET_API_KEY }}
-          NuGetFeed: ${{ secrets.NUGET_FEED }}
+          NuGetApiKey: ${{ secrets.GITHUB_TOKEN }}
+          NuGetFeed: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
           PackAndPublish: true
       - name: 'Save test reports'
         uses: actions/upload-artifact@v4

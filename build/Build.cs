@@ -146,7 +146,7 @@ class Build : NukeBuild
         });
 
     Target Publish => t => t
-        // .Requires(() => NuGetFeed, () => NuGetApiKey)
+        .Requires(() => NuGetFeed, () => NuGetApiKey)
         .Executes(() =>
         {
             Log.Information("Publishing...");
