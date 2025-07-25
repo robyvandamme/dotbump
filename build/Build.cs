@@ -35,7 +35,7 @@ class Build : NukeBuild
     readonly string NuGetFeed;
 
     [Parameter]
-    readonly bool PackAndPublish;
+    readonly bool PackAndPublish = true;
 
     Target RestoreTools => t => t
         .Executes(() =>
@@ -53,10 +53,14 @@ class Build : NukeBuild
         .Executes(() =>
         {
             // var version = GitVersionTasks.GitVersion().Result.SemVer;
+            // dotnet($"giversion"); // TODO: how can we get the correct version in here?
+
             // Log.Information("Setting version: {Version}", version);
 
             // NOTE: for some reason /updateprojectfiles only works (locally) when I add the verbosity argument...
             // GitVersionTasks.GitVersion($"path {Solution.Directory} /verbosity Normal /updateprojectfiles");
+
+            dotnet($"giversion /updateprojectfiles");
         });
 
     Target Clean => t => t
@@ -140,26 +144,27 @@ class Build : NukeBuild
             DotNetTasks.DotNetPack(o => o
                 .SetNoBuild(true)
                 .SetConfiguration(Configuration)
-                .SetProject($"{Solution.Directory}/src/DotBot/DotBot.csproj")
+                .SetProject($"{Solution.Directory}/src/DotBump/DotBump.csproj")
                 .SetOutputDirectory(ArtifactsDirectory));
         });
 
     Target Publish => t => t
-        .Requires(() => NuGetFeed, () => NuGetApiKey)
+        // .Requires(() => NuGetFeed, () => NuGetApiKey)
         .Executes(() =>
         {
-            Log.Information("Publishing...");
-            var packagePath = $"{ArtifactsDirectory}/*.nupkg";
-
-            if (!IsLocalBuild)
-            {
-                // For pushing we use a PAT for now since passing in the GITHUB_TOKEN did not work in initial testing.
-                dotnet($"nuget push -s {NuGetFeed} -k {NuGetApiKey} {packagePath}");
-            }
-            else
-            {
-                // push to the local package feed
-                dotnet($"nuget push -s http://localhost:9500/v3/index.json {packagePath} --skip-duplicate");
-            }
+            // Log.Information("Publishing...");
+            // var packagePath = $"{ArtifactsDirectory}/*.nupkg";
+            //
+            // if (!IsLocalBuild)
+            // {
+            //     // TODO: review - Ask copilot
+            //     // For pushing we use a PAT for now since passing in the GITHUB_TOKEN did not work in initial testing.
+            //     dotnet($"nuget push -s {NuGetFeed} -k {NuGetApiKey} {packagePath}");
+            // }
+            // else
+            // {
+            //     // push to the local package feed
+            //     dotnet($"nuget push -s http://localhost:9500/v3/index.json {packagePath} --skip-duplicate");
+            // }
         });
 }
