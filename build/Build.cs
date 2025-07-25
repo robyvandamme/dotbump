@@ -35,7 +35,7 @@ class Build : NukeBuild
     readonly string NuGetFeed;
 
     [Parameter]
-    readonly bool PackAndPublish = true;
+    readonly bool PackAndPublish;
 
     Target RestoreTools => t => t
         .Executes(() =>
