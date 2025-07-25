@@ -58,9 +58,7 @@ class Build : NukeBuild
             // Log.Information("Setting version: {Version}", version);
 
             // NOTE: for some reason /updateprojectfiles only works (locally) when I add the verbosity argument...
-            // GitVersionTasks.GitVersion($"path {Solution.Directory} /verbosity Normal /updateprojectfiles");
-
-            dotnet($"giversion /updateprojectfiles");
+            dotnet($"gitversion path {Solution.Directory} /verbosity Normal /updateprojectfiles");
         });
 
     Target Clean => t => t
