@@ -15,22 +15,7 @@ using Spectre.Console.Cli;
 Serilog.Debugging.SelfLog.Enable(msg => Debug.WriteLine(msg));
 #endif
 
-var defaultLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Error);
-if (ArgumentHandler.IsDebugMode(args))
-{
-    defaultLevelSwitch.MinimumLevel = LogEventLevel.Debug;
-}
-
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.ControlledBy(defaultLevelSwitch)
-#if DEBUG
-    .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
-    .WriteTo.File(
-        "dotbumplog.txt", // TODO: what is a good log location and when do we want to log?
-        rollingInterval: RollingInterval.Day,
-        formatProvider: CultureInfo.InvariantCulture)
-#endif
-    .CreateLogger();
+ConfigureLogger();
 
 var versionInfo = new VersionInfo(Assembly.GetExecutingAssembly());
 Log.Debug("DotBump version {@Version}", versionInfo);
@@ -58,4 +43,38 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+void ConfigureLogger()
+{
+    var defaultLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Error);
+    if (ArgumentHandler.IsDebugMode(args))
+    {
+        defaultLevelSwitch.MinimumLevel = LogEventLevel.Debug;
+    }
+
+    var logFile = ArgumentHandler.LogFile(args);
+
+    if (!string.IsNullOrWhiteSpace(logFile))
+    {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.ControlledBy(defaultLevelSwitch)
+#if DEBUG
+            .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
+#endif
+            .WriteTo.File(
+                logFile,
+                rollingInterval: RollingInterval.Day,
+                formatProvider: CultureInfo.InvariantCulture)
+            .CreateLogger();
+    }
+    else
+    {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.ControlledBy(defaultLevelSwitch)
+#if DEBUG
+            .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
+#endif
+            .CreateLogger();
+    }
 }
