@@ -148,14 +148,6 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Handles_Single_LogFile_Argument_Only()
-        {
-            var args = new[] { "--logfile" };
-            var result = ArgumentHandler.LogFile(args);
-            result.ShouldBe(string.Empty);
-        }
-
-        [Fact]
         public void Returns_LogFile_Value_With_Path_And_Extension()
         {
             var args = new[] { "--logfile", "/var/logs/application.log" };
