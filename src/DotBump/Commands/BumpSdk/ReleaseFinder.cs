@@ -9,7 +9,7 @@ namespace DotBump.Commands.BumpSdk;
 
 internal class ReleaseFinder(ILogger logger) : IReleaseFinder
 {
-    public Release? TryFindNewRelease(DataModel.Sdk currentSdk, IReadOnlyList<Release> releases, BumpType bumpType)
+    public Release? TryFindNewRelease(Sdk currentSdk, IReadOnlyList<Release> releases, BumpType bumpType)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindNewRelease));
 

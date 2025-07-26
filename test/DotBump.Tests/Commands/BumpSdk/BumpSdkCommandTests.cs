@@ -21,7 +21,7 @@ public class BumpSdkCommandTests
         [Fact]
         public async Task Sdk_Version_Updated_Returns_0()
         {
-            var json = new GlobalJson(new DotBump.Commands.BumpSdk.DataModel.Sdk("8.0.405", "disable"));
+            var json = new GlobalJson(new Sdk("8.0.405", "disable"));
             var directory = new LocalDirectory("./temp");
             directory.EnsureFileDeleted("global.json");
             directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
@@ -51,7 +51,7 @@ public class BumpSdkCommandTests
         [Fact]
         public async Task Sdk_Version_Not_Updated_Returns_0()
         {
-            var json = new GlobalJson(new DotBump.Commands.BumpSdk.DataModel.Sdk("8.0.406", "disable"));
+            var json = new GlobalJson(new Sdk("8.0.406", "disable"));
             var directory = new LocalDirectory("./temp");
             directory.EnsureFileDeleted("global.json");
             directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
@@ -106,7 +106,7 @@ public class BumpSdkCommandTests
         [Fact]
         public async Task With_Output_Parameter_Writes_Result_To_File()
         {
-            var json = new GlobalJson(new DotBump.Commands.BumpSdk.DataModel.Sdk("8.0.405", "disable"));
+            var json = new GlobalJson(new Sdk("8.0.405", "disable"));
             var directory = new LocalDirectory("./temp");
             directory.EnsureFileDeleted("global.json");
             directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
