@@ -9,7 +9,7 @@ public class ArgumentHandlerTests
     public class IsDebug
     {
         [Fact]
-        public void Args_Is_Empty_Returns_False()
+        public void Empty_Args_Returns_False()
         {
             var args = Array.Empty<string>();
             var result = ArgumentHandler.IsDebugMode(args);
@@ -17,7 +17,7 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Debug_Flag_Is_Not_Present_Returns_False()
+        public void Debug_Flag_Not_Present_Returns_False()
         {
             var args = new[] { "--other", "value" };
             var result = ArgumentHandler.IsDebugMode(args);
@@ -25,7 +25,7 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Debug_Flag_Is_Present_As_Last_Arg_Returns_False()
+        public void Debug_Flag_Present_As_Last_Arg_Returns_False()
         {
             var args = new[] { "--other", "--debug" };
             var result = ArgumentHandler.IsDebugMode(args);
@@ -76,7 +76,7 @@ public class ArgumentHandlerTests
     public class LogFile
     {
         [Fact]
-        public void Returns_Empty_String_When_Args_Array_Is_Empty()
+        public void Empty_Args_Returns_Empty_String()
         {
             var args = Array.Empty<string>();
             var result = ArgumentHandler.LogFile(args);
@@ -84,7 +84,7 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Returns_Empty_String_When_LogFile_Argument_Not_Found()
+        public void LogFile_Argument_Not_Found_Returns_Empty_String()
         {
             var args = new[] { "--verbose", "--config", "config.json" };
             var result = ArgumentHandler.LogFile(args);
@@ -92,7 +92,7 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Returns_LogFile_Value_When_LogFile_Argument_Is_Present()
+        public void LogFile_Argument_Present_Returns_LogFile_Value()
         {
             var args = new[] { "--verbose", "--logfile", "app.log", "--config", "config.json" };
             var result = ArgumentHandler.LogFile(args);
@@ -100,7 +100,7 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Returns_LogFile_Value_When_LogFile_Argument_Is_First()
+        public void LogFile_Argument_First_Returns_LogFile_Value()
         {
             var args = new[] { "--logfile", "first.log", "--verbose" };
             var result = ArgumentHandler.LogFile(args);
@@ -108,7 +108,7 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Returns_LogFile_Value_When_LogFile_Argument_Is_Last_With_Value()
+        public void LogFile_Argument_Last_With_Value_Returns_LogFile_Value()
         {
             var args = new[] { "--verbose", "--logfile", "last.log" };
             var result = ArgumentHandler.LogFile(args);
@@ -116,7 +116,7 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Returns_Empty_String_When_LogFile_Argument_Is_Last_Without_Value()
+        public void LogFile_Argument_Last_Without_Value_Returns_Empty_String()
         {
             var args = new[] { "--verbose", "--config", "config.json", "--logfile" };
             var result = ArgumentHandler.LogFile(args);
@@ -124,7 +124,7 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Is_Case_Insensitive_For_LogFile_Argument()
+        public void LogFile_Argument_Is_Case_Insensitive_UpperCase()
         {
             var args = new[] { "--LOGFILE", "uppercase.log" };
             var result = ArgumentHandler.LogFile(args);
@@ -132,7 +132,7 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Is_Case_Insensitive_For_Mixed_Case_LogFile_Argument()
+        public void LogFile_Argument_Is_Case_Insensitive_MixedCase()
         {
             var args = new[] { "--LogFile", "mixedcase.log" };
             var result = ArgumentHandler.LogFile(args);
@@ -140,7 +140,7 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void Returns_First_LogFile_Value_When_Multiple_LogFile_Arguments_Present()
+        public void Multiple_LogFile_Arguments_Returns_First_LogFile_Value_()
         {
             var args = new[] { "--logfile", "first.log", "--verbose", "--logfile", "second.log" };
             var result = ArgumentHandler.LogFile(args);
