@@ -36,15 +36,13 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
                 throw new ArgumentOutOfRangeException(nameof(bumpType), bumpType, null);
         }
 
-        if (newRelease != null)
+        if (newRelease == null)
         {
-            logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindNewRelease), newRelease);
-            return newRelease;
+            logger.Debug("No new release found");
         }
 
-        logger.Debug("No new release found");
-        logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindNewRelease));
-        return null;
+        logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindNewRelease), newRelease);
+        return newRelease;
     }
 
     private Release? TryFindMinorOrPatch(Sdk currentSdk, IReadOnlyList<Release> releases)
