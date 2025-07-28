@@ -11,24 +11,29 @@ NOTE: Only tested on MacOS and Linux.
 Bump the global.json SDK version to the latest minor or patch version.
 
 ```text
-
 DESCRIPTION:
-Bump SDK Version
+Bump the global.json SDK version. Use the 'minor' type option to bump the SDK to
+the latest minor or patch version for the current major version. Use the 'patch'
+type option to bump the SDK to the latest patch version for the current major 
+version. 
 
 USAGE:
     dotbump sdk [OPTIONS]
 
 EXAMPLES:
-    dotbump sdk -f ./other/global.json -o bump-sdk-result.json --debug true
+    dotbump sdk -t minor -o bump-sdk-result.json
+    dotbump sdk --type patch -o bump-sdk-result.json
+    dotbump sdk -t minor -f ./other/global.json --debug true
 
 OPTIONS:
     -h, --help      Prints help information                                     
         --debug     Enable debug logging for troubleshooting                    
-    -t, --type      The bump type. Defaults to `minor`. The option is ignored   
-                    for now (only the minor option is implemented)              
+    -t, --type      The bump type. Defaults to `minor`. Available options are   
+                    `minor` and `patch`                                         
     -f, --file      The global.json file to update. Defaults to `./global.json` 
     -o, --output    Output file name. The name of the file to write the result  
                     to. The output format is json                               
+
 
 ```
 

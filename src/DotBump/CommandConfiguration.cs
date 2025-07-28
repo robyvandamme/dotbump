@@ -31,8 +31,13 @@ internal static class CommandConfiguration
             config.Settings.Registrar.Register<IBumpSdkHandler, BumpSdkHandler>();
 
             config.AddCommand<BumpSdkCommand>(name: "sdk")
-                .WithDescription("Bump SDK Version.")
-                .WithExample("sdk", "-f", "./other/global.json", "-o", "bump-sdk-result.json", "--debug", "true");
+                .WithDescription(
+                    "Bump the global.json SDK version. " +
+                    "Use the 'minor' type option to bump the SDK to the latest minor or patch version for the current major version. " +
+                    "Use the 'patch' type option to bump the SDK to the latest patch version for the current major version. ")
+                .WithExample("sdk", "-t", "minor", "-o", "bump-sdk-result.json")
+                .WithExample("sdk", "--type", "patch", "-o", "bump-sdk-result.json")
+                .WithExample("sdk", "-t", "minor", "-f", "./other/global.json", "--debug", "true");
         });
     }
 }
