@@ -77,7 +77,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
 
     private Release? TryFindPatch(Sdk currentSdk, IReadOnlyList<Release> releases)
     {
-        logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch));
+        logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindPatch));
 
         var relevantRelease =
             releases.FirstOrDefault(o =>
@@ -89,12 +89,12 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
             if (relevantRelease.LatestSdkVersion.Patch > currentSdk.SemanticVersion.Patch)
             {
                 logger.Debug("Found new patch release {Release}", relevantRelease.LatestSdkVersion.ToString());
-                logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch), relevantRelease);
+                logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindPatch), relevantRelease);
                 return relevantRelease;
             }
         }
 
-        logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch));
+        logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindPatch));
         return null;
     }
 }
