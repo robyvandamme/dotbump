@@ -8,31 +8,34 @@ NOTE: Only tested on MacOS and Linux.
 
 ### Bump the .NET SDK version
 
-Bump the global.json SDK version to the latest minor or patch version.
+Bump the global.json SDK version to the latest specified SDK version.
 
 ```text
 DESCRIPTION:
 Bump the global.json SDK version. Use the 'minor' type option to bump the SDK to
 the latest minor or patch version for the current major version. Use the 'patch'
 type option to bump the SDK to the latest patch version for the current major 
-version. 
+version. Use the 'lts' type option to bump the SDK to the latest LTS version. 
 
 USAGE:
     dotbump sdk [OPTIONS]
 
 EXAMPLES:
-    dotbump sdk -t minor -o bump-sdk-result.json
-    dotbump sdk --type patch -o bump-sdk-result.json
-    dotbump sdk -t minor -f ./other/global.json --debug true
+    dotbump sdk -o bump-sdk-result.json
+    dotbump sdk -t patch -o bump-sdk-result.json
+    dotbump sdk -t lts -o bump-sdk-result.json
+    dotbump sdk --type minor -f ./other/global.json
+    dotbump sdk --debug true --logfile log.txt
 
 OPTIONS:
-    -h, --help      Prints help information                                     
-        --debug     Enable debug logging for troubleshooting                    
-    -t, --type      The bump type. Defaults to `minor`. Available options are   
-                    `minor` and `patch`                                         
-    -f, --file      The global.json file to update. Defaults to `./global.json` 
-    -o, --output    Output file name. The name of the file to write the result  
-                    to. The output format is json                               
+    -h, --help       Prints help information                                    
+        --debug      Enable debug logging for troubleshooting                   
+        --logfile    The file to send the log output to                         
+    -t, --type       The bump type. Defaults to `minor`. Available options are  
+                     `minor`, `patch` and `lts`                                 
+    -f, --file       The global.json file to update. Defaults to `./global.json`
+    -o, --output     Output file name. The name of the file to write the result 
+                     to. The output format is json                              
 
 
 ```

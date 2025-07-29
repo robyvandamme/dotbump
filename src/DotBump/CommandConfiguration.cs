@@ -34,9 +34,11 @@ internal static class CommandConfiguration
                 .WithDescription(
                     "Bump the global.json SDK version. " +
                     "Use the 'minor' type option to bump the SDK to the latest minor or patch version for the current major version. " +
-                    "Use the 'patch' type option to bump the SDK to the latest patch version for the current major version. ")
+                    "Use the 'patch' type option to bump the SDK to the latest patch version for the current major version. " +
+                    "Use the 'lts' type option to bump the SDK to the latest LTS version. ")
                 .WithExample("sdk", "-o", "bump-sdk-result.json")
                 .WithExample("sdk", "-t", "patch", "-o", "bump-sdk-result.json")
+                .WithExample("sdk", "-t", "lts", "-o", "bump-sdk-result.json")
                 .WithExample("sdk", "--type", "minor", "-f", "./other/global.json")
                 .WithExample("sdk", "--debug", "true", "--logfile", "log.txt");
         });
