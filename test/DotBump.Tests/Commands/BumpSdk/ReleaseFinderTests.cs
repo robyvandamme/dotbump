@@ -16,7 +16,7 @@ public class ReleaseFinderTests
         public void Finds_New_Patch_For_Minor_Type()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
-            var release = new Release("1.0", "1.1.14", "eol");
+            var release = new Release("1.0", "1.1.14", "eol", "lts");
             var releases = new List<Release>() { release };
             var bumpType = BumpType.Minor;
             var loggerMock = new Mock<ILogger>();
@@ -29,7 +29,7 @@ public class ReleaseFinderTests
         public void Finds_New_Minor_For_Minor_Type()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
-            var release = new Release("1.0", "1.2.0", "eol");
+            var release = new Release("1.0", "1.2.0", "eol", "lts");
             var releases = new List<Release>() { release };
             var bumpType = BumpType.Minor;
             var loggerMock = new Mock<ILogger>();
@@ -42,7 +42,7 @@ public class ReleaseFinderTests
         public void Ignores_New_Major_For_Minor_Type()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
-            var release = new Release("2.0", "2.2.0", "eol");
+            var release = new Release("2.0", "2.2.0", "eol", "sts");
             var releases = new List<Release>() { release };
             var bumpType = BumpType.Minor;
             var loggerMock = new Mock<ILogger>();
@@ -55,7 +55,7 @@ public class ReleaseFinderTests
         public void Ignores_Lower_Patch_For_Minor_Type()
         {
             var currentSdk = new Sdk("1.1.205", "disable");
-            var release = new Release("1.0", "1.1.105", "eol");
+            var release = new Release("1.0", "1.1.105", "eol", "lts");
             var releases = new List<Release>() { release };
             var bumpType = BumpType.Minor;
             var loggerMock = new Mock<ILogger>();
@@ -68,7 +68,7 @@ public class ReleaseFinderTests
         public void Ignores_Lower_Minor_For_Minor_Type()
         {
             var currentSdk = new Sdk("1.1.205", "disable");
-            var release = new Release("1.0", "1.0.105", "eol");
+            var release = new Release("1.0", "1.0.105", "eol", "lts");
             var releases = new List<Release>() { release };
             var bumpType = BumpType.Minor;
             var loggerMock = new Mock<ILogger>();
@@ -81,7 +81,7 @@ public class ReleaseFinderTests
         public void Finds_New_Patch_For_Patch_Type()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
-            var release = new Release("1.0", "1.1.14", "eol");
+            var release = new Release("1.0", "1.1.14", "eol", "lts");
             var releases = new List<Release>() { release };
             var bumpType = BumpType.Patch;
             var loggerMock = new Mock<ILogger>();
@@ -94,7 +94,7 @@ public class ReleaseFinderTests
         public void Ignores_Lower_Patch_For_Patch_Type()
         {
             var currentSdk = new Sdk("1.1.205", "disable");
-            var release = new Release("1.0", "1.1.105", "eol");
+            var release = new Release("1.0", "1.1.105", "eol", "lts");
             var releases = new List<Release>() { release };
             var bumpType = BumpType.Patch;
             var loggerMock = new Mock<ILogger>();
@@ -107,7 +107,7 @@ public class ReleaseFinderTests
         public void Ignores_New_Minor_For_Patch_Type()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
-            var release = new Release("1.0", "1.2.0", "eol");
+            var release = new Release("1.0", "1.2.0", "eol", "sts");
             var releases = new List<Release>() { release };
             var bumpType = BumpType.Patch;
             var loggerMock = new Mock<ILogger>();
@@ -120,7 +120,7 @@ public class ReleaseFinderTests
         public void Ignores_New_Major_For_Patch_Type()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
-            var release = new Release("2.0", "2.2.0", "eol");
+            var release = new Release("2.0", "2.2.0", "eol", "sts");
             var releases = new List<Release>() { release };
             var bumpType = BumpType.Patch;
             var loggerMock = new Mock<ILogger>();

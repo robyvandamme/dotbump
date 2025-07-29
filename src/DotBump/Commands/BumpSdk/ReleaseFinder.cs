@@ -27,6 +27,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
                 newRelease = TryFindPatch(currentSdk, releases);
                 break;
             case BumpType.Lts:
+                newRelease = TryFindLts(currentSdk, releases);
                 break;
             case BumpType.Stable:
                 break;
@@ -43,6 +44,27 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
 
         logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindNewRelease), newRelease);
         return newRelease;
+    }
+
+    private Release? TryFindLts(Sdk currentSdk, IReadOnlyList<Release> releases)
+    {
+        logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindLts));
+
+        // There is no need for new functionality to compare channel versions.
+        // We can use the SDK version. TEST
+        var relevantRelease =
+            releases.FirstOrDefault(o =>
+                o.SupportPhase.Equals("active", StringComparison.OrdinalIgnoreCase) &&
+                o.ReleaseType.Equals("lts", StringComparison.OrdinalIgnoreCase) &&
+                o.LatestSdkVersion > currentSdk.SemanticVersion);
+
+        if (relevantRelease != null)
+        {
+            logger.Debug("Found new LTS release {Release}", relevantRelease.LatestSdkVersion.ToString());
+        }
+
+        logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindLts));
+        return relevantRelease;
     }
 
     private Release? TryFindMinorOrPatch(Sdk currentSdk, IReadOnlyList<Release> releases)

@@ -5,7 +5,7 @@ using DotBump.Common;
 
 namespace DotBump.Commands.BumpSdk.DataModel;
 
-internal record Release(string ChannelVersion, string LatestSdk, string SupportPhase)
+internal record Release(string ChannelVersion, string LatestSdk, string SupportPhase, string ReleaseType)
 {
     [JsonPropertyName("channel-version")]
     public string ChannelVersion { get; } = ChannelVersion;
@@ -17,4 +17,7 @@ internal record Release(string ChannelVersion, string LatestSdk, string SupportP
 
     [JsonPropertyName("support-phase")]
     public string SupportPhase { get; } = SupportPhase;
+
+    [JsonPropertyName("release-type")]
+    public string ReleaseType { get; set; } = ReleaseType;
 }

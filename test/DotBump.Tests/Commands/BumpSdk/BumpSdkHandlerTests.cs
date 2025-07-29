@@ -20,15 +20,15 @@ public class BumpSdkHandlerTests
             var releaseService = new Mock<IReleaseService>();
 
             fileService.Setup(service => service.GetCurrentSdkVersionFromFile(It.IsAny<string>()))
-                .Returns(new DotBump.Commands.BumpSdk.DataModel.Sdk("1.1.0", "disable"));
+                .Returns(new Sdk("1.1.0", "disable"));
 
             var releaseFinderMock = new Mock<IReleaseFinder>();
             releaseFinderMock
                 .Setup(finder => finder.TryFindNewRelease(
-                    It.IsAny<DotBump.Commands.BumpSdk.DataModel.Sdk>(),
+                    It.IsAny<Sdk>(),
                     It.IsAny<IReadOnlyList<Release>>(),
                     It.IsAny<BumpType>()))
-                .Returns(new Release("1.0", "1.2.0", "eol"));
+                .Returns(new Release("1.0", "1.2.0", "eol", "lts"));
 
             var loggerMock = new Mock<ILogger>();
 
@@ -48,12 +48,12 @@ public class BumpSdkHandlerTests
             var releaseService = new Mock<IReleaseService>();
 
             fileService.Setup(service => service.GetCurrentSdkVersionFromFile(It.IsAny<string>()))
-                .Returns(new DotBump.Commands.BumpSdk.DataModel.Sdk("1.1.0", "disable"));
+                .Returns(new Sdk("1.1.0", "disable"));
 
             var releaseFinderMock = new Mock<IReleaseFinder>();
             releaseFinderMock
                 .Setup(finder => finder.TryFindNewRelease(
-                    It.IsAny<DotBump.Commands.BumpSdk.DataModel.Sdk>(),
+                    It.IsAny<Sdk>(),
                     It.IsAny<IReadOnlyList<Release>>(),
                     It.IsAny<BumpType>()))
                 .Returns((Release?)null);
