@@ -12,7 +12,7 @@ internal class BumpSdkHandler(
     IReleaseFinder releaseFinder,
     ILogger logger) : IBumpSdkHandler
 {
-    public async Task<BumpSdkResult> HandleAsync(BumpType bumpType, string filePath, bool security = false)
+    public async Task<BumpSdkResult> HandleAsync(BumpType bumpType, string filePath, bool security)
     {
         logger.MethodStart(nameof(BumpSdkHandler), nameof(HandleAsync));
 

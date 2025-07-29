@@ -35,7 +35,7 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
             logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("GlobalJson file path: {Path}", globalJsonPath);
             logger.Debug("Output file : {OutputFile}", outputFile);
-            logger.Debug("Only check for security updates: {Security}", security);
+            logger.Debug("Security updates only: {Security}", security);
 
             console.MarkupLine(
                 $"Bumping SDK with settings: type={bumpType}, file={globalJsonPath}, output: {outputFile ?? "none"}, security: {security}");

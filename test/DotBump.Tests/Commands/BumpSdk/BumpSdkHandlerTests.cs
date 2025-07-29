@@ -38,7 +38,7 @@ public class BumpSdkHandlerTests
                 releaseService.Object,
                 releaseFinderMock.Object,
                 loggerMock.Object);
-            var result = await handler.HandleAsync(BumpType.Minor, "filepath");
+            var result = await handler.HandleAsync(BumpType.Minor, "filepath", false);
             result.ShouldBe(new BumpSdkResult(true, "1.1.0", "1.2.0"));
         }
 
@@ -67,7 +67,7 @@ public class BumpSdkHandlerTests
                 releaseService.Object,
                 releaseFinderMock.Object,
                 loggerMock.Object);
-            var result = await handler.HandleAsync(BumpType.Minor, "filepath");
+            var result = await handler.HandleAsync(BumpType.Minor, "filepath", false);
             result.ShouldBe(new BumpSdkResult(false, "1.1.0", "1.1.0"));
         }
     }
