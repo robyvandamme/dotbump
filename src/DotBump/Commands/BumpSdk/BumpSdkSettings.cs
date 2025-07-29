@@ -1,7 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.ComponentModel;
-using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace DotBump.Commands.BumpSdk;
@@ -12,7 +11,7 @@ namespace DotBump.Commands.BumpSdk;
 internal class BumpSdkSettings : BumpSettings
 {
     [Description(
-        "The bump type. Defaults to `minor`. The option is ignored for now (only the minor option is implemented).")]
+        "The bump type. Defaults to `minor`. Available options are `minor` and `patch`.")]
     [CommandOption("-t|--type")]
     public BumpType? Type { get; init; }
 
