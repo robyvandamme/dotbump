@@ -50,8 +50,6 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindLts));
 
-        // There is no need for new functionality to compare channel versions.
-        // We can use the SDK version. TEST
         var relevantRelease =
             releases.FirstOrDefault(o =>
                 o.SupportPhase.Equals("active", StringComparison.OrdinalIgnoreCase) &&

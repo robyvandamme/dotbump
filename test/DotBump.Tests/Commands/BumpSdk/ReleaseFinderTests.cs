@@ -193,5 +193,18 @@ public class ReleaseFinderTests
             var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
             result.ShouldBe(release);
         }
+
+        [Fact]
+        public void Ignores_Current_Sdk_For_Lts()
+        {
+            var currentSdk = new Sdk("8.0.100", "disable");
+            var release = new Release("8.0", "8.0.100", "active", "lts");
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Lts;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            result.ShouldBe(null);
+        }
     }
 }
