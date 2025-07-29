@@ -27,8 +27,9 @@ public class BumpSdkHandlerTests
                 .Setup(finder => finder.TryFindNewRelease(
                     It.IsAny<DotBump.Commands.BumpSdk.DataModel.Sdk>(),
                     It.IsAny<IReadOnlyList<Release>>(),
-                    It.IsAny<BumpType>()))
-                .Returns(new Release("1.0", "1.2.0", "eol"));
+                    It.IsAny<BumpType>(),
+                    It.IsAny<bool>()))
+                .Returns(new Release("1.0", "1.2.0", "eol", false));
 
             var loggerMock = new Mock<ILogger>();
 
@@ -55,7 +56,8 @@ public class BumpSdkHandlerTests
                 .Setup(finder => finder.TryFindNewRelease(
                     It.IsAny<DotBump.Commands.BumpSdk.DataModel.Sdk>(),
                     It.IsAny<IReadOnlyList<Release>>(),
-                    It.IsAny<BumpType>()))
+                    It.IsAny<BumpType>(),
+                    It.IsAny<bool>()))
                 .Returns((Release?)null);
 
             var loggerMock = new Mock<ILogger>();
