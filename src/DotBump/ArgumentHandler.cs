@@ -37,4 +37,30 @@ internal static class ArgumentHandler
         // "--debug" not found in arguments
         return false;
     }
+
+    internal static string LogFile(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i].Equals("--logfile", StringComparison.OrdinalIgnoreCase))
+            {
+                // Check if this is the last argument
+                if (i == args.Length - 1)
+                {
+                    // "--logfile" is the last argument with no value
+                    return string.Empty;
+                }
+
+                return args[i + 1];
+            }
+        }
+
+        // "--logfile" not found in arguments
+        return string.Empty;
+    }
 }
