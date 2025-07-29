@@ -13,14 +13,14 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         Sdk currentSdk,
         IReadOnlyList<Release> releases,
         BumpType bumpType,
-        bool security = false)
+        bool security)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindNewRelease));
 
         ArgumentNullException.ThrowIfNull(currentSdk);
         ArgumentNullException.ThrowIfNull(releases);
 
-        Release? newRelease = null;
+        Release? newRelease;
 
         switch (bumpType)
         {
@@ -29,12 +29,6 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
                 break;
             case BumpType.Patch:
                 newRelease = TryFindPatch(currentSdk, releases, security);
-                break;
-            case BumpType.Lts:
-                break;
-            case BumpType.Stable:
-                break;
-            case BumpType.Preview:
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(bumpType), bumpType, null);

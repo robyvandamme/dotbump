@@ -21,7 +21,7 @@ public class ReleaseFinderTests
             var bumpType = BumpType.Minor;
             var loggerMock = new Mock<ILogger>();
             var finder = new ReleaseFinder(loggerMock.Object);
-            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, false);
             result.ShouldBe(release);
         }
 
@@ -29,12 +29,12 @@ public class ReleaseFinderTests
         public void Finds_New_Minor_For_Minor_Type()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
-            var release = new Release("1.0", "1.2.0", "eol", false);
+            var release = new Release("1.0", "1.2.0", "eol", true);
             var releases = new List<Release>() { release };
             var bumpType = BumpType.Minor;
             var loggerMock = new Mock<ILogger>();
             var finder = new ReleaseFinder(loggerMock.Object);
-            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, false);
             result.ShouldBe(release);
         }
 
@@ -47,7 +47,7 @@ public class ReleaseFinderTests
             var bumpType = BumpType.Minor;
             var loggerMock = new Mock<ILogger>();
             var finder = new ReleaseFinder(loggerMock.Object);
-            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, false);
             result.ShouldBe(null);
         }
 
@@ -60,7 +60,7 @@ public class ReleaseFinderTests
             var bumpType = BumpType.Minor;
             var loggerMock = new Mock<ILogger>();
             var finder = new ReleaseFinder(loggerMock.Object);
-            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, false);
             result.ShouldBe(null);
         }
 
@@ -73,8 +73,60 @@ public class ReleaseFinderTests
             var bumpType = BumpType.Minor;
             var loggerMock = new Mock<ILogger>();
             var finder = new ReleaseFinder(loggerMock.Object);
-            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, false);
             result.ShouldBe(null);
+        }
+
+        [Fact]
+        public void Ignores_Non_Security_Minor_For_Minor_Type_When_Security_Is_True()
+        {
+            var currentSdk = new Sdk("8.0.405", "disable");
+            var release = new Release("8.0", "8.1.100", "active", false);
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Minor;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, true);
+            result.ShouldBe(null);
+        }
+
+        [Fact]
+        public void Finds_Security_Minor_For_Minor_Type_When_Security_Is_True()
+        {
+            var currentSdk = new Sdk("8.0.405", "disable");
+            var release = new Release("8.0", "8.1.100", "active", true);
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Minor;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, true);
+            result.ShouldBe(release);
+        }
+
+        [Fact]
+        public void Ignores_Non_Security_Patch_For_Minor_Type_When_Security_Is_True()
+        {
+            var currentSdk = new Sdk("8.0.405", "disable");
+            var release = new Release("8.0", "8.0.406", "active", false);
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Minor;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, true);
+            result.ShouldBe(null);
+        }
+
+        [Fact]
+        public void Finds_Security_Patch_For_Minor_Type_When_Security_Is_True()
+        {
+            var currentSdk = new Sdk("8.0.405", "disable");
+            var release = new Release("8.0", "8.0.406", "active", true);
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Minor;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, true);
+            result.ShouldBe(release);
         }
 
         [Fact]
@@ -86,7 +138,7 @@ public class ReleaseFinderTests
             var bumpType = BumpType.Patch;
             var loggerMock = new Mock<ILogger>();
             var finder = new ReleaseFinder(loggerMock.Object);
-            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, false);
             result.ShouldBe(release);
         }
 
@@ -99,7 +151,7 @@ public class ReleaseFinderTests
             var bumpType = BumpType.Patch;
             var loggerMock = new Mock<ILogger>();
             var finder = new ReleaseFinder(loggerMock.Object);
-            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, false);
             result.ShouldBe(null);
         }
 
@@ -112,7 +164,7 @@ public class ReleaseFinderTests
             var bumpType = BumpType.Patch;
             var loggerMock = new Mock<ILogger>();
             var finder = new ReleaseFinder(loggerMock.Object);
-            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, false);
             result.ShouldBe(null);
         }
 
@@ -125,8 +177,34 @@ public class ReleaseFinderTests
             var bumpType = BumpType.Patch;
             var loggerMock = new Mock<ILogger>();
             var finder = new ReleaseFinder(loggerMock.Object);
-            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, false);
             result.ShouldBe(null);
+        }
+
+        [Fact]
+        public void Ignores_Non_Security_Patch_For_Patch_Type_When_Security_Is_True()
+        {
+            var currentSdk = new Sdk("8.0.405", "disable");
+            var release = new Release("8.0", "8.0.406", "active", false);
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Patch;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, true);
+            result.ShouldBe(null);
+        }
+
+        [Fact]
+        public void Finds_Security_Patch_For_Patch_Type_When_Security_Is_True()
+        {
+            var currentSdk = new Sdk("8.0.405", "disable");
+            var release = new Release("8.0", "8.0.406", "active", true);
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Patch;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, true);
+            result.ShouldBe(release);
         }
     }
 }
