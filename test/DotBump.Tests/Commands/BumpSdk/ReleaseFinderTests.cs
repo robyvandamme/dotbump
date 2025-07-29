@@ -128,5 +128,70 @@ public class ReleaseFinderTests
             var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
             result.ShouldBe(null);
         }
+
+        [Fact]
+        public void Ignores_New_Stable_For_Lts()
+        {
+            var currentSdk = new Sdk("8.0.0", "disable");
+            var release = new Release("9.0", "9.0.105", "active", "sts");
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Lts;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            result.ShouldBe(null);
+        }
+
+        [Fact]
+        public void Ignores_New_Preview_For_Lts()
+        {
+            var currentSdk = new Sdk("8.0.0", "disable");
+            var release = new Release("10.0", "10.0.100-preview.1.25120.13", "preview", "lts");
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Lts;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            result.ShouldBe(null);
+        }
+
+        [Fact]
+        public void Finds_New_Major_Lts()
+        {
+            var currentSdk = new Sdk("6.0.428", "disable");
+            var release = new Release("8.0", "8.0.406", "active", "lts");
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Lts;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            result.ShouldBe(release);
+        }
+
+        [Fact]
+        public void Finds_New_Minor_Lts()
+        {
+            var currentSdk = new Sdk("8.0.406", "disable");
+            var release = new Release("8.0", "8.1.0", "active", "lts");
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Lts;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            result.ShouldBe(release);
+        }
+
+        [Fact]
+        public void Finds_New_Patch_Lts()
+        {
+            var currentSdk = new Sdk("8.0.406", "disable");
+            var release = new Release("8.0", "8.0.410", "active", "lts");
+            var releases = new List<Release>() { release };
+            var bumpType = BumpType.Lts;
+            var loggerMock = new Mock<ILogger>();
+            var finder = new ReleaseFinder(loggerMock.Object);
+            var result = finder.TryFindNewRelease(currentSdk, releases, bumpType);
+            result.ShouldBe(release);
+        }
     }
 }
