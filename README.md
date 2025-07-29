@@ -8,7 +8,7 @@ NOTE: Only tested on MacOS and Linux.
 
 ### Bump the .NET SDK version
 
-Bump the global.json SDK version to the latest minor or patch version.
+Bump the global.json SDK version to the latest specified SDK version based on the current release index.
 
 ```text
 DESCRIPTION:

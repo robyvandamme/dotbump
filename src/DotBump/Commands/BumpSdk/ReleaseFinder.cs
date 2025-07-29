@@ -80,16 +80,14 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         var relevantRelease =
             releases.FirstOrDefault(o =>
                 o.LatestSdkVersion.Major == currentSdk.SemanticVersion.Major &&
-                o.LatestSdkVersion.Minor == currentSdk.SemanticVersion.Minor);
+                o.LatestSdkVersion.Minor == currentSdk.SemanticVersion.Minor &&
+                o.LatestSdkVersion.Patch > currentSdk.SemanticVersion.Patch);
 
         if (relevantRelease != null)
         {
-            if (relevantRelease.LatestSdkVersion.Patch > currentSdk.SemanticVersion.Patch)
-            {
-                logger.Debug("Found new patch release {Release}", relevantRelease.LatestSdkVersion.ToString());
-                logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindPatch), relevantRelease);
-                return relevantRelease;
-            }
+            logger.Debug("Found new patch release {Release}", relevantRelease.LatestSdkVersion.ToString());
+            logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindPatch), relevantRelease);
+            return relevantRelease;
         }
 
         logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindPatch));
