@@ -51,23 +51,13 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
             releases.FirstOrDefault(o =>
                 o.LatestSdkVersion.Major == currentSdk.SemanticVersion.Major);
 
-        if (relevantRelease != null)
+        if (relevantRelease != null &&
+            relevantRelease.LatestSdkVersion > currentSdk.SemanticVersion &&
+            (!security || relevantRelease.Security))
         {
-            if (relevantRelease.LatestSdkVersion.Minor > currentSdk.SemanticVersion.Minor &&
-                (!security || relevantRelease.Security))
-            {
-                logger.Debug("Found new minor release {Release}", relevantRelease.LatestSdkVersion.ToString());
-                logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch), relevantRelease);
-                return relevantRelease;
-            }
-
-            if (relevantRelease.LatestSdkVersion.Patch > currentSdk.SemanticVersion.Patch &&
-                (!security || relevantRelease.Security))
-            {
-                logger.Debug("Found new patch release {Release}", relevantRelease.LatestSdkVersion.ToString());
-                logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch), relevantRelease);
-                return relevantRelease;
-            }
+            logger.Debug("Found new release {Release}", relevantRelease.LatestSdkVersion.ToString());
+            logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch), relevantRelease);
+            return relevantRelease;
         }
 
         logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch));
@@ -82,11 +72,13 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
             releases.FirstOrDefault(o =>
                 o.LatestSdkVersion.Major == currentSdk.SemanticVersion.Major &&
                 o.LatestSdkVersion.Minor == currentSdk.SemanticVersion.Minor &&
-                o.LatestSdkVersion.Patch > currentSdk.SemanticVersion.Patch);
+                o.LatestSdkVersion.Patch >= currentSdk.SemanticVersion.Patch); // in the case of preview releases the patch version might be equal
 
-        if (relevantRelease != null && (!security || relevantRelease.Security))
+        if (relevantRelease != null &&
+            relevantRelease.LatestSdkVersion > currentSdk.SemanticVersion &&
+            (!security || relevantRelease.Security))
         {
-            logger.Debug("Found new patch release {Release}", relevantRelease.LatestSdkVersion.ToString());
+            logger.Debug("Found new release {Release}", relevantRelease.LatestSdkVersion.ToString());
             logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindPatch), relevantRelease);
             return relevantRelease;
         }
