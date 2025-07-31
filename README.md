@@ -4,12 +4,6 @@
 
 NOTE: Only tested on MacOS and Linux.
 
-## Installation
-
-```shell
-dotnet tool install DotBump
-```
-
 ## Features
 
 ### Bump the .NET SDK version
