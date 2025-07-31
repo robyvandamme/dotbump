@@ -6,5 +6,5 @@ namespace DotBump.Commands.BumpSdk.Interfaces;
 
 internal interface IReleaseFinder
 {
-    Release? TryFindNewRelease(Sdk currentSdk, IReadOnlyList<Release> releases, BumpType bumpType, bool security);
+    Release? TryFindNewRelease(Sdk currentSdk, IReadOnlyList<Release> releases, BumpType bumpType, bool securityOnly);
 }

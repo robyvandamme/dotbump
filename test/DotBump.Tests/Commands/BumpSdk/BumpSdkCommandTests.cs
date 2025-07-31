@@ -160,7 +160,7 @@ public class BumpSdkCommandTests
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
             var result = await command.ExecuteAsync(
                 context,
-                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", Security = true });
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true });
             result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
@@ -191,7 +191,7 @@ public class BumpSdkCommandTests
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
             var result = await command.ExecuteAsync(
                 context,
-                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", Security = false });
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = false });
             result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");

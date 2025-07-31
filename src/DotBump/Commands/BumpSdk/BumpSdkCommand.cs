@@ -30,7 +30,7 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
             var bumpType = settings.Type ?? BumpType.Minor;
             var globalJsonPath = settings.GlobalJsonPath ?? "./global.json";
             var outputFile = settings.Output;
-            var security = settings.Security;
+            var security = settings.SecurityOnly;
 
             logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("GlobalJson file path: {Path}", globalJsonPath);

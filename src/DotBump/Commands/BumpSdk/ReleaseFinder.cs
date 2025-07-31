@@ -13,7 +13,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         Sdk currentSdk,
         IReadOnlyList<Release> releases,
         BumpType bumpType,
-        bool security)
+        bool securityOnly)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindNewRelease));
 
@@ -25,10 +25,10 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         switch (bumpType)
         {
             case BumpType.Minor:
-                newRelease = TryFindMinorOrPatch(currentSdk, releases, security);
+                newRelease = TryFindMinorOrPatch(currentSdk, releases, securityOnly);
                 break;
             case BumpType.Patch:
-                newRelease = TryFindPatch(currentSdk, releases, security);
+                newRelease = TryFindPatch(currentSdk, releases, securityOnly);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(bumpType), bumpType, null);
@@ -43,7 +43,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         return newRelease;
     }
 
-    private Release? TryFindMinorOrPatch(Sdk currentSdk, IReadOnlyList<Release> releases, bool security)
+    private Release? TryFindMinorOrPatch(Sdk currentSdk, IReadOnlyList<Release> releases, bool securityOnly)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch));
 
@@ -53,7 +53,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
 
         if (relevantRelease != null &&
             relevantRelease.LatestSdkVersion > currentSdk.SemanticVersion &&
-            (!security || relevantRelease.Security))
+            (!securityOnly || relevantRelease.Security))
         {
             logger.Debug("Found new release {Release}", relevantRelease.LatestSdkVersion.ToString());
             logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch), relevantRelease);
@@ -64,7 +64,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         return null;
     }
 
-    private Release? TryFindPatch(Sdk currentSdk, IReadOnlyList<Release> releases, bool security)
+    private Release? TryFindPatch(Sdk currentSdk, IReadOnlyList<Release> releases, bool securityOnly)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindPatch));
 
@@ -76,7 +76,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
 
         if (relevantRelease != null &&
             relevantRelease.LatestSdkVersion > currentSdk.SemanticVersion &&
-            (!security || relevantRelease.Security))
+            (!securityOnly || relevantRelease.Security))
         {
             logger.Debug("Found new release {Release}", relevantRelease.LatestSdkVersion.ToString());
             logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindPatch), relevantRelease);

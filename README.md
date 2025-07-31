@@ -4,6 +4,12 @@
 
 NOTE: Only tested on MacOS and Linux.
 
+## Installation
+
+```shell
+dotnet tool install DotBump
+```
+
 ## Features
 
 ### Bump the .NET SDK version
@@ -15,32 +21,33 @@ DESCRIPTION:
 Bump the global.json SDK version. Use the 'minor' type option to bump the SDK to
 the latest minor or patch version for the current major version. Use the 'patch'
 type option to bump the SDK to the latest patch version for the current major 
-version. 
+version.
 
 USAGE:
-    dotbump sdk [OPTIONS]
+    dotnet dotbump sdk [OPTIONS]
 
 EXAMPLES:
-    dotbump sdk -o bump-sdk-result.json
-    dotbump sdk -t patch -o bump-sdk-result.json -s true
-    dotbump sdk --type patch -f ./other/global.json
-    dotbump sdk --debug true --logfile log.txt
+    dotnet dotbump sdk -o bump-sdk-result.json --security-only true
+    dotnet dotbump sdk -t patch -o bump-sdk-result.json -s true
+    dotnet dotbump sdk --type patch -f ./other/global.json
+    dotnet dotbump sdk --debug true --logfile log.txt
 
 OPTIONS:
-    -h, --help        Prints help information                                   
-        --debug       Enable debug logging for troubleshooting                  
-        --logfile     The file to send the log output to                        
-    -t, --type        The bump type. Defaults to `minor`. Available options are 
-                      `minor` and `patch`                                       
-    -f, --file        The global.json file to update. Defaults to               
-                      `./global.json`                                           
-    -o, --output      Output file name. The name of the file to write the result
-                      to. The output format is json                             
-    -s, --security    Only bump the version if the new release is a security    
-                      release. Defaults to false       
+    -h, --help             Prints help information                              
+        --debug            Enable debug logging for troubleshooting             
+        --logfile          The file to send the log output to                   
+    -t, --type             The bump type. Defaults to `minor`. Available options
+                           are `minor` and `patch`                              
+    -f, --file             The global.json file to update. Defaults to          
+                           `./global.json`                                      
+    -o, --output           Output file name. The name of the file to write the  
+                           result to. The output format is json                 
+    -s, --security-only    Only bump the version if the new release is a        
+                           security release. Defaults to false                  
+
 ```
 
-### Bump .NET Tools Versions (WIP)
+### Bump .NET Tools Versions (Planned for v0.2)
 
 Bumps .NET Tools versions to the latest minor or patch version.
 
@@ -50,13 +57,7 @@ Bumps .NET Tools versions to the latest minor or patch version.
 dotnet dotbump tools
 ```
 
-Enable debug logging:
-
-````shell
-dotnet dotbump tools --debug true
-````
-
-## Dependencies
+## Development Dependencies
 
 ### Application
 

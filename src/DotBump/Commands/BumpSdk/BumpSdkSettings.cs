@@ -23,7 +23,7 @@ internal class BumpSdkSettings : BumpSettings
     public string? Output { get; init; }
 
     [Description("Only bump the version if the new release is a security release. Defaults to false.")]
-    [CommandOption("-s|--security")]
+    [CommandOption("-s|--security-only")]
     [DefaultValue(false)]
-    public bool Security { get; init; }
+    public bool SecurityOnly { get; init; }
 }
