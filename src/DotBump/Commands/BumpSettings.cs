@@ -11,7 +11,7 @@ namespace DotBump.Commands;
 internal abstract class BumpSettings : CommandSettings
 {
     /// <summary>
-    /// Gets or sets the debug flag.
+    /// Gets or sets a value indicating whether debug logging is enabled.
     /// Note that this particular Spectre command setting is required primarily for documentation purposes and example
     /// validation. The argument is handled by the <see cref="ArgumentHandler"/> when the application is starting up .
     /// The reason this is handled outside of Spectre is to be able to hande the `--debug` argument anywhere in the
@@ -21,7 +21,7 @@ internal abstract class BumpSettings : CommandSettings
     [Description("Enable debug logging for troubleshooting")]
     [CommandOption("--debug")]
     [DefaultValue(false)]
-    public bool? Debug { get; set; }
+    public bool Debug { get; set; }
 
     /// <summary>
     /// Gets or sets the file to send the log output to.

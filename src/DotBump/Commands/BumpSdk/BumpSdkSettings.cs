@@ -10,8 +10,7 @@ namespace DotBump.Commands.BumpSdk;
 /// </summary>
 internal class BumpSdkSettings : BumpSettings
 {
-    [Description(
-        "The bump type. Defaults to `minor`. Available options are `minor` and `patch`.")]
+    [Description("The bump type. Defaults to `minor`. Available options are `minor` and `patch`.")]
     [CommandOption("-t|--type")]
     public BumpType? Type { get; init; }
 
@@ -22,4 +21,9 @@ internal class BumpSdkSettings : BumpSettings
     [Description("Output file name. The name of the file to write the result to. The output format is json.")]
     [CommandOption("-o|--output")]
     public string? Output { get; init; }
+
+    [Description("Only bump the version if the new release is a security release. Defaults to false.")]
+    [CommandOption("-s|--security-only")]
+    [DefaultValue(false)]
+    public bool SecurityOnly { get; init; }
 }
