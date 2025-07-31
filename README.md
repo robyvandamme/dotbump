@@ -2,7 +2,15 @@
 
 .NET Global Tool to automate dependency upgrade tasks in .NET solutions.
 
+[![Beta Release](https://github.com/robyvandamme/dotbump/actions/workflows/beta-release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/beta-release.yml)
+
 NOTE: Only tested on MacOS and Linux.
+
+## Installation
+
+```shell
+dotnet tool install DotBump
+```
 
 ## Features
 
