@@ -139,7 +139,7 @@ public class BumpSdkCommandTests
         }
 
         [Fact]
-        public async Task Handles_Security_True_Correctly()
+        public async Task Handles_SecurityOnly_True_Correctly_For_Non_Security_Releases()
         {
             // The SDK version in the release index (8.0.406) is not a security update.
             var json = new GlobalJson(new Sdk("8.0.405", "disable"));
@@ -150,7 +150,7 @@ public class BumpSdkCommandTests
             var loggerMock = new Mock<ILogger>().Object;
             using var testConsole = new TestConsole();
             var sdkFileService = new SdkFileService(loggerMock);
-            var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
+            var releaseService = new ReleaseFileService();
             var releaseFinder = new ReleaseFinder(loggerMock);
             var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
 
@@ -170,7 +170,7 @@ public class BumpSdkCommandTests
         }
 
         [Fact]
-        public async Task Handles_Security_False_Correctly()
+        public async Task Handles_SecurityOnly_False_Correctly_For_Non_Security_Releases()
         {
             // The SDK version in the release index (8.0.406) is not a security update.
             var json = new GlobalJson(new Sdk("8.0.405", "disable"));
@@ -181,7 +181,7 @@ public class BumpSdkCommandTests
             var loggerMock = new Mock<ILogger>().Object;
             using var testConsole = new TestConsole();
             var sdkFileService = new SdkFileService(loggerMock);
-            var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
+            var releaseService = new ReleaseFileService();
             var releaseFinder = new ReleaseFinder(loggerMock);
             var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
 
@@ -196,6 +196,37 @@ public class BumpSdkCommandTests
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
             globalJson.Version.ShouldBe("8.0.406");
+
+            testConsole.Output.ShouldContain("Updated = True");
+        }
+
+        [Fact]
+        public async Task Handles_SecurityOnly_True_Correctly_For_Security_Releases()
+        {
+            // The SDK version in the release index (7.0.410) is a security update.
+            var json = new GlobalJson(new Sdk("7.0.400", "disable"));
+            var directory = new LocalDirectory("./temp");
+            directory.EnsureFileDeleted("global.json");
+            directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
+
+            var loggerMock = new Mock<ILogger>().Object;
+            using var testConsole = new TestConsole();
+            var sdkFileService = new SdkFileService(loggerMock);
+            var releaseService = new ReleaseFileService();
+            var releaseFinder = new ReleaseFinder(loggerMock);
+            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+
+            var command = new BumpSdkCommand(testConsole, loggerMock, handler);
+            var arguments = new[] { "bump", "sdk" };
+            var remainingArguments = new Mock<IRemainingArguments>();
+            var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
+            var result = await command.ExecuteAsync(
+                context,
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true });
+            result.ShouldBe(0);
+
+            var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
+            globalJson.Version.ShouldBe("7.0.410");
 
             testConsole.Output.ShouldContain("Updated = True");
         }
