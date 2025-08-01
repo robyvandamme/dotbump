@@ -48,17 +48,6 @@ OPTIONS:
                            security release. Defaults to false                  
 
 ```
-
-### Bump .NET Tools Versions (Planned for v0.2)
-
-Bumps .NET Tools versions to the latest minor or patch version.
-
-#### Examples
-
-```shell
-dotnet dotbump tools
-```
-
 ## Development Dependencies
 
 ### Application
