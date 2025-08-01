@@ -23,7 +23,7 @@ Log.Debug("Configuring app");
 
 var commandApp = new CommandApp();
 
-AnsiConsole.WriteLine($"Initializing DotBump version {versionInfo.ProductVersion}");
+AnsiConsole.WriteLine($"Initializing DotBump version {versionInfo.Version}");
 
 commandApp.Configure(Log.Logger);
 
