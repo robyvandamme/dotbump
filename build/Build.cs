@@ -21,9 +21,9 @@ class Build : NukeBuild
     [Solution]
     readonly Solution Solution;
 
-    readonly AbsolutePath ArtifactsDirectory = RootDirectory / "artifacts";
-
     readonly AbsolutePath TestReportsDirectory = RootDirectory / "artifacts" / "test-reports";
+
+    readonly AbsolutePath PackagesDirectory = RootDirectory / "artifacts" / "packages";
 
     [PathVariable]
     readonly Tool dotnet;
@@ -142,7 +142,7 @@ class Build : NukeBuild
                 .SetNoBuild(true)
                 .SetConfiguration(Configuration)
                 .SetProject($"{Solution.Directory}/src/DotBump/DotBump.csproj")
-                .SetOutputDirectory(ArtifactsDirectory));
+                .SetOutputDirectory(PackagesDirectory));
         });
 
     Target Publish => t => t
@@ -150,7 +150,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             Log.Information("Publishing...");
-            var packagePath = $"{ArtifactsDirectory}/*.nupkg";
+            var packagePath = $"{PackagesDirectory}/*.nupkg";
 
             if (!IsLocalBuild)
             {
