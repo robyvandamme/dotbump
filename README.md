@@ -48,31 +48,3 @@ OPTIONS:
                            security release. Defaults to false                  
 
 ```
-## Development Dependencies
-
-### Application
-
-* Serilog: trialing Serilog without Microsoft logging extensions, might change in the future.
-* Spectre.Console.Cli: trialing. Probably the default for future CLI projects.
-
-### Code Style
-
-* [.editorconfig](.editorconfig): current default
-* StyleCop Analyzers (Unstable): current default
-* Roslynator.Analyzers: trialing
-
-### Testing
-
-* xUnit: current default
-* Shouldly: current default
-* Moq: current default
-* Coverlet: current default
-
-### Build
-
-* Nuke: current default
-* GitHub Actions: current default on GitHub
-
-### Versioning
-
-* GitVersion: current default with Conventional Commits. Not sure if this will cover all possible scenario's yet for a CLI.
