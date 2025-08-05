@@ -2,6 +2,8 @@
 
 .NET Global Tool to automate dependency upgrade tasks in .NET solutions.
 
+[![Release](https://github.com/robyvandamme/dotbump/actions/workflows/release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/release.yml)
+![NuGet Version](https://img.shields.io/nuget/v/DotBump)
 [![Beta Release](https://github.com/robyvandamme/dotbump/actions/workflows/beta-release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/beta-release.yml)
 
 NOTE: Only tested on MacOS and Linux.
