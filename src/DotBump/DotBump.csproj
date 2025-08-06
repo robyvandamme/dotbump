@@ -8,7 +8,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotbump</ToolCommandName>
     <Authors>Roby Van Damme</Authors>
-    <Copyright>Roby Van Damme</Copyright>
+    <Copyright>Copyright © 2025 Roby Van Damme.</Copyright>
     <PackageId>DotBump</PackageId>
     <Product>DotBump</Product>
     <Description>.NET Global Tool to automate dependency upgrade tasks in .NET solutions.</Description>
@@ -17,7 +17,8 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/robyvandamme/dotbump</PackageProjectUrl>
     <RepositoryUrl>https://github.com/robyvandamme/dotbump</RepositoryUrl>
-    
+    <ReleaseNotes>https://github.com/robyvandamme/dotbump/releases</ReleaseNotes>
+
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,10 +30,10 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Serilog" Version="4.3.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="Spectre.Console.Cli" Version="0.50.0" />
+    <PackageReference Include="Serilog" Version="4.3.0"/>
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0"/>
+    <PackageReference Include="Spectre.Console.Cli" Version="0.50.0"/>
     <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.556">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -56,6 +57,10 @@
     <None Include="../../icon.png" Pack="true" Visible="false" PackagePath="\"/>
     <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="\"/>
   </ItemGroup>
-  
-  
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
 </Project>
