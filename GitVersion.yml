@@ -4,3 +4,6 @@ patch-version-bump-message: "^(fix|perf|dep)(\\([\\w\\s-,/\\\\]*\\))?:"
 branches:
   main:
     label: "beta"
+  unknown:
+    label: "alpha"
+  
