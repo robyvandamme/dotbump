@@ -6,8 +6,6 @@
 [![NuGet Version](https://img.shields.io/nuget/v/DotBump?color=004D81)](https://www.nuget.org/packages/DotBump/)
 [![Beta Release](https://github.com/robyvandamme/dotbump/actions/workflows/beta-release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/beta-release.yml)
 
-NOTE: Only tested on MacOS and Linux.
-
 ## Installation
 
 ```shell
