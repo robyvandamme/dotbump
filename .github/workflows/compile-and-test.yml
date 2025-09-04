@@ -9,6 +9,8 @@ on:
       - '!doc/**'
       - '!.github/workflows/**'
       - '!GitVersion.yml'
+      - '!scripts/**'
+      - '!.config/**'
   workflow_dispatch:
 
 jobs:

@@ -22,6 +22,20 @@
         "reportgenerator"
       ],
       "rollForward": false
+    },
+    "dotbump": {
+      "version": "0.1.0",
+      "commands": [
+        "dotbump"
+      ],
+      "rollForward": false
+    },
+    "dotnet-outdated-tool": {
+      "version": "4.6.8",
+      "commands": [
+        "dotnet-outdated"
+      ],
+      "rollForward": false
     }
   }
 }

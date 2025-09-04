@@ -1,0 +1,110 @@
+name: Update .NET Dependencies
+
+# Updates dependencies in a .NET solution.
+# At the moment we have 2 cases: bump the SDK version (security updates only) and bump packages versions.
+# Only run the packages step when a solution file is available in the root directory.
+# For the pull request: simply use 3 different steps depending on what was updated. There is probably a better way of 
+# handling this but that can be picked up later on. 
+
+on:
+  workflow_dispatch:
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: ./global.json
+      - name: Get app token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.PULL_REQUEST_APP_ID }}
+          private-key: ${{ secrets.PULL_REQUEST_PRIVATE_KEY }}
+      - name: Create artifacts/results directory
+        run: mkdir -p artifacts/results
+      - name: Restore tools
+        run: dotnet tool restore
+      - name: Check for solution file
+        id: check-sln
+        run: |
+          if ls *.sln 1> /dev/null 2>&1; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Solution file exists"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No solution file found"
+          fi
+      - name: Bump NuGet packages
+        if: steps.check-sln.outputs.found == 'true'
+        run: |
+          dotnet dotnet-outdated -vl Major -u -o ./artifacts/results/bump-nuget-result.json
+      - name: Bump SDK
+        run: |
+          dotnet dotbump sdk -o ./artifacts/results/bump-sdk-result.json -s true
+      - name: Check for changes
+        id: changes
+        run: |
+          BASE_REF=${{ github.base_ref }}
+          if [ -z "$BASE_REF" ]; then BASE_REF="main"; fi
+          git fetch origin "$BASE_REF" --depth=1
+          git diff --name-only "origin/$BASE_REF" > changed_files.txt
+          echo "csproj_changed=false" >> $GITHUB_OUTPUT
+          echo "globaljson_changed=false" >> $GITHUB_OUTPUT
+          
+          if grep -qE '\.csproj$' changed_files.txt; then
+            echo "csproj_changed=true" >> $GITHUB_OUTPUT
+          fi
+          
+          if grep -q '^global\.json$' changed_files.txt; then
+            echo "globaljson_changed=true" >> $GITHUB_OUTPUT
+          fi
+          if [ -f changed_files.txt ]; then
+            rm changed_files.txt
+            echo "Cleaned up changed_files.txt"
+          fi
+      - name: Create SDK pull request
+        if: steps.changes.outputs.globaljson_changed == 'true' && steps.changes.outputs.csproj_changed == 'false'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: "dep: bump .NET SDK version"
+          title: "dep: bump .NET SDK version"
+          body: |
+            Automated dependency update.
+          branch: dependency-update
+          delete-branch: 'true'
+          assignees: robyvandamme
+
+      - name: Create packages pull request
+        if: steps.changes.outputs.csproj_changed == 'true' && steps.changes.outputs.globaljson_changed == 'false'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: "dep: bump NuGet package versions"
+          title: "dep: bump NuGet package versions"
+          body: |
+            Automated dependency update.
+          branch: dependency-update
+          delete-branch: 'true'
+          assignees: robyvandamme
+
+      - name: Create pull request
+        if: steps.changes.outputs.csproj_changed == 'true' && steps.changes.outputs.globaljson_changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: "dep: bump .NET SDK and NuGet package versions"
+          title: "dep: bump .NET SDK and NuGet package versions"
+          body: |
+            Automated dependency update.
+          branch: dependency-update
+          delete-branch: 'true'
+          assignees: robyvandamme
+      - name: 'Save results'
+        uses: actions/upload-artifact@v4
+        with:
+          name: results
+          path: artifacts/results
