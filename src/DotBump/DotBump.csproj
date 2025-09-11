@@ -22,18 +22,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Roslynator.Analyzers" Version="4.13.1">
+    <PackageReference Include="Roslynator.Analyzers" Version="4.14.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.13.1">
+    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.14.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Serilog" Version="4.3.0"/>
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
-    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0"/>
-    <PackageReference Include="Spectre.Console.Cli" Version="0.50.0"/>
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Spectre.Console.Cli" Version="0.51.1" />
     <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.556">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -48,14 +48,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="DotBump.Tests"/>
-    <InternalsVisibleTo Include="DynamicProxyGenAssembly2"/>
+    <InternalsVisibleTo Include="DotBump.Tests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../../README.md" Pack="true" Visible="false" PackagePath="\"/>
-    <None Include="../../icon.png" Pack="true" Visible="false" PackagePath="\"/>
-    <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="\"/>
+    <None Include="../../README.md" Pack="true" Visible="false" PackagePath="\" />
+    <None Include="../../icon.png" Pack="true" Visible="false" PackagePath="\" />
+    <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="\" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
