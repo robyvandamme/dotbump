@@ -11,7 +11,8 @@ namespace DotBump.Commands.BumpTools;
 internal class BumpToolsCommand(
     IAnsiConsole console,
     ILogger logger,
-    IToolFileService toolFileService)
+    IToolFileService toolFileService,
+    INuGetServiceClient nuGetServiceClient)
     : AsyncCommand<BumpToolsSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, BumpToolsSettings settings)
@@ -37,12 +38,26 @@ internal class BumpToolsCommand(
                 console.MarkupLine(tool.Key);
             }
 
-            var nugetPackageSources = toolFileService.GetNuGetPackageSources();
+            var nugetPackageSources = toolFileService.GetNuGetPackageSources().ToList();
 
             console.MarkupLine(">> NuGet Package Sources:");
             foreach (var packageSource in nugetPackageSources)
             {
                 console.MarkupLine(packageSource);
+            }
+
+            var indices = await nuGetServiceClient.GetServiceIndexesAsync(nugetPackageSources.ToList())
+                .ConfigureAwait(false);
+
+            console.MarkupLine(">> Services indices:");
+
+            foreach (var serviceIndex in indices)
+            {
+                var registrationResource = serviceIndex.Resources.FirstOrDefault(o => o.Type.StartsWith(
+                    "Catalog",
+                    StringComparison.OrdinalIgnoreCase));
+
+                console.MarkupLine(registrationResource?.Id ?? "RegistrationsBaseUrl empty for service index");
             }
 
             var bumpToolResults = new List<BumpToolResult>();

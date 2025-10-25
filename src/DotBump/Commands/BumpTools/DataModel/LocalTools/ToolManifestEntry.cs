@@ -3,7 +3,7 @@
 using System.Text.Json.Serialization;
 using DotBump.Common;
 
-namespace DotBump.Commands.BumpTools.DataModel;
+namespace DotBump.Commands.BumpTools.DataModel.LocalTools;
 
 internal class ToolManifestEntry
 {

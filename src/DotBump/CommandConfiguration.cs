@@ -43,6 +43,7 @@ internal static class CommandConfiguration
                 .WithExample("sdk", "--debug", "true", "--logfile", "log.txt");
 
             config.Settings.Registrar.Register<IToolFileService, ToolFileService>();
+            config.Settings.Registrar.Register<INuGetServiceClient, NuGetServiceClient>();
 
             config.AddCommand<BumpToolsCommand>(name: "tools")
                 .WithDescription(

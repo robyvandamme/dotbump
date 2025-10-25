@@ -1,8 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
-using System.Text.Json.Serialization;
-
-namespace DotBump.Commands.BumpTools.DataModel;
+namespace DotBump.Commands.BumpTools.DataModel.LocalTools;
 
 /// <summary>
 /// Represents the structure of the dotnet-tools.json file.
