@@ -30,10 +30,19 @@ internal class BumpToolsCommand(
 
             var manifest = toolFileService.GetToolManifest();
 
+            console.MarkupLine(">> Local Tools:");
             for (var i = 0; i < manifest.Tools.Count; i++)
             {
                 var tool = manifest.Tools.ElementAt(i);
                 console.MarkupLine(tool.Key);
+            }
+
+            var nugetPackageSources = toolFileService.GetNuGetPackageSources();
+
+            console.MarkupLine(">> NuGet Package Sources:");
+            foreach (var packageSource in nugetPackageSources)
+            {
+                console.MarkupLine(packageSource);
             }
 
             var bumpToolResults = new List<BumpToolResult>();

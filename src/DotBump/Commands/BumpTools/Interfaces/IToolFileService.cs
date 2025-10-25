@@ -7,4 +7,6 @@ namespace DotBump.Commands.BumpTools.Interfaces;
 internal interface IToolFileService
 {
     ToolManifest GetToolManifest();
+
+    IEnumerable<string> GetNuGetPackageSources();
 }
