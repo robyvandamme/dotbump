@@ -1,5 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
+using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
 using Serilog;
 using Spectre.Console;
@@ -9,7 +10,8 @@ namespace DotBump.Commands.BumpTools;
 
 internal class BumpToolsCommand(
     IAnsiConsole console,
-    ILogger logger)
+    ILogger logger,
+    IToolFileService toolFileService)
     : AsyncCommand<BumpToolsSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, BumpToolsSettings settings)
@@ -24,6 +26,14 @@ internal class BumpToolsCommand(
             if (context.Name != "tools")
             {
                 throw new DotBumpException($"Unsupported command name {context.Name}");
+            }
+
+            var manifest = toolFileService.GetToolManifest();
+
+            for (var i = 0; i < manifest.Tools.Count; i++)
+            {
+                var tool = manifest.Tools.ElementAt(i);
+                console.MarkupLine(tool.Key);
             }
 
             var bumpToolResults = new List<BumpToolResult>();

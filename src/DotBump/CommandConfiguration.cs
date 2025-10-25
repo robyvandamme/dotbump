@@ -4,6 +4,7 @@ using System.Diagnostics;
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Commands.BumpTools;
+using DotBump.Commands.BumpTools.Interfaces;
 using Serilog;
 using Spectre.Console.Cli;
 
@@ -40,6 +41,8 @@ internal static class CommandConfiguration
                 .WithExample("sdk", "-t", "patch", "-o", "bump-sdk-result.json", "-s", "true")
                 .WithExample("sdk", "--type", "patch", "-f", "./other/global.json")
                 .WithExample("sdk", "--debug", "true", "--logfile", "log.txt");
+
+            config.Settings.Registrar.Register<IToolFileService, ToolFileService>();
 
             config.AddCommand<BumpToolsCommand>(name: "tools")
                 .WithDescription(
