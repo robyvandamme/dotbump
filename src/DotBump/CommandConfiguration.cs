@@ -3,6 +3,7 @@
 using System.Diagnostics;
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.Interfaces;
+using DotBump.Commands.BumpTools;
 using Serilog;
 using Spectre.Console.Cli;
 
@@ -39,6 +40,15 @@ internal static class CommandConfiguration
                 .WithExample("sdk", "-t", "patch", "-o", "bump-sdk-result.json", "-s", "true")
                 .WithExample("sdk", "--type", "patch", "-f", "./other/global.json")
                 .WithExample("sdk", "--debug", "true", "--logfile", "log.txt");
+
+            config.AddCommand<BumpToolsCommand>(name: "tools")
+                .WithDescription(
+                    "Bump the .NET tools versions. " +
+                    "Use the 'minor' type option to bump the tools to the latest minor or patch versions for the current major version. " +
+                    "Use the 'patch' type option to bump the tools to the latest patch version for the current major version. ")
+                .WithExample("tools", "-o", "bump-tools-result.json")
+                .WithExample("tools", "-t", "patch", "-o", "bump-tools-result.json")
+                .WithExample("tools", "--debug", "true", "--logfile", "log.txt");
         });
     }
 }
