@@ -1,7 +1,9 @@
 // Copyright © 2025 Roby Van Damme.
 
 using DotBump.Commands.BumpTools.DataModel.NuGetService;
+using DotBump.Commands.BumpTools.DataModel.Registrations;
 using DotBump.Commands.BumpTools.Interfaces;
+using DotBump.Common;
 
 namespace DotBump.Commands.BumpTools;
 
@@ -30,5 +32,18 @@ internal class NuGetReleaseService : INuGetReleaseService
         }
 
         return baseUrls;
+    }
+
+    public List<CatalogPage> TryFindNewReleaseCatalogPages(
+        RegistrationIndex index,
+        SemanticVersion currentVersion)
+    {
+        ArgumentNullException.ThrowIfNull(index);
+        ArgumentNullException.ThrowIfNull(currentVersion);
+
+        var results = index.CatalogPages.FindAll(o => o.UpperSemanticVersion > currentVersion
+                                                      && o.LowerSemanticVersion.Major <= currentVersion.Major);
+
+        return results;
     }
 }

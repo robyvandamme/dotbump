@@ -72,6 +72,23 @@ internal class BumpToolsCommand(
 
                 console.MarkupLine(
                     releaseIndex != null ? releaseIndex.Id : $"No Release index found for package ID {tool.Key}");
+
+                if (releaseIndex != null)
+                {
+                    var pages = nuGetReleaseService.TryFindNewReleaseCatalogPages(
+                        releaseIndex,
+                        tool.Value.SemanticVersion);
+
+                    if (pages.Count == 0)
+                    {
+                        console.MarkupLine("No relevant releases found.");
+
+                        // no new releases
+                        break;
+                    }
+
+                    console.MarkupLine("Relevant releases found.");
+                }
             }
 
             var bumpToolResults = new List<BumpToolResult>();
