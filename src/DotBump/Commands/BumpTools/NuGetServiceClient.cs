@@ -2,6 +2,7 @@
 
 using System.Text.Json;
 using DotBump.Commands.BumpTools.DataModel.NuGetService;
+using DotBump.Commands.BumpTools.DataModel.Registrations;
 using DotBump.Commands.BumpTools.Interfaces;
 using Serilog;
 
@@ -9,6 +10,9 @@ namespace DotBump.Commands.BumpTools;
 
 internal class NuGetServiceClient : INuGetServiceClient
 {
+    private static readonly JsonSerializerOptions s_jsonSerializerOptions =
+        new() { PropertyNameCaseInsensitive = false, };
+
     private readonly ILogger _logger;
 
     // TODO: How to initialize multiple Http Clients for the different sources and then dispose them? Or not relevant?
@@ -51,5 +55,26 @@ internal class NuGetServiceClient : INuGetServiceClient
         }
 
         return list;
+    }
+
+    public async Task<RegistrationIndex?> GetPackageInformationAsync(List<string> baseUrls, string packageId)
+    {
+        ArgumentNullException.ThrowIfNull(baseUrls);
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
+
+        foreach (var url in baseUrls)
+        {
+            using var client = new HttpClient();
+            var packageUrl = new Uri(url + "/" + packageId + "/index.json");
+            var result = await client.GetStringAsync(packageUrl).ConfigureAwait(false);
+            var options = s_jsonSerializerOptions;
+            var registrationIndex = JsonSerializer.Deserialize<RegistrationIndex>(result, options);
+            if (registrationIndex != null)
+            {
+                return registrationIndex;
+            }
+        }
+
+        return null;
     }
 }

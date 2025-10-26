@@ -31,14 +31,6 @@ internal class BumpToolsCommand(
             }
 
             var manifest = toolFileService.GetToolManifest();
-
-            console.MarkupLine(">> Local Tools:");
-            for (var i = 0; i < manifest.Tools.Count; i++)
-            {
-                var tool = manifest.Tools.ElementAt(i);
-                console.MarkupLine(tool.Key);
-            }
-
             var nugetPackageSources = toolFileService.GetNuGetPackageSources().ToList();
 
             console.MarkupLine(">> NuGet Package Sources:");
@@ -67,6 +59,19 @@ internal class BumpToolsCommand(
             foreach (var baseUrl in baseUrls)
             {
                 console.MarkupLine(baseUrl);
+            }
+
+            console.MarkupLine(">> Local Tools:");
+            for (var i = 0; i < manifest.Tools.Count; i++)
+            {
+                var tool = manifest.Tools.ElementAt(i);
+                console.MarkupLine(tool.Key);
+
+                var releaseIndex =
+                    await nuGetServiceClient.GetPackageInformationAsync(baseUrls, tool.Key).ConfigureAwait(false);
+
+                console.MarkupLine(
+                    releaseIndex != null ? releaseIndex.Id : $"No Release index found for package ID {tool.Key}");
             }
 
             var bumpToolResults = new List<BumpToolResult>();
