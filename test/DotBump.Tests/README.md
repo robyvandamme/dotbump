@@ -1,5 +1,9 @@
 # dotBump Tests
 
+## Style
+
+Testing out a couple of different patterns for the tests at the moment, will converge at some moment in time.
+
 ## NuGet Tests
 
 For the different NuGet test cases I have added example json result files to be able to easily test the logic to 
@@ -31,6 +35,15 @@ contains all the package release information. This is a single page of informati
 The GitVersion example has:
 * A `package-registration.json` which contains the release pages
 * A `catalog-page.json` which contains the releases from `6.0.2` to `6.4.0`
+
+Note that for this one we should be able to get the version we want (if we want MinorOrPatch) from the 
+`package-registration.json` since the last upper version is OK.
+
+In case we only want to find the patch version for the current minor version (assuming we have version 6.0.1) we 
+need to get the details page.
+
+So there will be cases where we do not need to get a detail page at all: when the latest version we want is the 
+upper version in the list.
 
 ##### Moq Example
 
