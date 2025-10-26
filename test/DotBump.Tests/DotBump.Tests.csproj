@@ -68,6 +68,26 @@
     <Content Include="Data\releases-index.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Remove="Data\NuGet\DotMarkdown\package-registration.json" />
+    <Content Include="Data\NuGet\DotMarkdown\package-registration.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="Data\NuGet\GitVersion\catalog-page.json" />
+    <Content Include="Data\NuGet\GitVersion\catalog-page.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="Data\NuGet\GitVersion\package-registration.json" />
+    <Content Include="Data\NuGet\GitVersion\package-registration.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="Data\NuGet\Moq\package-registration.json" />
+    <Content Include="Data\NuGet\Moq\package-registration.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="Data\NuGet\nuget-service-index.json" />
+    <Content Include="Data\NuGet\nuget-service-index.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
