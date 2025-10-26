@@ -12,7 +12,8 @@ internal class BumpToolsCommand(
     IAnsiConsole console,
     ILogger logger,
     IToolFileService toolFileService,
-    INuGetServiceClient nuGetServiceClient)
+    INuGetServiceClient nuGetServiceClient,
+    INuGetReleaseService nuGetReleaseService)
     : AsyncCommand<BumpToolsSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, BumpToolsSettings settings)
@@ -46,18 +47,26 @@ internal class BumpToolsCommand(
                 console.MarkupLine(packageSource);
             }
 
-            var indices = await nuGetServiceClient.GetServiceIndexesAsync(nugetPackageSources.ToList())
+            var indexes = await nuGetServiceClient.GetServiceIndexesAsync(nugetPackageSources.ToList())
                 .ConfigureAwait(false);
 
-            console.MarkupLine(">> Services indices:");
+            // console.MarkupLine(">> Services indexes:");
 
-            foreach (var serviceIndex in indices)
+            // foreach (var serviceIndex in indexes)
+            // {
+            //     var registrationResource = serviceIndex.Resources.FirstOrDefault(o => o.Type.StartsWith(
+            //         "Catalog",
+            //         StringComparison.OrdinalIgnoreCase));
+            //
+            //     console.MarkupLine(registrationResource?.Id ?? "RegistrationsBaseUrl empty for service index");
+            // }
+            console.MarkupLine(">> Base URLs:");
+
+            var baseUrls = nuGetReleaseService.GetRegistrationsUrls(indexes);
+
+            foreach (var baseUrl in baseUrls)
             {
-                var registrationResource = serviceIndex.Resources.FirstOrDefault(o => o.Type.StartsWith(
-                    "Catalog",
-                    StringComparison.OrdinalIgnoreCase));
-
-                console.MarkupLine(registrationResource?.Id ?? "RegistrationsBaseUrl empty for service index");
+                console.MarkupLine(baseUrl);
             }
 
             var bumpToolResults = new List<BumpToolResult>();

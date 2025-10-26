@@ -13,7 +13,6 @@ internal class NuGetServiceClient : INuGetServiceClient
 
     // TODO: How to initialize multiple Http Clients for the different sources and then dispose them? Or not relevant?
     // private readonly HttpClient _httpClient;
-
     public NuGetServiceClient(ILogger logger)
     {
         _logger = logger;
