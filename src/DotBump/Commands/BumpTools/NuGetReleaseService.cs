@@ -46,4 +46,45 @@ internal class NuGetReleaseService : INuGetReleaseService
 
         return results;
     }
+
+    public SemanticVersion? TryGetNewMinorOrPatchVersionFromCatalogPages(
+        ICollection<CatalogPage> catalogPages,
+        SemanticVersion currentVersion)
+    {
+        ArgumentNullException.ThrowIfNull(catalogPages);
+        ArgumentNullException.ThrowIfNull(currentVersion);
+
+        var versions = new List<SemanticVersion>();
+        if (catalogPages.Count == 0)
+        {
+            return null;
+        }
+
+        if (catalogPages.Count > 1)
+        {
+            foreach (var catalogPage in catalogPages)
+            {
+                versions.AddRange(catalogPage.Items.Select(o => o.CatalogEntry.SemanticVersion));
+            }
+        }
+        else
+        {
+            versions.AddRange(catalogPages.First().Items.Select(o => o.CatalogEntry.SemanticVersion));
+        }
+
+        if (currentVersion.IsPreRelease)
+        {
+            var availableNewVersions =
+                versions.Where(o => o.Major == currentVersion.Major && o > currentVersion);
+            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
+            return newestVersion;
+        }
+        else
+        {
+            var availableNewVersions =
+                versions.Where(o => o.Major == currentVersion.Major && o > currentVersion && o.IsPreRelease == false);
+            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
+            return newestVersion;
+        }
+    }
 }

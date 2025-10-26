@@ -18,4 +18,8 @@ internal interface INuGetReleaseService
     List<CatalogPage> TryFindNewReleaseCatalogPages(
         RegistrationIndex index,
         SemanticVersion currentVersion);
+
+    SemanticVersion? TryGetNewMinorOrPatchVersionFromCatalogPages(
+        ICollection<CatalogPage> catalogPages,
+        SemanticVersion currentVersion);
 }
