@@ -9,4 +9,6 @@ internal interface IToolFileService
     ToolManifest GetToolManifest();
 
     IEnumerable<string> GetNuGetPackageSources();
+
+    void SaveToolManifest(ToolManifest manifest);
 }

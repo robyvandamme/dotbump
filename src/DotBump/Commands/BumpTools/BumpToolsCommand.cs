@@ -132,6 +132,8 @@ internal class BumpToolsCommand(
                 }
             }
 
+            toolFileService.SaveToolManifest(manifest);
+
             if (bumpToolResults.Count == 0)
             {
                 logger.Debug("No tool versions were bumped");

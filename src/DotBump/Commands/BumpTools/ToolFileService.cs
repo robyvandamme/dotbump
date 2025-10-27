@@ -85,4 +85,20 @@ internal class ToolFileService(ILogger logger) : IToolFileService
 
         return sources.Distinct().ToList();
     }
+
+    public void SaveToolManifest(ToolManifest manifest)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+
+        var json = JsonSerializer.Serialize(manifest, s_serializerOptions);
+
+        // check if the directory exists
+        var directoryPath = Path.GetDirectoryName(_defaultToolManifestPath);
+        if (!Directory.Exists(directoryPath))
+        {
+            throw new DotBumpException($"Tools file directory {_defaultToolManifestPath} not found");
+        }
+
+        File.WriteAllText(_defaultToolManifestPath, json);
+    }
 }
