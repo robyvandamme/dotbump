@@ -2,6 +2,8 @@
 
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Serilog;
+using Serilog.Core;
 
 namespace DotBump.Common;
 
@@ -31,19 +33,28 @@ internal record SemanticVersion : IComparable<SemanticVersion>
         var match = s_versionPattern.Match(version);
         if (!match.Success)
         {
-            throw new ArgumentException(
-                $"The version '{version}' does not have the expected format x.y.z[-prerelease]",
-                nameof(version));
+            // TODO: review - what is the best way to handle non-semantic versions. This happens when processing NuGet feeds.
+            // For example the test Moq feed.
+            // throw new ArgumentException(
+            //     $"The version '{version}' does not have the expected format x.y.z[-prerelease]",
+            //     nameof(version));
+            Log.Warning("The version {Version} does not have the expected format x.y.z[-prerelease]", version);
+
+            Major = 0;
+            Minor = 0;
+            Patch = 0;
         }
-
-        Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
-        Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
-        Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
-
-        if (match.Groups["prerelease"].Success)
+        else
         {
-            PreRelease = match.Groups["prerelease"].Value;
-            IsPreRelease = true;
+            Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
+            Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
+            Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
+
+            if (match.Groups["prerelease"].Success)
+            {
+                PreRelease = match.Groups["prerelease"].Value;
+                IsPreRelease = true;
+            }
         }
     }
 
