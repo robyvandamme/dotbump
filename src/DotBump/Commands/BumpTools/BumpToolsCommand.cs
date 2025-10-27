@@ -112,8 +112,20 @@ internal class BumpToolsCommand(
                         //  However... it might be possible to pick up the version from the index?
                         //  in case the upper one is one that we can use? If the upper one is one we can use we pick that one
                         //  otherwise we need to dig deeper.
-                        //  So: first check if we have a usable version available here
+                        //  So: first check if we have a usable version available here: that would be the last available version only?
                         //  if not fetch the relevant pages.
+                        //  For now: fetch the relevant pages. Add the optimization to the backlog.
+                        var detailPages = await nuGetServiceClient.GetRelevantDetailCatalogPagesAsync(pages);
+                        var newVersion =
+                            nuGetReleaseService.TryGetNewMinorOrPatchVersionFromDetailCatalogPages(
+                                detailPages.ToList(),
+                                tool.Value.SemanticVersion);
+                        if (newVersion != null)
+                        {
+                            bumpToolResults.Add(
+                                new BumpToolResult(tool.Key, tool.Value.Version, newVersion.ToString()));
+                            tool.Value.Version = newVersion.ToString();
+                        }
                     }
 
                     console.MarkupLine("Relevant releases found.");

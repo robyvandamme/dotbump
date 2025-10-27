@@ -1,6 +1,7 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Text.Json;
+using DotBump.Commands.BumpTools.DataModel.Catalog;
 using DotBump.Commands.BumpTools.DataModel.NuGetService;
 using DotBump.Commands.BumpTools.DataModel.Registrations;
 using DotBump.Commands.BumpTools.Interfaces;
@@ -76,5 +77,26 @@ internal class NuGetServiceClient : INuGetServiceClient
         }
 
         return null;
+    }
+
+    public async Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(
+        IEnumerable<CatalogPage> catalogPages)
+    {
+        ArgumentNullException.ThrowIfNull(catalogPages);
+
+        var result = new List<NuGetCatalogPage>();
+        using var client = new HttpClient();
+        foreach (var catalogPage in catalogPages)
+        {
+            var json = await client.GetStringAsync(new Uri(catalogPage.Id)).ConfigureAwait(false);
+            var options = s_jsonSerializerOptions;
+            var detailPage = JsonSerializer.Deserialize<NuGetCatalogPage>(json, options);
+            if (detailPage != null)
+            {
+                result.Add(detailPage);
+            }
+        }
+
+        return result;
     }
 }

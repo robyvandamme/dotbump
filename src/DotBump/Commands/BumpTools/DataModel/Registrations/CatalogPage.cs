@@ -56,7 +56,21 @@ internal record CatalogPage
     [JsonIgnore]
     public bool HasPackageDetails
     {
-        get { return Items == null || Items.Count > 0; }
+        get
+        {
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+            if (Items == null)
+            {
+                return false;
+            }
+
+            if (Items.Count > 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
