@@ -51,5 +51,44 @@ public class NuGetReleaseServiceTests
                 result.ShouldBe(new SemanticVersion("0.3.0"));
             }
         }
+
+        public class Inline_Two_Pages
+        {
+            private static readonly Lazy<RegistrationIndex?> s_lazyRegistrationIndex =
+                new(() =>
+                {
+                    var client = new FakeNuGetServiceClient();
+                    return client.GetPackageInformationAsync(new List<string>(), "moq").Result;
+                });
+
+            /// <summary>
+            /// Gets the Moq RegistrationIndex.
+            /// NOTE: this one has none-semantic versions in the list.....
+            /// First page is 3.1.416.3/4.7.49.
+            /// Second page is 4.7.58/4.20.72.
+            /// So for the minor + patch update we will always have 4.20.72 as the result.
+            /// </summary>
+            private RegistrationIndex? RegistrationIndex => s_lazyRegistrationIndex.Value;
+
+            [Fact]
+            public void No_New_Version_Returns_Null()
+            {
+                var service = new NuGetReleaseService();
+                var result = service.TryGetNewMinorOrPatchVersionFromCatalogPages(
+                    RegistrationIndex!.CatalogPages,
+                    new SemanticVersion("4.20.72")); // highest version in the page
+                result.ShouldBeNull();
+            }
+
+            [Fact]
+            public void New_Version_Returns_Matching_Version()
+            {
+                var service = new NuGetReleaseService();
+                var result = service.TryGetNewMinorOrPatchVersionFromCatalogPages(
+                    RegistrationIndex!.CatalogPages,
+                    new SemanticVersion("4.5.6-alpha")); // first semantic version available
+                result.ShouldBe(new SemanticVersion("4.20.72")); // highest version in the page
+            }
+        }
     }
 }

@@ -30,12 +30,25 @@ internal class FakeNuGetServiceClient : INuGetServiceClient
             return GetDotMarkdownPackageInformation();
         }
 
+        if (packageId.Equals("moq", StringComparison.OrdinalIgnoreCase))
+        {
+            return GetMoqPackageInformation();
+        }
+
         return Task.FromResult<RegistrationIndex?>(null);
     }
 
     private async Task<RegistrationIndex?> GetDotMarkdownPackageInformation()
     {
         var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/DotMarkdown/package-registration.json";
+        var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+        var index = JsonSerializer.Deserialize<RegistrationIndex>(json);
+        return index;
+    }
+
+    private async Task<RegistrationIndex?> GetMoqPackageInformation()
+    {
+        var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/Moq/package-registration.json";
         var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
         var index = JsonSerializer.Deserialize<RegistrationIndex>(json);
         return index;
