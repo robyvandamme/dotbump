@@ -67,7 +67,8 @@ internal class NuGetServiceClient(ILogger logger) : INuGetServiceClient
         foreach (var url in baseUrls)
         {
             using var client = new HttpClient();
-            var packageUrl = new Uri(url + "/" + packageId + "/index.json");
+            // can also use the "https://api.nuget.org/v3/registration5-semver1/{id-lower}/index.json and replace the id, same result... though
+            var packageUrl = new Uri(url + "/" + packageId + "/index.json"); 
             var result = await client.GetStringAsync(packageUrl).ConfigureAwait(false);
             var options = s_jsonSerializerOptions;
             options.Converters.Add(_semanticVersionConverter);

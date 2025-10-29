@@ -2,7 +2,7 @@
 
 namespace DotBump.Commands.BumpTools.DataModel.NuGetConfiguration;
 
-internal class SourceCredential
+internal record SourceCredential
 {
     public string SourceName { get; set; }
 

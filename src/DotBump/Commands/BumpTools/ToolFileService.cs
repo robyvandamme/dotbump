@@ -1,7 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Text.Json;
-using System.Xml.Linq;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
 using DotBump.Commands.BumpTools.DataModel.NuGetConfiguration;
 using DotBump.Commands.BumpTools.Interfaces;
@@ -50,53 +49,30 @@ internal class ToolFileService(ILogger logger) : IToolFileService
     /// Gets the package sources from the default config. If there is no default config the default nuget source is used.
     /// </summary>
     /// <returns>A list of package source URL strings.</returns>
-    public IReadOnlyCollection<string> GetNuGetPackageSources()
+    public NuGetConfiguration GetNuGetConfiguration()
     {
-        logger.MethodStart(nameof(ToolFileService), nameof(GetNuGetPackageSources));
-
-        var sources = new List<string>();
+        logger.MethodStart(nameof(ToolFileService), nameof(GetNuGetConfiguration));
 
         logger.Debug("Looking for default nuget config file {ConfigFile}", _defaultNugetConfigPath);
 
-        try
+        if (!File.Exists(_defaultNugetConfigPath))
         {
-            if (!File.Exists(_defaultNugetConfigPath))
-            {
-                logger.Debug(
-                    "Default nuget config file {ConfigFile} not found, using default source https://api.nuget.org/v3/index.json",
-                    _defaultNugetConfigPath);
-                sources.Add("https://api.nuget.org/v3/index.json");
-                return sources;
-            }
-
-            var config = NuGetConfiguration.Load(_defaultNugetConfigPath);
-
-            var nugetConfig = XDocument.Load(_defaultNugetConfigPath);
-            var packageSources = nugetConfig.Descendants("packageSources").Descendants("add");
-
-            foreach (var source in packageSources)
-            {
-                var valueAttribute = source.Attribute("value");
-                if (valueAttribute != null && !string.IsNullOrEmpty(valueAttribute.Value))
+            logger.Debug(
+                "Default nuget config file {ConfigFile} not found, using default source https://api.nuget.org/v3/index.json",
+                _defaultNugetConfigPath);
+            var defaultConfig = new NuGetConfiguration();
+            defaultConfig.PackageSources.Add(
+                new PackageSource
                 {
-                    var sourceUrl = valueAttribute.Value;
-                    if (Uri.TryCreate(sourceUrl, UriKind.Absolute, out _))
-                    {
-                        sources.Add(sourceUrl);
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.Error(ex, "Error reading {NuGetConfig}", _defaultNugetConfigPath);
-            throw;
+                    Key = "nuget.org", ProtocolVersion = "3", Value = "https://api.nuget.org/v3/index.json",
+                });
+            return defaultConfig;
         }
 
-        logger.MethodReturn(nameof(ToolFileService), nameof(GetNuGetPackageSources), sources);
+        var config = NuGetConfiguration.Load(_defaultNugetConfigPath);
 
-        // TODO: better to return the URI here I assume? Unless we need a string in the handler....
-        return sources.Distinct().ToList();
+        logger.MethodReturn(nameof(ToolFileService), nameof(GetNuGetConfiguration), config);
+        return config;
     }
 
     public void SaveToolManifest(ToolManifest manifest)

@@ -2,7 +2,7 @@
 
 namespace DotBump.Commands.BumpTools.DataModel.NuGetConfiguration;
 
-internal class PackageSource
+internal record PackageSource
 {
     public string Key { get; set; }
 

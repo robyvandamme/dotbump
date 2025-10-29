@@ -1,8 +1,9 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Xml.Linq;
+using DotBump.Commands.BumpTools.DataModel.NuGetConfiguration;
 
-namespace DotBump.Commands.BumpTools.DataModel.NuGetConfiguration;
+namespace DotBump.Commands.BumpTools;
 
 internal class NuGetConfiguration
 {
@@ -13,7 +14,7 @@ internal class NuGetConfiguration
     public static NuGetConfiguration Load(string filePath)
     {
         var config = new NuGetConfiguration();
-        XDocument doc = XDocument.Load(filePath);
+        var doc = XDocument.Load(filePath);
 
         // Parse package sources
         var sourceElements = doc.Root.Element("packageSources")?.Elements("add");
@@ -24,9 +25,9 @@ internal class NuGetConfiguration
                 config.PackageSources.Add(
                     new PackageSource
                     {
-                        Key = element.Attribute("key")?.Value,
-                        Value = element.Attribute("value")?.Value,
-                        ProtocolVersion = element.Attribute("protocolVersion")?.Value
+                        Key = element.Attribute("key")?.Value ?? string.Empty,
+                        Value = element.Attribute("value")?.Value ?? string.Empty,
+                        ProtocolVersion = element.Attribute("protocolVersion")?.Value ?? string.Empty,
                     });
             }
         }
@@ -38,7 +39,7 @@ internal class NuGetConfiguration
             foreach (var sourceCredElement in credentialsElement.Elements())
             {
                 // The element name itself is the source name (like "myorg")
-                string sourceName = sourceCredElement.Name.LocalName;
+                var sourceName = sourceCredElement.Name.LocalName;
                 var sourceCred = new SourceCredential { SourceName = sourceName };
 
                 foreach (var addElement in sourceCredElement.Elements("add"))
@@ -46,7 +47,8 @@ internal class NuGetConfiguration
                     sourceCred.Credentials.Add(
                         new Credential
                         {
-                            Key = addElement.Attribute("key")?.Value, Value = addElement.Attribute("value")?.Value
+                            Key = addElement.Attribute("key")?.Value ?? string.Empty,
+                            Value = addElement.Attribute("value")?.Value ?? string.Empty,
                         });
                 }
 

@@ -17,19 +17,34 @@ internal class BumpToolsHandler(
     {
         logger.MethodStart(nameof(BumpSdkHandler), nameof(HandleAsync), bumpType);
 
-        var manifest = toolFileService.GetToolManifest();
-        var nugetPackageSources = toolFileService.GetNuGetPackageSources();
+        var bumpToolResults = new List<BumpToolResult>();
 
-        var clients = new List<HttpClient>();
-        
+        var manifest = toolFileService.GetToolManifest();
+        var nuGetConfiguration = toolFileService.GetNuGetConfiguration();
+
+        // var clients = new List<HttpClient>();
+
         // here we need to create a list of HttpClients, one for each of the package sources
         // and then pass those into the NuGetServiceClient
         // and then clean up when we are done
-        var indexes = await nuGetServiceClient.GetServiceIndexesAsync(nugetPackageSources)
+
+        // we can then for each httpclient run the check on the tools
+
+        // what I think needs to be done is:
+        // create an HTTP Client for each packagesource
+        // then run all of the functionality in a using block
+        // so a for each on the package sources
+        // within that loop create the http client with credentials if necessary
+        // run below in that
+
+        // so this needs to include the credentials as well
+        foreach (var nugetPackageSource in nuGetConfiguration.PackageSources)
+        {
+        }
+
+        var indexes = await nuGetServiceClient.GetServiceIndexesAsync(nuGetConfiguration)
             .ConfigureAwait(false);
         var baseUrls = nuGetReleaseService.GetRegistrationsUrls(indexes);
-
-        var bumpToolResults = new List<BumpToolResult>();
 
         for (var i = 0; i < manifest.Tools.Count; i++)
         {
