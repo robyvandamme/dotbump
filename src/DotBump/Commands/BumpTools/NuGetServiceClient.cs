@@ -30,7 +30,6 @@ internal class NuGetServiceClient(ILogger logger) : INuGetServiceClient
             try
             {
                 var response = await client.GetStringAsync(new Uri(source)).ConfigureAwait(false);
-
                 var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(response);
                 if (serviceIndex != null)
                 {

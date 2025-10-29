@@ -19,6 +19,12 @@ internal class BumpToolsHandler(
 
         var manifest = toolFileService.GetToolManifest();
         var nugetPackageSources = toolFileService.GetNuGetPackageSources();
+
+        var clients = new List<HttpClient>();
+        
+        // here we need to create a list of HttpClients, one for each of the package sources
+        // and then pass those into the NuGetServiceClient
+        // and then clean up when we are done
         var indexes = await nuGetServiceClient.GetServiceIndexesAsync(nugetPackageSources)
             .ConfigureAwait(false);
         var baseUrls = nuGetReleaseService.GetRegistrationsUrls(indexes);
