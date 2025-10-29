@@ -1,7 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.ComponentModel;
-using DotBump.Commands.BumpSdk;
 using Spectre.Console.Cli;
 
 namespace DotBump.Commands.BumpTools;
