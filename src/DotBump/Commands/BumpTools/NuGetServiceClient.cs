@@ -15,6 +15,8 @@ internal class NuGetServiceClient(ILogger logger) : INuGetServiceClient
     private static readonly JsonSerializerOptions s_jsonSerializerOptions =
         new() { PropertyNameCaseInsensitive = false, };
 
+    private readonly SemanticVersionConverter _semanticVersionConverter = new(logger);
+
     public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IReadOnlyCollection<string> sources)
     {
         logger.MethodStart(nameof(NuGetServiceClient), nameof(GetServiceIndexesAsync), sources);
@@ -69,6 +71,7 @@ internal class NuGetServiceClient(ILogger logger) : INuGetServiceClient
             var packageUrl = new Uri(url + "/" + packageId + "/index.json");
             var result = await client.GetStringAsync(packageUrl).ConfigureAwait(false);
             var options = s_jsonSerializerOptions;
+            options.Converters.Add(_semanticVersionConverter);
             var registrationIndex = JsonSerializer.Deserialize<RegistrationIndex>(result, options);
             if (registrationIndex != null)
             {

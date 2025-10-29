@@ -2,8 +2,6 @@
 
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Serilog;
-using Serilog.Core;
 
 namespace DotBump.Common;
 
@@ -13,7 +11,7 @@ namespace DotBump.Common;
 /// </summary>
 internal record SemanticVersion : IComparable<SemanticVersion>
 {
-    private static readonly Regex s_versionPattern = new Regex(
+    private static readonly Regex s_versionPattern = new(
         @"^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:-(?<prerelease>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$",
         RegexOptions.Compiled);
 
@@ -25,21 +23,16 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     /// Version string in format x.y.z or x.y.z-prerelease
     /// where prerelease can be any combination of alphanumerics and hyphens separated by dots
     /// (e.g., "1.0.0-alpha", "1.0.0-beta.2", "1.0.0-rc.1", "1.0.0-preview.1.25080.5", etc.)
+    /// When the version parameter does not match the version pattern the version is set to "0.0.0".
     /// </param>
     public SemanticVersion(string version)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
+        // TODO: this now lives in 2 places... What is the best approach here?
         var match = s_versionPattern.Match(version);
         if (!match.Success)
         {
-            // TODO: review - what is the best way to handle non-semantic versions. This happens when processing NuGet feeds.
-            // For example the test Moq feed.
-            // throw new ArgumentException(
-            //     $"The version '{version}' does not have the expected format x.y.z[-prerelease]",
-            //     nameof(version));
-            Log.Warning("The version {Version} does not have the expected format x.y.z[-prerelease]", version);
-
             Major = 0;
             Minor = 0;
             Patch = 0;

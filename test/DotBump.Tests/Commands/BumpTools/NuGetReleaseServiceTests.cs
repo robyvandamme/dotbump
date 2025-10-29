@@ -4,6 +4,8 @@ using DotBump.Commands.BumpTools;
 using DotBump.Commands.BumpTools.DataModel.Registrations;
 using DotBump.Common;
 using DotBump.Tests.Commands.BumpTools.Fakes;
+using Moq;
+using Serilog;
 using Shouldly;
 
 namespace DotBump.Tests.Commands.BumpTools;
@@ -14,7 +16,7 @@ public class NuGetReleaseServiceTests
     public async Task Get_Something()
     {
         var client = new FakeNuGetServiceClient();
-        var result = await client.GetServiceIndexesAsync(new List<string>());
+        var result = await client.GetServiceIndexesAsync(new Mock<IReadOnlyCollection<string>>().Object);
         result.ShouldNotBeEmpty();
     }
 
@@ -34,7 +36,7 @@ public class NuGetReleaseServiceTests
             [Fact]
             public void When_No_New_Version_Then_Return_Null()
             {
-                var service = new NuGetReleaseService();
+                var service = new NuGetReleaseService(new Mock<ILogger>().Object);
                 var result = service.TryGetNewMinorOrPatchVersionFromCatalogPages(
                     RegistrationIndex!.CatalogPages,
                     new SemanticVersion("0.3.0")); // 0.3.0 is the latest version in the file.
@@ -44,7 +46,7 @@ public class NuGetReleaseServiceTests
             [Fact]
             public void When_New_Version_Then_Return_Matching_Version()
             {
-                var service = new NuGetReleaseService();
+                var service = new NuGetReleaseService(new Mock<ILogger>().Object);
                 var result = service.TryGetNewMinorOrPatchVersionFromCatalogPages(
                     RegistrationIndex!.CatalogPages,
                     new SemanticVersion("0.1.0")); // 0.3.0 is the latest version in the file.
@@ -73,7 +75,7 @@ public class NuGetReleaseServiceTests
             [Fact]
             public void No_New_Version_Returns_Null()
             {
-                var service = new NuGetReleaseService();
+                var service = new NuGetReleaseService(new Mock<ILogger>().Object);
                 var result = service.TryGetNewMinorOrPatchVersionFromCatalogPages(
                     RegistrationIndex!.CatalogPages,
                     new SemanticVersion("4.20.72")); // highest version in the page
@@ -83,7 +85,7 @@ public class NuGetReleaseServiceTests
             [Fact]
             public void New_Version_Returns_Matching_Version()
             {
-                var service = new NuGetReleaseService();
+                var service = new NuGetReleaseService(new Mock<ILogger>().Object);
                 var result = service.TryGetNewMinorOrPatchVersionFromCatalogPages(
                     RegistrationIndex!.CatalogPages,
                     new SemanticVersion("4.5.6-alpha")); // first semantic version available

@@ -1,11 +1,13 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Xml.Linq;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
 using Serilog;
+using Serilog.Core;
 
 namespace DotBump.Commands.BumpTools;
 
@@ -13,7 +15,8 @@ internal class ToolFileService(ILogger logger) : IToolFileService
 {
     private static readonly JsonSerializerOptions s_serializerOptions = new()
     {
-        WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
     private readonly string _defaultToolManifestPath = Path.Combine(

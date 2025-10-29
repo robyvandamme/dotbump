@@ -24,9 +24,18 @@ internal class FakeNuGetServiceClient : INuGetServiceClient
         return result;
     }
 
-    public Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IReadOnlyCollection<string> sources)
+    public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IReadOnlyCollection<string> sources)
     {
-        throw new NotImplementedException();
+        var result = new List<ServiceIndex>();
+        var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/nuget-service-index.json";
+        var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+        var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(json);
+        if (serviceIndex != null)
+        {
+            result.Add(serviceIndex);
+        }
+
+        return result;
     }
 
     public Task<RegistrationIndex?> GetPackageInformationAsync(IReadOnlyCollection<string> baseUrls, string packageId)
@@ -42,6 +51,11 @@ internal class FakeNuGetServiceClient : INuGetServiceClient
         }
 
         return Task.FromResult<RegistrationIndex?>(null);
+    }
+
+    public Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(IReadOnlyCollection<CatalogPage> catalogPages)
+    {
+        throw new NotImplementedException();
     }
 
     public Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(IEnumerable<CatalogPage> catalogPages)

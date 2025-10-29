@@ -68,6 +68,7 @@ internal class BumpToolsHandler(
                     //  So: first check if we have a usable version available here: that would be the last available version only?
                     //  if not fetch the relevant pages.
                     //  For now: fetch the relevant pages. Add the optimization to the backlog.
+                    //  That would be Pages.Last.HasMatchingVersion or something along those lines
                     var detailPages = await nuGetServiceClient.GetRelevantDetailCatalogPagesAsync(pages);
                     var newVersion =
                         nuGetReleaseService.TryGetNewMinorOrPatchVersionFromDetailCatalogPages(
@@ -82,7 +83,16 @@ internal class BumpToolsHandler(
             }
         }
 
-        toolFileService.SaveToolManifest(manifest);
+        // TODO: only save when there are changes.
+        // do we always have results? depends on the strategy.
+        // If we look at it as a report, we include all tools and the new and the old version? Even when there are no updates? Yes....
+        // So the question is: always report everything or only report changes?
+        if (bumpToolResults.Any(o => o.NewVersion != o.OldVersion))
+        {
+            toolFileService.SaveToolManifest(manifest);
+        }
+
+        logger.MethodReturn(nameof(BumpSdkHandler), nameof(HandleAsync), bumpToolResults);
 
         return bumpToolResults;
     }
