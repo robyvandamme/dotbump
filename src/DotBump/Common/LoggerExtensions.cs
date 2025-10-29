@@ -15,11 +15,37 @@ internal static class LoggerExtensions
         }
     }
 
-    public static void MethodStart<TParameter>(this ILogger logger, string className, string methodName, TParameter parameter)
+    public static void MethodStart<TParameter>(
+        this ILogger logger,
+        string className,
+        string methodName,
+        TParameter parameter)
     {
         if (logger.IsEnabled(LogEventLevel.Debug))
         {
-            logger.Debug("{ClassName} {MethodName} started with parameter {@Parameter}", className, methodName, parameter);
+            logger.Debug(
+                "{ClassName} {MethodName} started with parameter {@Parameter}",
+                className,
+                methodName,
+                parameter);
+        }
+    }
+
+    public static void MethodStart<TParameter1, TParameter2>(
+        this ILogger logger,
+        string className,
+        string methodName,
+        TParameter1 parameter1,
+        TParameter2 parameter2)
+    {
+        if (logger.IsEnabled(LogEventLevel.Debug))
+        {
+            logger.Debug(
+                "{ClassName} {MethodName} started with parameters {@Parameter1}, {@Parameter2}",
+                className,
+                methodName,
+                parameter1,
+                parameter2);
         }
     }
 

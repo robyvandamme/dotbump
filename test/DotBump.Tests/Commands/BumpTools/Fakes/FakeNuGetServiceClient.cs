@@ -24,12 +24,12 @@ internal class FakeNuGetServiceClient : INuGetServiceClient
         return result;
     }
 
-    public Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IEnumerable<string> sources)
+    public Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IReadOnlyCollection<string> sources)
     {
         throw new NotImplementedException();
     }
 
-    public Task<RegistrationIndex?> GetPackageInformationAsync(IEnumerable<string> baseUrls, string packageId)
+    public Task<RegistrationIndex?> GetPackageInformationAsync(IReadOnlyCollection<string> baseUrls, string packageId)
     {
         if (packageId.Equals("dotmarkdown", StringComparison.OrdinalIgnoreCase))
         {

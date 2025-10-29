@@ -5,29 +5,20 @@ using DotBump.Commands.BumpTools.DataModel.Catalog;
 using DotBump.Commands.BumpTools.DataModel.NuGetService;
 using DotBump.Commands.BumpTools.DataModel.Registrations;
 using DotBump.Commands.BumpTools.Interfaces;
+using DotBump.Common;
 using Serilog;
 
 namespace DotBump.Commands.BumpTools;
 
-internal class NuGetServiceClient : INuGetServiceClient
+internal class NuGetServiceClient(ILogger logger) : INuGetServiceClient
 {
     private static readonly JsonSerializerOptions s_jsonSerializerOptions =
         new() { PropertyNameCaseInsensitive = false, };
 
-    private readonly ILogger _logger;
-
-    // TODO: How to initialize multiple Http Clients for the different sources and then dispose them? Or not relevant?
-    // private readonly HttpClient _httpClient;
-    public NuGetServiceClient(ILogger logger)
+    public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IReadOnlyCollection<string> sources)
     {
-        _logger = logger;
+        logger.MethodStart(nameof(NuGetServiceClient), nameof(GetServiceIndexesAsync), sources);
 
-        // _httpClient = new HttpClient();
-        // _httpClient.DefaultRequestHeaders.Add("User-Agent", " NuGetServiceClient/1.0");
-    }
-
-    public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IEnumerable<string> sources)
-    {
         ArgumentNullException.ThrowIfNull(sources);
 
         var list = new List<ServiceIndex>();
@@ -45,21 +36,30 @@ internal class NuGetServiceClient : INuGetServiceClient
                 }
                 else
                 {
-                    _logger.Debug("Unable to deserialize service index for {Source}", source);
+                    logger.Debug("Unable to deserialize service index for {Source}", source);
                 }
             }
             catch (HttpRequestException e)
             {
                 // TODO: how to propagate this to the console? Throw? That is the easiest solution for now...
-                _logger.Error(e, "An error occurred connecting to {Source}", source);
+                // But not sure that is the best option? Well.... if we can not connect to a source we do need to inform somehow...
+                // throwing is what I am doing so far, so consistency is throw?
+                // If not use a warning instead
+                logger.Error(e, "An error occurred connecting to {Source}", source);
             }
         }
+
+        logger.MethodReturn(nameof(NuGetServiceClient), nameof(GetServiceIndexesAsync), list);
 
         return list;
     }
 
-    public async Task<RegistrationIndex?> GetPackageInformationAsync(IEnumerable<string> baseUrls, string packageId)
+    public async Task<RegistrationIndex?> GetPackageInformationAsync(
+        IReadOnlyCollection<string> baseUrls,
+        string packageId)
     {
+        logger.MethodStart(nameof(NuGetServiceClient), nameof(GetServiceIndexesAsync), baseUrls, packageId);
+
         ArgumentNullException.ThrowIfNull(baseUrls);
         ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
 
@@ -72,21 +72,23 @@ internal class NuGetServiceClient : INuGetServiceClient
             var registrationIndex = JsonSerializer.Deserialize<RegistrationIndex>(result, options);
             if (registrationIndex != null)
             {
+                // NOTE: package information can be found at multiple service indexes, so it is possible we need to a bit more here.
+                logger.MethodReturn(nameof(NuGetServiceClient), nameof(GetServiceIndexesAsync), registrationIndex);
                 return registrationIndex;
             }
         }
 
-        return null;
-    }
+        logger.Debug("No service indexes found for package {PackageId} at {BaseUrls}", packageId, baseUrls);
+        logger.MethodReturn(nameof(NuGetServiceClient), nameof(GetServiceIndexesAsync));
 
-    public Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(IEnumerable<CatalogPage> catalogPages)
-    {
-        throw new NotImplementedException();
+        return null;
     }
 
     public async Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(
         IReadOnlyCollection<CatalogPage> catalogPages)
     {
+        logger.MethodStart(nameof(NuGetServiceClient), nameof(GetRelevantDetailCatalogPagesAsync), catalogPages);
+
         ArgumentNullException.ThrowIfNull(catalogPages);
 
         var result = new List<NuGetCatalogPage>();
@@ -101,6 +103,8 @@ internal class NuGetServiceClient : INuGetServiceClient
                 result.Add(detailPage);
             }
         }
+
+        logger.MethodReturn(nameof(NuGetServiceClient), nameof(GetRelevantDetailCatalogPagesAsync), result);
 
         return result;
     }

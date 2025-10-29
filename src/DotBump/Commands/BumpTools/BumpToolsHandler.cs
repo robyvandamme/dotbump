@@ -19,26 +19,17 @@ internal class BumpToolsHandler(
 
         var manifest = toolFileService.GetToolManifest();
         var nugetPackageSources = toolFileService.GetNuGetPackageSources();
-
         var indexes = await nuGetServiceClient.GetServiceIndexesAsync(nugetPackageSources)
             .ConfigureAwait(false);
-
         var baseUrls = nuGetReleaseService.GetRegistrationsUrls(indexes);
 
         var bumpToolResults = new List<BumpToolResult>();
 
-        // console.MarkupLine(">> Local Tools:");
         for (var i = 0; i < manifest.Tools.Count; i++)
         {
             var tool = manifest.Tools.ElementAt(i);
-
-            // console.MarkupLine(tool.Key);
-
             var releaseIndex =
                 await nuGetServiceClient.GetPackageInformationAsync(baseUrls, tool.Key).ConfigureAwait(false);
-
-            // console.MarkupLine(
-            // releaseIndex != null ? releaseIndex.Id : $"No Release index found for package ID {tool.Key}");
 
             if (releaseIndex != null)
             {
@@ -48,13 +39,9 @@ internal class BumpToolsHandler(
 
                 if (pages.Count == 0)
                 {
-                    // console.MarkupLine("No relevant releases found.");
-
-                    // no new releases
+                    logger.Debug("No new versions found in catalog for {Tool}", tool);
                     break;
                 }
-
-                // console.MarkupLine("Relevant releases found.");
 
                 // then there are 2 options?
                 // either the release info is in the release index itself
