@@ -10,7 +10,7 @@ namespace DotBump.Tests.Commands.BumpTools.Fakes;
 
 internal class FakeNuGetServiceClient : INuGetServiceClient
 {
-    public async Task<List<ServiceIndex>> GetServiceIndexesAsync(ICollection<string> sources)
+    public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(ICollection<string> sources)
     {
         var result = new List<ServiceIndex>();
         var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/nuget-service-index.json";
@@ -24,7 +24,12 @@ internal class FakeNuGetServiceClient : INuGetServiceClient
         return result;
     }
 
-    public Task<RegistrationIndex?> GetPackageInformationAsync(List<string> baseUrls, string packageId)
+    public Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IEnumerable<string> sources)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<RegistrationIndex?> GetPackageInformationAsync(IEnumerable<string> baseUrls, string packageId)
     {
         if (packageId.Equals("dotmarkdown", StringComparison.OrdinalIgnoreCase))
         {

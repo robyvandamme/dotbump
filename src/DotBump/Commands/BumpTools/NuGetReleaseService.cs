@@ -5,18 +5,21 @@ using DotBump.Commands.BumpTools.DataModel.NuGetService;
 using DotBump.Commands.BumpTools.DataModel.Registrations;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
+using Serilog;
 
 namespace DotBump.Commands.BumpTools;
 
-internal class NuGetReleaseService : INuGetReleaseService
+internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
 {
     /// <summary>
     /// Gets the RegistrationsBaseUrl's for the current list of service indexes.
     /// </summary>
     /// <param name="serviceIndexes">The list of Nuget Services indices.</param>
     /// <returns>List of url's.</returns>
-    public List<string> GetRegistrationsUrls(List<ServiceIndex> serviceIndexes)
+    public IReadOnlyCollection<string> GetRegistrationsUrls(IReadOnlyCollection<ServiceIndex> serviceIndexes)
     {
+        logger.MethodStart(nameof(NuGetReleaseService), nameof(GetRegistrationsUrls), serviceIndexes);
+
         ArgumentNullException.ThrowIfNull(serviceIndexes);
 
         var baseUrls = new List<string>();
@@ -31,6 +34,8 @@ internal class NuGetReleaseService : INuGetReleaseService
                 baseUrls.Add(registrationResource.Id);
             }
         }
+
+        logger.MethodReturn(nameof(NuGetReleaseService), nameof(GetRegistrationsUrls), baseUrls);
 
         return baseUrls;
     }

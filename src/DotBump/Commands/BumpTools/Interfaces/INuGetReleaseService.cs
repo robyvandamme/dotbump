@@ -14,7 +14,7 @@ internal interface INuGetReleaseService
     /// </summary>
     /// <param name="serviceIndexes">The list of Nuget Services indices.</param>
     /// <returns>List of url's.</returns>
-    List<string> GetRegistrationsUrls(List<ServiceIndex> serviceIndexes);
+    IReadOnlyCollection<string> GetRegistrationsUrls(IReadOnlyCollection<ServiceIndex> serviceIndexes);
 
     List<CatalogPage> TryFindNewReleaseCatalogPages(
         RegistrationIndex index,

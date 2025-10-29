@@ -8,7 +8,7 @@ internal interface IToolFileService
 {
     ToolManifest GetToolManifest();
 
-    IEnumerable<string> GetNuGetPackageSources();
+    IReadOnlyCollection<string> GetNuGetPackageSources();
 
     void SaveToolManifest(ToolManifest manifest);
 }

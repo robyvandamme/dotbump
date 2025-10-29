@@ -1,6 +1,8 @@
 // Copyright © 2025 Roby Van Damme.
 
+using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpTools.Interfaces;
+using DotBump.Common;
 using Serilog;
 
 namespace DotBump.Commands.BumpTools;
@@ -13,26 +15,15 @@ internal class BumpToolsHandler(
 {
     public async Task<IReadOnlyCollection<BumpToolResult>> HandleAsync(BumpType bumpType)
     {
+        logger.MethodStart(nameof(BumpSdkHandler), nameof(HandleAsync), bumpType);
+
         var manifest = toolFileService.GetToolManifest();
-        var nugetPackageSources = toolFileService.GetNuGetPackageSources().ToList();
+        var nugetPackageSources = toolFileService.GetNuGetPackageSources();
 
-        // console.MarkupLine(">> NuGet Package Sources:");
-        // foreach (var packageSource in nugetPackageSources)
-        // {
-        // console.MarkupLine(packageSource);
-        // }
-
-        var indexes = await nuGetServiceClient.GetServiceIndexesAsync(nugetPackageSources.ToList())
+        var indexes = await nuGetServiceClient.GetServiceIndexesAsync(nugetPackageSources)
             .ConfigureAwait(false);
 
-        // console.MarkupLine(">> Base URLs:");
-
         var baseUrls = nuGetReleaseService.GetRegistrationsUrls(indexes);
-
-        // foreach (var baseUrl in baseUrls)
-        // {
-        // console.MarkupLine(baseUrl);
-        // }
 
         var bumpToolResults = new List<BumpToolResult>();
 

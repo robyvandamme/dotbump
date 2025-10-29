@@ -26,7 +26,7 @@ internal class NuGetServiceClient : INuGetServiceClient
         // _httpClient.DefaultRequestHeaders.Add("User-Agent", " NuGetServiceClient/1.0");
     }
 
-    public async Task<List<ServiceIndex>> GetServiceIndexesAsync(ICollection<string> sources)
+    public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IEnumerable<string> sources)
     {
         ArgumentNullException.ThrowIfNull(sources);
 
@@ -58,7 +58,7 @@ internal class NuGetServiceClient : INuGetServiceClient
         return list;
     }
 
-    public async Task<RegistrationIndex?> GetPackageInformationAsync(List<string> baseUrls, string packageId)
+    public async Task<RegistrationIndex?> GetPackageInformationAsync(IEnumerable<string> baseUrls, string packageId)
     {
         ArgumentNullException.ThrowIfNull(baseUrls);
         ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
@@ -79,8 +79,13 @@ internal class NuGetServiceClient : INuGetServiceClient
         return null;
     }
 
+    public Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(IEnumerable<CatalogPage> catalogPages)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(
-        IEnumerable<CatalogPage> catalogPages)
+        IReadOnlyCollection<CatalogPage> catalogPages)
     {
         ArgumentNullException.ThrowIfNull(catalogPages);
 

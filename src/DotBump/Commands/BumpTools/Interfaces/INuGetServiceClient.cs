@@ -8,9 +8,9 @@ namespace DotBump.Commands.BumpTools.Interfaces;
 
 internal interface INuGetServiceClient
 {
-    Task<List<ServiceIndex>> GetServiceIndexesAsync(ICollection<string> sources);
+    Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IEnumerable<string> sources);
 
-    Task<RegistrationIndex?> GetPackageInformationAsync(List<string> baseUrls, string packageId);
+    Task<RegistrationIndex?> GetPackageInformationAsync(IEnumerable<string> baseUrls, string packageId);
 
     Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(
         IEnumerable<CatalogPage> catalogPages);
