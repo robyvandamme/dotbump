@@ -1,6 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
-namespace DotBump.Commands.BumpTools.DataModel.NuGetConfig;
+namespace DotBump.Commands.BumpTools.DataModel.NuGetConfiguration;
 
 internal record NuGetConfig
 {

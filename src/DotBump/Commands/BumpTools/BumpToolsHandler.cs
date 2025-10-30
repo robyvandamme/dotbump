@@ -2,6 +2,7 @@
 
 using System.Net;
 using DotBump.Commands.BumpSdk;
+using DotBump.Commands.BumpTools.DataModel.NuGetClientConfiguration;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
 using Serilog;
@@ -10,7 +11,7 @@ namespace DotBump.Commands.BumpTools;
 
 internal class BumpToolsHandler(
     IToolFileService toolFileService,
-    INuGetServiceClient nuGetServiceClient,
+    INuGetClient nuGetClient,
     INuGetReleaseService nuGetReleaseService,
     ILogger logger) : IBumpToolsHandler
 {
@@ -23,141 +24,80 @@ internal class BumpToolsHandler(
         var manifest = toolFileService.GetToolManifest();
         var nuGetConfiguration = toolFileService.GetNuGetConfiguration();
 
-        // var clients = new List<HttpClient>();
-
-        // here we need to create a list of HttpClients, one for each of the package sources
-        // and then pass those into the NuGetServiceClient
-        // and then clean up when we are done
-
-        // we can then for each httpclient run the check on the tools
-
-        // what I think needs to be done is:
-        // create an HTTP Client for each packagesource
-        // then run all of the functionality in a using block
-        // so a for each on the package sources
-        // within that loop create the http client with credentials if necessary
-        // run below in that
-
-        // so this needs to include the credentials as well
         foreach (var nugetPackageSource in nuGetConfiguration.PackageSources)
         {
-            // NOTE: this should be a using
-
-            nuGetConfiguration.Credentials.TryGetValue(nugetPackageSource.Key, out var sourceCredential);
-            if (sourceCredential != null)
-            {
-                var userNamePlaceHolder = sourceCredential.Credentials.FirstOrDefault(o => o.Key.Equals(
-                    "UserName",
-                    StringComparison.OrdinalIgnoreCase));
-                var passwordPlaceHolder = sourceCredential.Credentials.FirstOrDefault(o => o.Key.Equals(
-                    "ClearTextPassword",
-                    StringComparison.OrdinalIgnoreCase));
-                if (userNamePlaceHolder != null && passwordPlaceHolder != null)
-                {
-                    var userNameVariable = userNamePlaceHolder.Value.Replace("%", string.Empty);
-                    var passwordVariable = passwordPlaceHolder.Value.Replace("%", string.Empty);
-
-                    var userName = Environment.GetEnvironmentVariable(userNameVariable);
-                    var password = Environment.GetEnvironmentVariable(passwordVariable);
-                    if (string.IsNullOrWhiteSpace(userName))
-                    {
-                        logger.Debug(
-                            "Environment variable {UserName} not found for {PackageSource}",
-                            userNameVariable,
-                            nugetPackageSource.Key);
-                    }
-
-                    if (string.IsNullOrWhiteSpace(password))
-                    {
-                        logger.Debug(
-                            "Environment variable {Password} not found for {PackageSource}",
-                            passwordVariable,
-                            nugetPackageSource.Key);
-                    }
-
-                    var handler = new HttpClientHandler { Credentials = new NetworkCredential(userName, password), };
-                    using var client = new HttpClient(handler);
-                    var response = await client.GetStringAsync(new Uri(nugetPackageSource.Value));
-                }
-            }
-
-            //     // this needs to become a credential and needs to be excluded from logs
-            //     var usernamePlaceHolder = nuGetConfiguration.Credentials.Values.
-            //     var userName = Environment.GetEnvironmentVariable("GITHUB_PACKAGES_USER");
-            // }
-            //
-            // var handler = new HttpClientHandler
-            // {
-            //     Credentials = new NetworkCredential(userName, password),
-            // };
+            var clientConfig = new NuGetClientConfig(nugetPackageSource.Key, nuGetConfiguration, logger);
+            var clientFactory = new HttpClientFactory(logger); // TODO: this one can be injected
+            using var client = clientFactory.Create(clientConfig);
+            var response = await client.GetStringAsync(new Uri(nugetPackageSource.Value));
         }
 
-        // var indexes = await nuGetServiceClient.GetServiceIndexesAsync(nuGetConfiguration)
-        //     .ConfigureAwait(false);
-        // var baseUrls = nuGetReleaseService.GetRegistrationsUrls(indexes);
-        //
-        // for (var i = 0; i < manifest.Tools.Count; i++)
-        // {
-        //     var tool = manifest.Tools.ElementAt(i);
-        //     var releaseIndex =
-        //         await nuGetServiceClient.GetPackageInformationAsync(baseUrls, tool.Key).ConfigureAwait(false);
-        //
-        //     if (releaseIndex != null)
-        //     {
-        //         var pages = nuGetReleaseService.TryFindNewReleaseCatalogPages(
-        //             releaseIndex,
-        //             tool.Value.SemanticVersion);
-        //
-        //         if (pages.Count == 0)
-        //         {
-        //             logger.Debug("No new versions found in catalog for {Tool}", tool);
-        //             break;
-        //         }
-        //
-        //         // then there are 2 options?
-        //         // either the release info is in the release index itself
-        //         // or the release info is in a page linked from the release index
-        //         if (pages.First().HasPackageDetails)
-        //         {
-        //             // we can extract the version from the pages
-        //             var newVersion =
-        //                 nuGetReleaseService.TryGetNewMinorOrPatchVersionFromCatalogPages(
-        //                     pages,
-        //                     tool.Value.SemanticVersion);
-        //             if (newVersion != null)
-        //             {
-        //                 bumpToolResults.Add(new BumpToolResult(tool.Key, tool.Value.Version, newVersion.ToString()));
-        //                 tool.Value.Version = newVersion.ToString();
-        //             }
-        //         }
-        //         else
-        //         {
-        //             // TODO: get the relevant detail pages
-        //             //  However... it might be possible to pick up the version from the index?
-        //             //  in case the upper one is one that we can use? If the upper one is one we can use we pick that one
-        //             //  otherwise we need to dig deeper.
-        //             //  So: first check if we have a usable version available here: that would be the last available version only?
-        //             //  if not fetch the relevant pages.
-        //             //  For now: fetch the relevant pages. Add the optimization to the backlog.
-        //             //  That would be Pages.Last.HasMatchingVersion or something along those lines
-        //             var detailPages = await nuGetServiceClient.GetRelevantDetailCatalogPagesAsync(pages);
-        //             var newVersion =
-        //                 nuGetReleaseService.TryGetNewMinorOrPatchVersionFromDetailCatalogPages(
-        //                     detailPages.ToList(),
-        //                     tool.Value.SemanticVersion);
-        //             if (newVersion != null)
-        //             {
-        //                 bumpToolResults.Add(new BumpToolResult(tool.Key, tool.Value.Version, newVersion.ToString()));
-        //                 tool.Value.Version = newVersion.ToString();
-        //             }
-        //         }
-        //     }
-        // }
+// var indexes = await nuGetServiceClient.GetServiceIndexesAsync(nuGetConfiguration)
+//     .ConfigureAwait(false);
+// var baseUrls = nuGetReleaseService.GetRegistrationsUrls(indexes);
+//
+// for (var i = 0; i < manifest.Tools.Count; i++)
+// {
+//     var tool = manifest.Tools.ElementAt(i);
+//     var releaseIndex =
+//         await nuGetServiceClient.GetPackageInformationAsync(baseUrls, tool.Key).ConfigureAwait(false);
+//
+//     if (releaseIndex != null)
+//     {
+//         var pages = nuGetReleaseService.TryFindNewReleaseCatalogPages(
+//             releaseIndex,
+//             tool.Value.SemanticVersion);
+//
+//         if (pages.Count == 0)
+//         {
+//             logger.Debug("No new versions found in catalog for {Tool}", tool);
+//             break;
+//         }
+//
+//         // then there are 2 options?
+//         // either the release info is in the release index itself
+//         // or the release info is in a page linked from the release index
+//         if (pages.First().HasPackageDetails)
+//         {
+//             // we can extract the version from the pages
+//             var newVersion =
+//                 nuGetReleaseService.TryGetNewMinorOrPatchVersionFromCatalogPages(
+//                     pages,
+//                     tool.Value.SemanticVersion);
+//             if (newVersion != null)
+//             {
+//                 bumpToolResults.Add(new BumpToolResult(tool.Key, tool.Value.Version, newVersion.ToString()));
+//                 tool.Value.Version = newVersion.ToString();
+//             }
+//         }
+//         else
+//         {
+//             // TODO: get the relevant detail pages
+//             //  However... it might be possible to pick up the version from the index?
+//             //  in case the upper one is one that we can use? If the upper one is one we can use we pick that one
+//             //  otherwise we need to dig deeper.
+//             //  So: first check if we have a usable version available here: that would be the last available version only?
+//             //  if not fetch the relevant pages.
+//             //  For now: fetch the relevant pages. Add the optimization to the backlog.
+//             //  That would be Pages.Last.HasMatchingVersion or something along those lines
+//             var detailPages = await nuGetServiceClient.GetRelevantDetailCatalogPagesAsync(pages);
+//             var newVersion =
+//                 nuGetReleaseService.TryGetNewMinorOrPatchVersionFromDetailCatalogPages(
+//                     detailPages.ToList(),
+//                     tool.Value.SemanticVersion);
+//             if (newVersion != null)
+//             {
+//                 bumpToolResults.Add(new BumpToolResult(tool.Key, tool.Value.Version, newVersion.ToString()));
+//                 tool.Value.Version = newVersion.ToString();
+//             }
+//         }
+//     }
+// }
 
-        // TODO: only save when there are changes.
-        // do we always have results? depends on the strategy.
-        // If we look at it as a report, we include all tools and the new and the old version? Even when there are no updates? Yes....
-        // So the question is: always report everything or only report changes?
+// TODO: only save when there are changes.
+// do we always have results? depends on the strategy.
+// If we look at it as a report, we include all tools and the new and the old version? Even when there are no updates? Yes....
+// So the question is: always report everything or only report changes?
         if (bumpToolResults.Any(o => o.NewVersion != o.OldVersion))
         {
             toolFileService.SaveToolManifest(manifest);

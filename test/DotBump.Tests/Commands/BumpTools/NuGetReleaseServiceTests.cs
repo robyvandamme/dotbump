@@ -15,7 +15,7 @@ public class NuGetReleaseServiceTests
     [Fact]
     public async Task Get_Something()
     {
-        var client = new FakeNuGetServiceClient();
+        var client = new FakeNuGetClient();
         var result = await client.GetServiceIndexesAsync(new Mock<IReadOnlyCollection<string>>().Object);
         result.ShouldNotBeEmpty();
     }
@@ -27,7 +27,7 @@ public class NuGetReleaseServiceTests
             private static readonly Lazy<RegistrationIndex?> s_lazyRegistrationIndex =
                 new(() =>
                 {
-                    var client = new FakeNuGetServiceClient();
+                    var client = new FakeNuGetClient();
                     return client.GetPackageInformationAsync(new List<string>(), "dotmarkdown").Result;
                 });
 
@@ -59,7 +59,7 @@ public class NuGetReleaseServiceTests
             private static readonly Lazy<RegistrationIndex?> s_lazyRegistrationIndex =
                 new(() =>
                 {
-                    var client = new FakeNuGetServiceClient();
+                    var client = new FakeNuGetClient();
                     return client.GetPackageInformationAsync(new List<string>(), "moq").Result;
                 });
 

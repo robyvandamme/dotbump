@@ -6,7 +6,7 @@ using DotBump.Commands.BumpTools.DataModel.Registrations;
 
 namespace DotBump.Commands.BumpTools.Interfaces;
 
-internal interface INuGetServiceClient
+internal interface INuGetClient
 {
     Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IReadOnlyCollection<string> sources);
 

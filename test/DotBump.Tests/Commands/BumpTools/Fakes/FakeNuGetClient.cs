@@ -8,7 +8,7 @@ using DotBump.Commands.BumpTools.Interfaces;
 
 namespace DotBump.Tests.Commands.BumpTools.Fakes;
 
-internal class FakeNuGetServiceClient : INuGetServiceClient
+internal class FakeNuGetClient : INuGetClient
 {
     public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(ICollection<string> sources)
     {
