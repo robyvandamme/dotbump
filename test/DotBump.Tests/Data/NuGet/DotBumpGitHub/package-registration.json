@@ -1,0 +1,255 @@
+{
+  "count": 1,
+  "items": [
+    {
+      "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/index.json",
+      "lower": "0.1.0-beta.7",
+      "upper": "0.1.1-beta.8",
+      "count": 11,
+      "items": [
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.1-beta.8.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.1-beta.8/dotbump.0.1.1-beta.8.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.1-beta.8.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Copyright © 2025 Roby Van Damme.",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": true,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.1-beta.8/dotbump.0.1.1-beta.8.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.1-beta.8"
+          }
+        },
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.1-beta.7.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.1-beta.7/dotbump.0.1.1-beta.7.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.1-beta.7.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Copyright © 2025 Roby Van Damme.",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": true,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.1-beta.7/dotbump.0.1.1-beta.7.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.1-beta.7"
+          }
+        },
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0/dotbump.0.1.0.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Copyright © 2025 Roby Van Damme.",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": false,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0/dotbump.0.1.0.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.0"
+          }
+        },
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.18.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.18/dotbump.0.1.0-beta.18.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.18.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Copyright © 2025 Roby Van Damme.",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": true,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.18/dotbump.0.1.0-beta.18.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.0-beta.18"
+          }
+        },
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.14.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.14/dotbump.0.1.0-beta.14.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.14.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Roby Van Damme",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": true,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.14/dotbump.0.1.0-beta.14.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.0-beta.14"
+          }
+        },
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.13.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.13/dotbump.0.1.0-beta.13.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.13.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Roby Van Damme",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": true,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.13/dotbump.0.1.0-beta.13.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.0-beta.13"
+          }
+        },
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.12.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.12/dotbump.0.1.0-beta.12.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.12.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Roby Van Damme",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": true,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.12/dotbump.0.1.0-beta.12.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.0-beta.12"
+          }
+        },
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.10.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.10/dotbump.0.1.0-beta.10.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.10.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Roby Van Damme",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": true,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.10/dotbump.0.1.0-beta.10.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.0-beta.10"
+          }
+        },
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.9.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.9/dotbump.0.1.0-beta.9.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.9.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Roby Van Damme",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": true,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.9/dotbump.0.1.0-beta.9.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.0-beta.9"
+          }
+        },
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.8.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.8/dotbump.0.1.0-beta.8.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.8.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Roby Van Damme",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": true,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.8/dotbump.0.1.0-beta.8.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.0-beta.8"
+          }
+        },
+        {
+          "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.7.json",
+          "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.7/dotbump.0.1.0-beta.7.nupkg",
+          "catalogEntry": {
+            "@id": "https://nuget.pkg.github.com/robyvandamme/dotbump/0.1.0-beta.7.json",
+            "authors": "Roby Van Damme",
+            "copyright": "Roby Van Damme",
+            "dependencyGroups": [],
+            "description": ".NET Global Tool to automate dependency upgrade tasks in .NET solutions.",
+            "iconUrl": "",
+            "id": "dotbump",
+            "isPrerelease": true,
+            "language": "",
+            "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+            "packageContent": "https://nuget.pkg.github.com/robyvandamme/download/dotbump/0.1.0-beta.7/dotbump.0.1.0-beta.7.nupkg",
+            "projectUrl": "https://github.com/robyvandamme/dotbump",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": "",
+            "version": "0.1.0-beta.7"
+          }
+        }
+      ]
+    }
+  ]
+}

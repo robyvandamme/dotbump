@@ -40,6 +40,30 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
         return baseUrls;
     }
 
+    /// <summary>
+    /// Gets the RegistrationsBaseUr for the current service index.
+    /// </summary>
+    /// <param name="serviceIndex">The NuGet service index..</param>
+    /// <returns>The base URL.</returns>
+    public string GetRegistrationsUrl(ServiceIndex serviceIndex)
+    {
+        logger.MethodStart(nameof(NuGetReleaseService), nameof(GetRegistrationsUrl), serviceIndex);
+
+        ArgumentNullException.ThrowIfNull(serviceIndex);
+
+        var registrationResource = serviceIndex.Resources.FirstOrDefault(o => o.Type.Equals(
+            "RegistrationsBaseUrl",
+            StringComparison.OrdinalIgnoreCase));
+
+        if (registrationResource != null)
+        {
+            logger.MethodReturn(nameof(NuGetReleaseService), nameof(GetRegistrationsUrl), registrationResource.Id);
+            return registrationResource.Id;
+        }
+
+        throw new DotBumpException($"No RegistrationsBaseUrl found in the service index.");
+    }
+
     public List<CatalogPage> TryFindNewReleaseCatalogPages(
         RegistrationIndex index,
         SemanticVersion currentVersion)

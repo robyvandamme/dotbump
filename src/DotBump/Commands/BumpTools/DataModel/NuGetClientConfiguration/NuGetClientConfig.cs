@@ -26,7 +26,7 @@ internal record NuGetClientConfig
     }
 
     /// <summary>
-    /// Gets the URL string from the config for the specified packageSourceName. 
+    /// Gets the URL string from the config for the specified packageSourceName.
     /// </summary>
     private string GetUrlFromConfig(string packageSourceName, NuGetConfig nuGetConfig)
     {
@@ -86,7 +86,7 @@ internal record NuGetClientConfig
                     return null;
                 }
 
-                return new NuGetClientCredential() { UserName = userName, Password = password };
+                return new NuGetClientCredential(userName, password);
             }
         }
 

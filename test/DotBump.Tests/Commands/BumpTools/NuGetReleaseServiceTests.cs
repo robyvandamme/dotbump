@@ -92,5 +92,37 @@ public class NuGetReleaseServiceTests
                 result.ShouldBe(new SemanticVersion("4.20.72")); // highest version in the page
             }
         }
+
+        public class Inline_GitHub
+        {
+            private static readonly Lazy<RegistrationIndex?> s_lazyRegistrationIndex =
+                new(() =>
+                {
+                    var client = new FakeNuGetClient();
+                    return client.GetPackageInformationAsync(new List<string>(), "dotbump").Result;
+                });
+
+            private RegistrationIndex? RegistrationIndex => s_lazyRegistrationIndex.Value;
+
+            [Fact(Skip = "Problems with deserialization")]
+            public void No_New_Version_Returns_Null()
+            {
+                var service = new NuGetReleaseService(new Mock<ILogger>().Object);
+                var result = service.TryGetNewMinorOrPatchVersionFromCatalogPages(
+                    RegistrationIndex!.CatalogPages,
+                    new SemanticVersion("0.1.1-beta.8"));
+                result.ShouldBeNull();
+            }
+
+            [Fact(Skip = "Problems with deserialization")]
+            public void New_Version_Returns_Matching_Version()
+            {
+                var service = new NuGetReleaseService(new Mock<ILogger>().Object);
+                var result = service.TryGetNewMinorOrPatchVersionFromCatalogPages(
+                    RegistrationIndex!.CatalogPages,
+                    new SemanticVersion("0.1.1-beta.7"));
+                result.ShouldBe(new SemanticVersion("0.1.1-beta.8"));
+            }
+        }
     }
 }

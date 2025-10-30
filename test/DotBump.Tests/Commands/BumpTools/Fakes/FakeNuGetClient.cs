@@ -50,10 +50,21 @@ internal class FakeNuGetClient : INuGetClient
             return GetMoqPackageInformation();
         }
 
+        if (packageId.Equals("dotBump", StringComparison.OrdinalIgnoreCase))
+        {
+            return GetDotBumpPackageInformation();
+        }
+
         return Task.FromResult<RegistrationIndex?>(null);
     }
 
-    public Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(IReadOnlyCollection<CatalogPage> catalogPages)
+    public Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(
+        IReadOnlyCollection<CatalogPage> catalogPages)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<RegistrationIndex?> GetPackageInformationAsync(string baseUrl, string packageId)
     {
         throw new NotImplementedException();
     }
@@ -74,6 +85,14 @@ internal class FakeNuGetClient : INuGetClient
     private async Task<RegistrationIndex?> GetMoqPackageInformation()
     {
         var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/Moq/package-registration.json";
+        var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+        var index = JsonSerializer.Deserialize<RegistrationIndex>(json);
+        return index;
+    }
+
+    private async Task<RegistrationIndex?> GetDotBumpPackageInformation()
+    {
+        var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/DotBumpGitHub/package-registration.json";
         var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
         var index = JsonSerializer.Deserialize<RegistrationIndex>(json);
         return index;

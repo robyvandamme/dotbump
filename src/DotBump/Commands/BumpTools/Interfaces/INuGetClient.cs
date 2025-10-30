@@ -14,4 +14,6 @@ internal interface INuGetClient
 
     Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(
         IReadOnlyCollection<CatalogPage> catalogPages);
+
+    Task<RegistrationIndex?> GetPackageInformationAsync(string baseUrl, string packageId);
 }

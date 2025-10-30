@@ -27,4 +27,11 @@ internal interface INuGetReleaseService
     SemanticVersion? TryGetNewMinorOrPatchVersionFromDetailCatalogPages(
         ICollection<NuGetCatalogPage> catalogPages,
         SemanticVersion currentVersion);
+
+    /// <summary>
+    /// Gets the RegistrationsBaseUr for the current service index.
+    /// </summary>
+    /// <param name="serviceIndex">The NuGet service index..</param>
+    /// <returns>The base URL.</returns>
+    string GetRegistrationsUrl(ServiceIndex serviceIndex);
 }
