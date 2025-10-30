@@ -3,6 +3,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
+using Destructurama;
 using DotBump;
 using DotBump.Common;
 using Serilog;
@@ -62,6 +63,7 @@ void ConfigureLogger()
 #if DEBUG
             .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
 #endif
+            .Destructure.UsingAttributes()
             .WriteTo.File(
                 logFile,
                 rollingInterval: RollingInterval.Day,
@@ -75,6 +77,7 @@ void ConfigureLogger()
 #if DEBUG
             .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
 #endif
+            .Destructure.UsingAttributes()
             .CreateLogger();
     }
 }
