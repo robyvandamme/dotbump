@@ -1,7 +1,6 @@
 ﻿// Copyright © 2025 Roby Van Damme.
 
 using System.Globalization;
-using System.Text.RegularExpressions;
 
 namespace DotBump.Common;
 
@@ -11,10 +10,6 @@ namespace DotBump.Common;
 /// </summary>
 internal record SemanticVersion : IComparable<SemanticVersion>
 {
-    private static readonly Regex s_versionPattern = new(
-        @"^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:-(?<prerelease>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$",
-        RegexOptions.Compiled);
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SemanticVersion"/> class.
     /// Creates a new semantic version from a version string.
@@ -23,31 +18,34 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     /// Version string in format x.y.z or x.y.z-prerelease
     /// where prerelease can be any combination of alphanumerics and hyphens separated by dots
     /// (e.g., "1.0.0-alpha", "1.0.0-beta.2", "1.0.0-rc.1", "1.0.0-preview.1.25080.5", etc.)
-    /// When the version parameter does not match the version pattern the version is set to "0.0.0".
+    /// When the version parameter does not match the sematic version pattern an exception is thrown.
     /// </param>
+    /// <exception cref="ArgumentException">When the version parameter does not match the sematic version pattern.</exception>
     public SemanticVersion(string version)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
-        // TODO: this now lives in 2 places... What is the best approach here?
-        var match = s_versionPattern.Match(version);
+        // NOTE: for now throw an exception in case of invalid version strings.
+        // For NuGet feeds that contain invalid version strings the SemanticVersionConverter is used to handle
+        // the invalid cases before this constructor is called.
+        // Logic is centralized in the extension method.
+        // Not sure if this is the right approach, will become clearer if more exceptions show up.
+        var match = version.MatchesSemanticVersionPattern();
         if (!match.Success)
         {
-            Major = 0;
-            Minor = 0;
-            Patch = 0;
+            throw new ArgumentException(
+                $"The version '{version}' does not have the expected format x.y.z[-prerelease]",
+                nameof(version));
         }
-        else
-        {
-            Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
-            Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
-            Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
 
-            if (match.Groups["prerelease"].Success)
-            {
-                PreRelease = match.Groups["prerelease"].Value;
-                IsPreRelease = true;
-            }
+        Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
+        Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
+        Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
+
+        if (match.Groups["prerelease"].Success)
+        {
+            PreRelease = match.Groups["prerelease"].Value;
+            IsPreRelease = true;
         }
     }
 
