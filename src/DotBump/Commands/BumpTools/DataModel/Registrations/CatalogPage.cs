@@ -64,7 +64,7 @@ internal record CatalogPage
                 return false;
             }
 
-            if (Items.Count > 0)
+            if (Items.Count == 0)
             {
                 return false;
             }

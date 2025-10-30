@@ -2,6 +2,7 @@
 
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpTools.DataModel.NuGetClientConfiguration;
+using DotBump.Commands.BumpTools.DataModel.Report;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
 using Serilog;
@@ -14,13 +15,13 @@ internal class BumpToolsHandler(
     INuGetReleaseService nuGetReleaseService,
     ILogger logger) : IBumpToolsHandler
 {
-    public async Task<IReadOnlyCollection<BumpToolResult>> HandleAsync(BumpType bumpType)
+    public async Task<BumpReport> HandleAsync(BumpType bumpType)
     {
         logger.MethodStart(nameof(BumpSdkHandler), nameof(HandleAsync), bumpType);
 
-        var bumpToolResults = new List<BumpToolResult>();
-
         var manifest = toolFileService.GetToolManifest();
+        var bumpReport = new BumpReport(manifest);
+
         var nuGetConfiguration = toolFileService.GetNuGetConfiguration();
 
         foreach (var nugetPackageSource in nuGetConfiguration.PackageSources)
@@ -53,13 +54,12 @@ internal class BumpToolsHandler(
                     if (pages.Count == 0)
                     {
                         logger.Debug("No new versions found in catalog for {Tool}", tool);
-                        break;
                     }
 
-                    // then there are 2 options?
+                    // then there are 2 options at the moment:
                     // either the release info is in the release index itself
                     // or the release info is in a page linked from the release index
-                    if (pages.First().HasPackageDetails)
+                    else if (pages.First().HasPackageDetails)
                     {
                         // we can extract the version from the pages
                         var newVersion =
@@ -68,21 +68,11 @@ internal class BumpToolsHandler(
                                 tool.Value.SemanticVersion);
                         if (newVersion != null)
                         {
-                            bumpToolResults.Add(
-                                new BumpToolResult(tool.Key, tool.Value.Version, newVersion.ToString()));
                             tool.Value.Version = newVersion.ToString();
                         }
                     }
                     else
                     {
-                        // TODO: get the relevant detail pages
-                        //  However... it might be possible to pick up the version from the index?
-                        //  in case the upper one is one that we can use? If the upper one is one we can use we pick that one
-                        //  otherwise we need to dig deeper.
-                        //  So: first check if we have a usable version available here: that would be the last available version only?
-                        //  if not fetch the relevant pages.
-                        //  For now: fetch the relevant pages. Add the optimization to the backlog.
-                        //  That would be Pages.Last.HasMatchingVersion or something along those lines
                         var detailPages = await nuGetClient.GetRelevantDetailCatalogPagesAsync(pages);
                         var newVersion =
                             nuGetReleaseService.TryGetNewMinorOrPatchVersionFromDetailCatalogPages(
@@ -90,8 +80,6 @@ internal class BumpToolsHandler(
                                 tool.Value.SemanticVersion);
                         if (newVersion != null)
                         {
-                            bumpToolResults.Add(
-                                new BumpToolResult(tool.Key, tool.Value.Version, newVersion.ToString()));
                             tool.Value.Version = newVersion.ToString();
                         }
                     }
@@ -99,17 +87,15 @@ internal class BumpToolsHandler(
             }
         }
 
-        // TODO: only save when there are changes.
-        // do we always have results? depends on the strategy.
-        // If we look at it as a report, we include all tools and the new and the old version? Even when there are no updates? Yes....
-        // So the question is: always report everything or only report changes?
-        if (bumpToolResults.Any(o => o.NewVersion != o.OldVersion))
+        bumpReport.ReportChanges(manifest);
+
+        if (bumpReport.HasChanges)
         {
             toolFileService.SaveToolManifest(manifest);
         }
 
-        logger.MethodReturn(nameof(BumpSdkHandler), nameof(HandleAsync), bumpToolResults);
+        logger.MethodReturn(nameof(BumpSdkHandler), nameof(HandleAsync), bumpReport);
 
-        return bumpToolResults;
+        return bumpReport;
     }
 }

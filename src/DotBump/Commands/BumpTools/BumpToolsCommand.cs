@@ -38,22 +38,32 @@ internal class BumpToolsCommand(
 
             console.MarkupLine($"Bumping Tools with settings: type={bumpType}, output: {outputFile ?? "none"}");
 
-            var result = await bumpToolsHandler.HandleAsync(bumpType);
+            var bumpReport = await bumpToolsHandler.HandleAsync(bumpType);
 
-            if (result.Count == 0)
+            if (!bumpReport.HasChanges)
             {
                 console.MarkupLine("No tool versions were bumped.");
             }
-
-            foreach (var update in result)
+            else
             {
-                console.MarkupLine(update.ToString());
+                console.MarkupLine("Tool versions bumped:");
+                foreach (var bumpResult in bumpReport.Results)
+                {
+                    if (bumpResult.WasBumped)
+                    {
+                        console.MarkupLine(bumpResult.ToString());
+                    }
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(outputFile))
             {
                 logger.Debug("Writing output to file {File}", outputFile);
-                File.WriteAllText(outputFile, JsonSerializer.Serialize(result), new UTF8Encoding());
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                };
+                File.WriteAllText(outputFile, JsonSerializer.Serialize(bumpReport, options), new UTF8Encoding());
             }
         }
 #pragma warning disable CA1031

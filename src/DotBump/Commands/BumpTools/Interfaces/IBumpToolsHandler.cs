@@ -1,8 +1,10 @@
 // Copyright © 2025 Roby Van Damme.
 
+using DotBump.Commands.BumpTools.DataModel.Report;
+
 namespace DotBump.Commands.BumpTools.Interfaces;
 
 internal interface IBumpToolsHandler
 {
-    Task<IReadOnlyCollection<BumpToolResult>> HandleAsync(BumpType bumpType);
+    Task<BumpReport> HandleAsync(BumpType bumpType);
 }
