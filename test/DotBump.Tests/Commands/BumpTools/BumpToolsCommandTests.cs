@@ -24,19 +24,51 @@ public class BumpToolsCommandTests
             WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
 
+        public class No_Tools_Manifest
+        {
+            [Fact]
+            public async Task Returns_1_And_FileNotFoundException()
+            {
+                var directory = new LocalDirectory("./.config");
+                directory.EnsureFileDeleted("dotnet-tools.json");
+
+                var loggerMock = new Mock<ILogger>().Object;
+                using var testConsole = new TestConsole();
+                var fileService = new ToolFileService(loggerMock);
+                var clientFactory = new ClientFactory(loggerMock);
+                var releaseService = new NuGetReleaseService(loggerMock);
+                var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
+
+                var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+                var arguments = new[] { "bump", "tools" };
+                var remainingArguments = new Mock<IRemainingArguments>();
+                var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
+                var result = await command.ExecuteAsync(context, new BumpToolsSettings());
+                result.ShouldBe(1);
+                testConsole.Output.ShouldContain("FileNotFoundException: Tool manifest file not found");
+            }
+        }
+
         public class No_Config_Parameter_And_No_BumpType_Parameter
         {
             [Fact]
             public async Task Updates_Tools_To_Latest_Minor_Or_Patch_Version_And_Returns_0()
             {
-                // TODO: use repeatable data, this will break when gitversion updates
                 var tools = new Dictionary<string, ToolManifestEntry>();
+
+                // latest minor is 10.4.1. Should be stable since version 11 has been released.
+                // latest patch should be 10.1.2
                 tools.Add(
-                    "gitversion.tool",
+                    "dotnet-sonarscanner",
                     new ToolManifestEntry
                     {
-                        Version = "6.0.4", RollForward = false, Commands = ["dotnet-gitversion"],
+                        Version = "10.1.0", RollForward = false, Commands = ["dotnet-sonarscanner"],
                     });
+
+                // this is an old version. Minor should bump to 3.3.1. Patch should bump to 3.2.3
+                tools.Add(
+                    "amazon.lambda.tools",
+                    new ToolManifestEntry { Version = "3.2.0", RollForward = false, Commands = ["dotnet-lambda"], });
 
                 var manifest = new ToolManifest() { Version = 1, IsRoot = true, Tools = tools };
                 var directory = new LocalDirectory("./.config");
@@ -60,7 +92,10 @@ public class BumpToolsCommandTests
                 result.ShouldBe(0);
 
                 var updatedManifest = fileService.GetToolManifest();
-                updatedManifest.Tools.First(o => o.Key.Equals("gitversion.tool")).Value.Version.ShouldBe("6.4.0");
+                updatedManifest.Tools.First(o => o.Key.Equals("dotnet-sonarscanner"))
+                    .Value.Version.ShouldBe("10.4.1");
+                updatedManifest.Tools.First(o => o.Key.Equals("amazon.lambda.tools"))
+                    .Value.Version.ShouldBe("3.3.1");
             }
 
             [Fact(Skip = "SDK Test - Review - Needed for Tools?")]
