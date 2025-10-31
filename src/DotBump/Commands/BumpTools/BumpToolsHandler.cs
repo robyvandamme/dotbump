@@ -28,13 +28,6 @@ internal class BumpToolsHandler(
         {
             var clientConfig = new NuGetClientConfig(nugetPackageSource.Key, nuGetConfiguration, logger);
 
-            if (!clientConfig.Url.Equals("https://api.nuget.org/v3/index.json", StringComparison.OrdinalIgnoreCase))
-            {
-                logger.Warning(
-                    "Only the package source https://api.nuget.org/v3/index.json is supported at the moment");
-                break;
-            }
-
             using var nuGetClient = clientFactory.CreateNuGetClient(clientConfig);
             var index = await nuGetClient.GetServiceIndexAsync(clientConfig.Url).ConfigureAwait(false);
             var baseUrl = nuGetReleaseService.GetRegistrationsUrl(index);
