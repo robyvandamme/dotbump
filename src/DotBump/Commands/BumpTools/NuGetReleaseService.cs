@@ -93,12 +93,16 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
         {
             foreach (var catalogPage in catalogPages)
             {
-                versions.AddRange(catalogPage.Items.Select(o => o.CatalogEntry.SemanticVersion));
+                // If listed is null (like in the GitHub feed, use true
+                var listedItems = catalogPage.Items.Where(o => o.CatalogEntry.Listed ?? true);
+                versions.AddRange(listedItems.Select(o => o.CatalogEntry.SemanticVersion));
             }
         }
         else
         {
-            versions.AddRange(catalogPages.First().Items.Select(o => o.CatalogEntry.SemanticVersion));
+            // If listed is null (like in the GitHub feed, use true
+            var listedItems = catalogPages.First().Items.Where(o => o.CatalogEntry.Listed ?? true);
+            versions.AddRange(listedItems.Select(o => o.CatalogEntry.SemanticVersion));
         }
 
         if (currentVersion.IsPreRelease)

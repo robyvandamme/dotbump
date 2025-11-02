@@ -42,7 +42,7 @@ internal record PackageDetails
     // public string LicenseUrl { get; init; }
 
     [JsonPropertyName("listed")]
-    public bool Listed { get; init; }
+    public bool? Listed { get; init; }
 
     // [JsonPropertyName("minClientVersion")]
     // public string MinClientVersion { get; init; }
