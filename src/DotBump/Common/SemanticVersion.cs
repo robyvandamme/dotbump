@@ -18,41 +18,46 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     /// Version string in format x.y.z or x.y.z-prerelease
     /// where prerelease can be any combination of alphanumerics and hyphens separated by dots
     /// (e.g., "1.0.0-alpha", "1.0.0-beta.2", "1.0.0-rc.1", "1.0.0-preview.1.25080.5", etc.)
-    /// When the version parameter does not match the sematic version pattern an exception is thrown.
+    /// When the version parameter does not match the sematic version pattern the semantic version is set to 0.0.0 and
+    /// the <see cref="IsValid"/> property is set to false.
     /// </param>
     /// <exception cref="ArgumentException">When the version parameter does not match the sematic version pattern.</exception>
     public SemanticVersion(string version)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
-        // NOTE: for now throw an exception in case of invalid version strings.
-        // For NuGet feeds that contain invalid version strings the SemanticVersionConverter is used to handle
-        // the invalid cases before this constructor is called.
-        // Logic is centralized in the extension method.
-        // Not sure if this is the right approach, will become clearer if more exceptions show up.
+        Version = version;
+
         var match = version.MatchesSemanticVersionPattern();
         if (!match.Success)
         {
-            // throw new ArgumentException(
-            //     $"The version '{version}' does not have the expected format x.y.z[-prerelease]",
-            //     nameof(version));
-            Major = 0;
-            Minor = 0;
-            Patch = 0;
+            Major = Minor = Patch = 0;
+            IsValid = false;
         }
         else
         {
             Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
             Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
             Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
-        }
+            IsValid = true;
 
-        if (match.Groups["prerelease"].Success)
-        {
-            PreRelease = match.Groups["prerelease"].Value;
-            IsPreRelease = true;
+            if (match.Groups["prerelease"].Success)
+            {
+                PreRelease = match.Groups["prerelease"].Value;
+                IsPreRelease = true;
+            }
         }
     }
+
+    /// <summary>
+    /// Gets the input version string.
+    /// </summary>
+    public string Version { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the input version string is valid.
+    /// </summary>
+    public bool IsValid { get; }
 
     /// <summary>
     /// Gets the major version number.
