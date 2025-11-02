@@ -61,8 +61,9 @@ internal record PackageDetails
     [JsonPropertyName("summary")]
     public string Summary { get; init; }
 
+    [JsonConverter(typeof(StringOrStringArrayConverter))]
     [JsonPropertyName("tags")]
-    public IEnumerable Tags { get; init; }
+    public IEnumerable<string> Tags { get; init; }
 
     [JsonPropertyName("title")]
     public string Title { get; init; }

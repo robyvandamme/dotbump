@@ -33,14 +33,19 @@ internal record SemanticVersion : IComparable<SemanticVersion>
         var match = version.MatchesSemanticVersionPattern();
         if (!match.Success)
         {
-            throw new ArgumentException(
-                $"The version '{version}' does not have the expected format x.y.z[-prerelease]",
-                nameof(version));
+            // throw new ArgumentException(
+            //     $"The version '{version}' does not have the expected format x.y.z[-prerelease]",
+            //     nameof(version));
+            Major = 0;
+            Minor = 0;
+            Patch = 0;
         }
-
-        Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
-        Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
-        Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
+        else
+        {
+            Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
+            Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
+            Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
+        }
 
         if (match.Groups["prerelease"].Success)
         {
