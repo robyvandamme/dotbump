@@ -1,6 +1,5 @@
 // Copyright © 2025 Roby Van Damme.
 
-using DotBump.Commands.BumpTools.DataModel.Catalog;
 using DotBump.Commands.BumpTools.DataModel.NuGetService;
 using DotBump.Commands.BumpTools.DataModel.Registrations;
 using DotBump.Common;
@@ -24,9 +23,9 @@ internal interface INuGetReleaseService
         ICollection<CatalogPage> catalogPages,
         SemanticVersion currentVersion);
 
-    SemanticVersion? TryGetNewMinorOrPatchVersionFromDetailCatalogPages(
-        ICollection<NuGetCatalogPage> catalogPages,
-        SemanticVersion currentVersion);
+    // SemanticVersion? TryGetNewMinorOrPatchVersionFromDetailCatalogPages(
+    //     ICollection<NuGetCatalogPage> catalogPages,
+    //     SemanticVersion currentVersion);
 
     /// <summary>
     /// Gets the RegistrationsBaseUr for the current service index.

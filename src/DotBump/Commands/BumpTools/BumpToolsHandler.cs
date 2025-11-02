@@ -68,7 +68,7 @@ internal class BumpToolsHandler(
                     {
                         var detailPages = await nuGetClient.GetRelevantDetailCatalogPagesAsync(pages);
                         var newVersion =
-                            nuGetReleaseService.TryGetNewMinorOrPatchVersionFromDetailCatalogPages(
+                            nuGetReleaseService.TryGetNewMinorOrPatchVersionFromCatalogPages(
                                 detailPages.ToList(),
                                 tool.Value.SemanticVersion);
                         if (newVersion != null)

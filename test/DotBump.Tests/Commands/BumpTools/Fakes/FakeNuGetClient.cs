@@ -1,7 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Text.Json;
-using DotBump.Commands.BumpTools.DataModel.Catalog;
 using DotBump.Commands.BumpTools.DataModel.NuGetService;
 using DotBump.Commands.BumpTools.DataModel.Registrations;
 using DotBump.Commands.BumpTools.Interfaces;
@@ -71,18 +70,13 @@ internal class FakeNuGetClient : INuGetClient
         return Task.FromResult<RegistrationIndex?>(null);
     }
 
-    public Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(
+    public Task<IEnumerable<CatalogPage>> GetRelevantDetailCatalogPagesAsync(
         IReadOnlyCollection<CatalogPage> catalogPages)
     {
         throw new NotImplementedException();
     }
 
     public Task<RegistrationIndex?> GetPackageInformationAsync(string baseUrl, string packageId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(IEnumerable<CatalogPage> catalogPages)
     {
         throw new NotImplementedException();
     }

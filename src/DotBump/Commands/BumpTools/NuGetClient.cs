@@ -2,7 +2,6 @@
 
 using System.Net;
 using System.Text.Json;
-using DotBump.Commands.BumpTools.DataModel.Catalog;
 using DotBump.Commands.BumpTools.DataModel.NuGetService;
 using DotBump.Commands.BumpTools.DataModel.Registrations;
 using DotBump.Commands.BumpTools.Interfaces;
@@ -157,19 +156,19 @@ internal class NuGetClient : INuGetClient, IDisposable
         return null;
     }
 
-    public async Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(
+    public async Task<IEnumerable<CatalogPage>> GetRelevantDetailCatalogPagesAsync(
         IReadOnlyCollection<CatalogPage> catalogPages)
     {
         _logger.MethodStart(nameof(NuGetClient), nameof(GetRelevantDetailCatalogPagesAsync), catalogPages);
 
         ArgumentNullException.ThrowIfNull(catalogPages);
 
-        var result = new List<NuGetCatalogPage>();
+        var result = new List<CatalogPage>();
 
         foreach (var catalogPage in catalogPages)
         {
             var json = await _httpClient.GetStringAsync(new Uri(catalogPage.Id)).ConfigureAwait(false);
-            var detailPage = JsonSerializer.Deserialize<NuGetCatalogPage>(json, _defaultOptions);
+            var detailPage = JsonSerializer.Deserialize<CatalogPage>(json, _defaultOptions);
             if (detailPage != null)
             {
                 result.Add(detailPage);

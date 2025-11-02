@@ -1,6 +1,5 @@
 // Copyright © 2025 Roby Van Damme.
 
-using DotBump.Commands.BumpTools.DataModel.Catalog;
 using DotBump.Commands.BumpTools.DataModel.NuGetService;
 using DotBump.Commands.BumpTools.DataModel.Registrations;
 
@@ -12,8 +11,7 @@ internal interface INuGetClient
 
     Task<RegistrationIndex?> GetPackageInformationAsync(IReadOnlyCollection<string> baseUrls, string packageId);
 
-    Task<IEnumerable<NuGetCatalogPage>> GetRelevantDetailCatalogPagesAsync(
-        IReadOnlyCollection<CatalogPage> catalogPages);
+    Task<IEnumerable<CatalogPage>> GetRelevantDetailCatalogPagesAsync(IReadOnlyCollection<CatalogPage> catalogPages);
 
     Task<RegistrationIndex?> GetPackageInformationAsync(string baseUrl, string packageId);
 }
