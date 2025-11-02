@@ -11,22 +11,22 @@ internal record Package
     [JsonPropertyName("@id")]
     public string Id { get; init; }
 
-    [JsonPropertyName("@type")]
-    public string Type { get; init; }
+    // [JsonPropertyName("@type")]
+    // public string Type { get; init; }
 
-    [JsonPropertyName("commitId")]
-    public string CommitId { get; init; }
+    // [JsonPropertyName("commitId")]
+    // public string CommitId { get; init; }
 
-    [JsonPropertyName("commitTimeStamp")]
-    public DateTime CommitTimeStamp { get; init; }
+    // [JsonPropertyName("commitTimeStamp")]
+    // public DateTime CommitTimeStamp { get; init; }
 
     [JsonPropertyName("catalogEntry")]
     public PackageDetails CatalogEntry { get; init; }
 
-    [JsonPropertyName("packageContent")]
-    public string PackageContent { get; init; }
+    // [JsonPropertyName("packageContent")]
+    // public string PackageContent { get; init; }
 
-    [JsonPropertyName("registration")]
-    public string Registration { get; init; }
+    // [JsonPropertyName("registration")]
+    // public string Registration { get; init; }
 }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.

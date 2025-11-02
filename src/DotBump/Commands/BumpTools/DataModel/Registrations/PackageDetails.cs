@@ -17,63 +17,63 @@ internal record PackageDetails
     [JsonPropertyName("@type")]
     public string Type { get; init; }
 
-    [JsonPropertyName("authors")]
-    public string Authors { get; init; }
+    // [JsonPropertyName("authors")]
+    // public string Authors { get; init; }
 
-    [JsonPropertyName("dependencyGroups")]
-    public IEnumerable DependencyGroups { get; init; }
+    // [JsonPropertyName("dependencyGroups")]
+    // public IEnumerable DependencyGroups { get; init; }
 
-    [JsonPropertyName("description")]
-    public string Description { get; init; }
+    // [JsonPropertyName("description")]
+    // public string Description { get; init; }
 
-    [JsonPropertyName("iconUrl")]
-    public string IconUrl { get; init; }
+    // [JsonPropertyName("iconUrl")]
+    // public string IconUrl { get; init; }
 
-    [JsonPropertyName("id")]
-    public string PackageId { get; init; }
+    // [JsonPropertyName("id")]
+    // public string PackageId { get; init; }
 
-    [JsonPropertyName("language")]
-    public string Language { get; init; }
+    // [JsonPropertyName("language")]
+    // public string Language { get; init; }
 
-    [JsonPropertyName("licenseExpression")]
-    public string LicenseExpression { get; init; }
+    // [JsonPropertyName("licenseExpression")]
+    // public string LicenseExpression { get; init; }
 
-    [JsonPropertyName("licenseUrl")]
-    public string LicenseUrl { get; init; }
+    // [JsonPropertyName("licenseUrl")]
+    // public string LicenseUrl { get; init; }
 
     [JsonPropertyName("listed")]
     public bool Listed { get; init; }
 
-    [JsonPropertyName("minClientVersion")]
-    public string MinClientVersion { get; init; }
+    // [JsonPropertyName("minClientVersion")]
+    // public string MinClientVersion { get; init; }
 
-    [JsonPropertyName("packageContent")]
-    public string PackageContent { get; init; }
+    // [JsonPropertyName("packageContent")]
+    // public string PackageContent { get; init; }
 
-    [JsonPropertyName("projectUrl")]
-    public string ProjectUrl { get; init; }
+    // [JsonPropertyName("projectUrl")]
+    // public string ProjectUrl { get; init; }
 
-    [JsonPropertyName("published")]
-    public DateTime Published { get; init; }
+    // [JsonPropertyName("published")]
+    // public DateTime Published { get; init; }
 
-    [JsonPropertyName("requireLicenseAcceptance")]
-    public bool RequireLicenseAcceptance { get; init; }
+    // [JsonPropertyName("requireLicenseAcceptance")]
+    // public bool RequireLicenseAcceptance { get; init; }
 
-    [JsonPropertyName("summary")]
-    public string Summary { get; init; }
+    // [JsonPropertyName("summary")]
+    // public string Summary { get; init; }
 
-    [JsonConverter(typeof(StringOrStringArrayConverter))]
-    [JsonPropertyName("tags")]
-    public IEnumerable<string> Tags { get; init; }
+    // [JsonConverter(typeof(StringOrStringArrayConverter))]
+    // [JsonPropertyName("tags")]
+    // public IEnumerable<string> Tags { get; init; }
 
-    [JsonPropertyName("title")]
-    public string Title { get; init; }
+    // [JsonPropertyName("title")]
+    // public string Title { get; init; }
 
     [JsonPropertyName("version")]
     public string Version { get; init; }
 
-    [JsonPropertyName("readmeUrl")]
-    public string ReadmeUrl { get; init; }
+    // [JsonPropertyName("readmeUrl")]
+    // public string ReadmeUrl { get; init; }
 
     [JsonIgnore]
     public SemanticVersion SemanticVersion
