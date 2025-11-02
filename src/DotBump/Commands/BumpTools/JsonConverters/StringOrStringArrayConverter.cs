@@ -3,7 +3,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace DotBump.Commands.BumpTools;
+namespace DotBump.Commands.BumpTools.JsonConverters;
 
 public class StringOrStringArrayConverter : JsonConverter<IEnumerable<string>>
 {
@@ -11,24 +11,22 @@ public class StringOrStringArrayConverter : JsonConverter<IEnumerable<string>>
     {
         if (reader.TokenType == JsonTokenType.String)
         {
-            string value = reader.GetString();
+            var value = reader.GetString();
 
-            // Handle empty string
             if (string.IsNullOrEmpty(value))
+            {
                 return new List<string>();
-
-            // Or if you want to treat it as a single item:
-            // return new List<string> { value };
+            }
         }
 
         if (reader.TokenType == JsonTokenType.StartArray)
         {
-            List<string> list = new List<string>();
+            var list = new List<string>();
             while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
             {
                 if (reader.TokenType == JsonTokenType.String)
                 {
-                    list.Add(reader.GetString());
+                    list.Add(reader.GetString() ?? string.Empty);
                 }
             }
 
@@ -41,7 +39,7 @@ public class StringOrStringArrayConverter : JsonConverter<IEnumerable<string>>
     public override void Write(Utf8JsonWriter writer, IEnumerable<string> value, JsonSerializerOptions options)
     {
         writer.WriteStartArray();
-        foreach (string item in value)
+        foreach (var item in value)
         {
             writer.WriteStringValue(item);
         }

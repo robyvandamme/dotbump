@@ -2,6 +2,7 @@
 
 using System.Collections;
 using System.Text.Json.Serialization;
+using DotBump.Commands.BumpTools.JsonConverters;
 using DotBump.Common;
 
 namespace DotBump.Commands.BumpTools.DataModel.Registrations;
