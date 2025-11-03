@@ -70,10 +70,15 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
         ArgumentNullException.ThrowIfNull(index);
         ArgumentNullException.ThrowIfNull(currentVersion);
 
-        var results = index.CatalogPages.FindAll(o => o.UpperSemanticVersion > currentVersion
-                                                      && o.LowerSemanticVersion.Major <= currentVersion.Major);
+        if (index.CatalogPages != null)
+        {
+            var results = index.CatalogPages.FindAll(o => o.UpperSemanticVersion > currentVersion
+                                                          && o.LowerSemanticVersion.Major <= currentVersion.Major);
 
-        return results;
+            return results;
+        }
+
+        return new List<CatalogPage>();
     }
 
     public SemanticVersion? TryGetNewMinorOrPatchVersionFromCatalogPages(
@@ -93,16 +98,23 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
         {
             foreach (var catalogPage in catalogPages)
             {
-                // If listed is null (like in the GitHub feed, use true
-                var listedItems = catalogPage.Items.Where(o => o.CatalogEntry.Listed ?? true);
-                versions.AddRange(listedItems.Select(o => o.CatalogEntry.SemanticVersion));
+                if (catalogPage.Items != null)
+                {
+                    // If listed is null (like in the GitHub feed, use true
+                    var listedItems = catalogPage.Items.Where(o => o.CatalogEntry.Listed ?? true);
+                    versions.AddRange(listedItems.Select(o => o.CatalogEntry.SemanticVersion));
+                }
             }
         }
         else
         {
             // If listed is null (like in the GitHub feed, use true
-            var listedItems = catalogPages.First().Items.Where(o => o.CatalogEntry.Listed ?? true);
-            versions.AddRange(listedItems.Select(o => o.CatalogEntry.SemanticVersion));
+            var packages = catalogPages.First().Items;
+            if (packages != null)
+            {
+                var listedItems = packages.Where(o => o.CatalogEntry.Listed ?? true);
+                versions.AddRange(listedItems.Select(o => o.CatalogEntry.SemanticVersion));
+            }
         }
 
         if (currentVersion.IsPreRelease)
