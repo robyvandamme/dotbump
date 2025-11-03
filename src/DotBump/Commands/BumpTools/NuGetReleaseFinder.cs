@@ -8,11 +8,11 @@ using Serilog;
 
 namespace DotBump.Commands.BumpTools;
 
-internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
+internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
 {
     public IReadOnlyCollection<string> GetRegistrationsUrls(IReadOnlyCollection<ServiceIndex> serviceIndexes)
     {
-        logger.MethodStart(nameof(NuGetReleaseService), nameof(GetRegistrationsUrls), serviceIndexes);
+        logger.MethodStart(nameof(NuGetReleaseFinder), nameof(GetRegistrationsUrls), serviceIndexes);
 
         ArgumentNullException.ThrowIfNull(serviceIndexes);
 
@@ -29,14 +29,14 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
             }
         }
 
-        logger.MethodReturn(nameof(NuGetReleaseService), nameof(GetRegistrationsUrls), baseUrls);
+        logger.MethodReturn(nameof(NuGetReleaseFinder), nameof(GetRegistrationsUrls), baseUrls);
 
         return baseUrls;
     }
 
     public string GetRegistrationsBaseUrl(ServiceIndex serviceIndex)
     {
-        logger.MethodStart(nameof(NuGetReleaseService), nameof(GetRegistrationsBaseUrl), serviceIndex);
+        logger.MethodStart(nameof(NuGetReleaseFinder), nameof(GetRegistrationsBaseUrl), serviceIndex);
 
         ArgumentNullException.ThrowIfNull(serviceIndex);
 
@@ -46,7 +46,7 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
 
         if (registrationResource != null)
         {
-            logger.MethodReturn(nameof(NuGetReleaseService), nameof(GetRegistrationsBaseUrl), registrationResource.Id);
+            logger.MethodReturn(nameof(NuGetReleaseFinder), nameof(GetRegistrationsBaseUrl), registrationResource.Id);
             return registrationResource.Id;
         }
 
@@ -55,11 +55,13 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
 
     public List<CatalogPage> TryFindNewReleaseCatalogPages(
         RegistrationIndex index,
-        SemanticVersion currentVersion)
+        SemanticVersion currentVersion,
+        BumpType bumpType)
     {
         ArgumentNullException.ThrowIfNull(index);
         ArgumentNullException.ThrowIfNull(currentVersion);
 
+        // TODO: is there a difference between minor and patch here? I assume there should be....
         if (index.CatalogPages != null)
         {
             var results = index.CatalogPages.FindAll(o => o.UpperSemanticVersion > currentVersion
@@ -71,12 +73,26 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
         return new List<CatalogPage>();
     }
 
-    public SemanticVersion? TryGetNewMinorOrPatchVersionFromCatalogPages(
+    /// <summary>
+    /// Tries to find a new version in the provided catalog pages using the provided bump type.
+    /// If the current version is a pre-release version then pre-release versions will be taken into account, otherwise
+    /// pre-release versions will be excluded.
+    /// </summary>
+    /// <param name="catalogPages">The list of catalog pages.</param>
+    /// <param name="currentVersion">The current version.</param>
+    /// <param name="bumpType">The bump type.</param>
+    /// <returns>A new version if one is found.</returns>
+    public SemanticVersion? TryFindVersionInCatalogPages(
         ICollection<CatalogPage> catalogPages,
-        SemanticVersion currentVersion)
+        SemanticVersion currentVersion,
+        BumpType bumpType)
     {
         ArgumentNullException.ThrowIfNull(catalogPages);
         ArgumentNullException.ThrowIfNull(currentVersion);
+        if (bumpType != BumpType.Patch && bumpType != BumpType.Minor)
+        {
+            throw new ArgumentOutOfRangeException(nameof(bumpType));
+        }
 
         var versions = new List<SemanticVersion>();
         if (catalogPages.Count == 0)
@@ -107,6 +123,18 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
             }
         }
 
+        if (bumpType == BumpType.Minor)
+        {
+            return TryFindNewMinorOrPatchVersion(currentVersion, versions);
+        }
+
+        return TryFindNewPatchVersion(currentVersion, versions);
+    }
+
+    private static SemanticVersion? TryFindNewMinorOrPatchVersion(
+        SemanticVersion currentVersion,
+        List<SemanticVersion> versions)
+    {
         if (currentVersion.IsPreRelease)
         {
             var availableNewVersions =
@@ -118,6 +146,30 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
         {
             var availableNewVersions =
                 versions.Where(o => o.Major == currentVersion.Major && o > currentVersion && o.IsPreRelease == false);
+            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
+            return newestVersion;
+        }
+    }
+
+    private static SemanticVersion? TryFindNewPatchVersion(
+        SemanticVersion currentVersion,
+        List<SemanticVersion> versions)
+    {
+        if (currentVersion.IsPreRelease)
+        {
+            var availableNewVersions =
+                versions.Where(o => o.Major == currentVersion.Major
+                                    && o.Minor == currentVersion.Minor
+                                    && o > currentVersion);
+            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
+            return newestVersion;
+        }
+        else
+        {
+            var availableNewVersions =
+                versions.Where(o => o.Major == currentVersion.Major
+                                    && o.Minor == currentVersion.Minor
+                                    && o > currentVersion && o.IsPreRelease == false);
             var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
             return newestVersion;
         }

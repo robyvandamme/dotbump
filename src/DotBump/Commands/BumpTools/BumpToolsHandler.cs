@@ -12,7 +12,7 @@ namespace DotBump.Commands.BumpTools;
 internal class BumpToolsHandler(
     IToolFileService toolFileService,
     INuGetClientFactory nuGetClientFactory,
-    INuGetReleaseService nuGetReleaseService,
+    INuGetReleaseFinder nuGetReleaseFinder,
     ILogger logger) : IBumpToolsHandler
 {
     public async Task<BumpReport> HandleAsync(BumpType bumpType)
@@ -30,7 +30,7 @@ internal class BumpToolsHandler(
 
             using var nuGetClient = nuGetClientFactory.CreateNuGetClient(clientConfig);
             var index = await nuGetClient.GetServiceIndexAsync(clientConfig.Url).ConfigureAwait(false);
-            var baseUrl = nuGetReleaseService.GetRegistrationsBaseUrl(index);
+            var baseUrl = nuGetReleaseFinder.GetRegistrationsBaseUrl(index);
 
             for (var i = 0; i < manifest.Tools.Count; i++)
             {
@@ -40,9 +40,10 @@ internal class BumpToolsHandler(
 
                 if (releaseIndex != null)
                 {
-                    var pages = nuGetReleaseService.TryFindNewReleaseCatalogPages(
+                    var pages = nuGetReleaseFinder.TryFindNewReleaseCatalogPages(
                         releaseIndex,
-                        tool.Value.SemanticVersion);
+                        tool.Value.SemanticVersion,
+                        bumpType);
 
                     if (pages.Count == 0)
                     {
@@ -56,9 +57,10 @@ internal class BumpToolsHandler(
                     {
                         // we can extract the version from the pages
                         var newVersion =
-                            nuGetReleaseService.TryGetNewMinorOrPatchVersionFromCatalogPages(
+                            nuGetReleaseFinder.TryFindVersionInCatalogPages(
                                 pages,
-                                tool.Value.SemanticVersion);
+                                tool.Value.SemanticVersion,
+                                bumpType);
                         if (newVersion != null)
                         {
                             tool.Value.Version = newVersion.ToString();
@@ -68,9 +70,10 @@ internal class BumpToolsHandler(
                     {
                         var detailPages = await nuGetClient.GetRelevantCatalogPagesAsync(pages);
                         var newVersion =
-                            nuGetReleaseService.TryGetNewMinorOrPatchVersionFromCatalogPages(
+                            nuGetReleaseFinder.TryFindVersionInCatalogPages(
                                 detailPages.ToList(),
-                                tool.Value.SemanticVersion);
+                                tool.Value.SemanticVersion,
+                                bumpType);
                         if (newVersion != null)
                         {
                             tool.Value.Version = newVersion.ToString();

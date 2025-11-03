@@ -36,7 +36,7 @@ public class BumpToolsCommandTests
                 using var testConsole = new TestConsole();
                 var fileService = new ToolFileService(loggerMock);
                 var clientFactory = new NuGetClientFactory(loggerMock);
-                var releaseService = new NuGetReleaseService(loggerMock);
+                var releaseService = new NuGetReleaseFinder(loggerMock);
                 var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
 
                 var command = new BumpToolsCommand(testConsole, loggerMock, handler);
@@ -81,7 +81,7 @@ public class BumpToolsCommandTests
                 using var testConsole = new TestConsole();
                 var fileService = new ToolFileService(loggerMock);
                 var clientFactory = new NuGetClientFactory(loggerMock);
-                var releaseService = new NuGetReleaseService(loggerMock);
+                var releaseService = new NuGetReleaseFinder(loggerMock);
                 var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
 
                 var command = new BumpToolsCommand(testConsole, loggerMock, handler);

@@ -43,7 +43,7 @@ internal static class CommandConfiguration
                 .WithExample("sdk", "--debug", "true", "--logfile", "log.txt");
 
             config.Settings.Registrar.Register<IToolFileService, ToolFileService>();
-            config.Settings.Registrar.Register<INuGetReleaseService, NuGetReleaseService>();
+            config.Settings.Registrar.Register<INuGetReleaseFinder, NuGetReleaseFinder>();
             config.Settings.Registrar.Register<IBumpToolsHandler, BumpToolsHandler>();
             config.Settings.Registrar.Register<INuGetClientFactory, NuGetClientFactory>();
 
