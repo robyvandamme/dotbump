@@ -7,9 +7,9 @@ namespace DotBump.Commands.BumpTools.Interfaces;
 
 internal interface IToolFileService
 {
-    ToolManifest GetToolManifest();
+    ToolsManifest GetToolManifest();
 
     NuGetConfig GetNuGetConfiguration();
 
-    void SaveToolManifest(ToolManifest manifest);
+    void SaveToolManifest(ToolsManifest manifest);
 }

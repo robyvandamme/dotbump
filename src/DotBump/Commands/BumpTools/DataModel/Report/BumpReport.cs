@@ -7,9 +7,9 @@ namespace DotBump.Commands.BumpTools.DataModel.Report;
 
 internal class BumpReport
 {
-    public BumpReport(ToolManifest toolManifest)
+    public BumpReport(ToolsManifest toolsManifest)
     {
-        foreach (var toolManifestEntry in toolManifest.Tools)
+        foreach (var toolManifestEntry in toolsManifest.Tools)
         {
             Results.Add(new BumpResult(toolManifestEntry.Key, toolManifestEntry.Value.Version));
         }
@@ -19,9 +19,9 @@ internal class BumpReport
 
     public List<BumpResult> Results { get; set; } = new();
 
-    public void ReportChanges(ToolManifest toolManifest)
+    public void ReportChanges(ToolsManifest toolsManifest)
     {
-        foreach (var toolManifestEntry in toolManifest.Tools)
+        foreach (var toolManifestEntry in toolsManifest.Tools)
         {
             var reportItem = Results.FirstOrDefault(o => o.Id.Equals(
                 toolManifestEntry.Key,

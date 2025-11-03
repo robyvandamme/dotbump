@@ -1,6 +1,7 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Text.Json;
+using System.Xml;
 using System.Xml.Linq;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
 using DotBump.Commands.BumpTools.DataModel.NuGetConfiguration;
@@ -24,7 +25,7 @@ internal class ToolFileService(ILogger logger) : IToolFileService
 
     private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
 
-    public ToolManifest GetToolManifest()
+    public ToolsManifest GetToolManifest()
     {
         logger.MethodStart(nameof(ToolFileService), nameof(GetToolManifest));
 
@@ -34,7 +35,7 @@ internal class ToolFileService(ILogger logger) : IToolFileService
         }
 
         var json = File.ReadAllText(_defaultToolManifestPath);
-        var manifest = JsonSerializer.Deserialize<ToolManifest>(json, s_serializerOptions);
+        var manifest = JsonSerializer.Deserialize<ToolsManifest>(json, s_serializerOptions);
 
         if (manifest == null)
         {
@@ -47,9 +48,10 @@ internal class ToolFileService(ILogger logger) : IToolFileService
     }
 
     /// <summary>
-    /// Gets the package sources from the default config. If there is no default config the default nuget source is used.
+    /// Tries to read a NuGet configuration named "nuget.config" in the current directory.
+    /// If not found a default NuGet configuration is returned with the default https://api.nuget.org/v3/index.json package source.
     /// </summary>
-    /// <returns>A list of package source URL strings.</returns>
+    /// <returns>A NuGet configuration.</returns>
     public NuGetConfig GetNuGetConfiguration()
     {
         logger.MethodStart(nameof(ToolFileService), nameof(GetNuGetConfiguration));
@@ -77,7 +79,12 @@ internal class ToolFileService(ILogger logger) : IToolFileService
         return config;
     }
 
-    public void SaveToolManifest(ToolManifest manifest)
+    /// <summary>
+    /// Saves the default tool manifest.
+    /// </summary>
+    /// <param name="manifest">The updated tools manifest.</param>
+    /// <exception cref="DotBumpException">If the manifest can not be found.</exception>
+    public void SaveToolManifest(ToolsManifest manifest)
     {
         logger.MethodStart(nameof(ToolFileService), nameof(SaveToolManifest));
 
@@ -96,10 +103,25 @@ internal class ToolFileService(ILogger logger) : IToolFileService
         logger.MethodReturn(nameof(ToolFileService), nameof(SaveToolManifest));
     }
 
-    private NuGetConfig ReadFromConfigFile(string filePath)
+    internal NuGetConfig ReadFromConfigFile(string filePath)
     {
         var config = new NuGetConfig();
-        var doc = XDocument.Load(filePath);
+        XDocument doc;
+        try
+        {
+            doc = XDocument.Load(filePath);
+        }
+        catch (XmlException exception)
+        {
+            logger.Error(exception, "An error occured trying to load the NuGet config file {FilePath}", filePath);
+            throw;
+        }
+
+        if (doc.Root == null)
+        {
+            logger.Error("Unable to read the nuget config file at {FilePath} with {Content}", filePath, doc);
+            throw new DotBumpException($"Unable to read the nuget config file at {filePath}.");
+        }
 
         // Parse package sources
         var sourceElements = doc.Root.Element("packageSources")?.Elements("add");
@@ -115,6 +137,16 @@ internal class ToolFileService(ILogger logger) : IToolFileService
                         ProtocolVersion = element.Attribute("protocolVersion")?.Value ?? string.Empty,
                     });
             }
+        }
+
+        if (config.PackageSources.Count == 0)
+        {
+            // No package sources found...
+            logger.Error(
+                "No package sources were found in the NuGet config {FilePath} with content {Content}",
+                filePath,
+                doc);
+            throw new DotBumpException($"No package sources were found in the NuGet config  {filePath}");
         }
 
         // Parse credentials

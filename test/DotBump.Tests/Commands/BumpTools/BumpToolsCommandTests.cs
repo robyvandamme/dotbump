@@ -70,7 +70,7 @@ public class BumpToolsCommandTests
                     "amazon.lambda.tools",
                     new ToolManifestEntry { Version = "3.2.0", RollForward = false, Commands = ["dotnet-lambda"], });
 
-                var manifest = new ToolManifest() { Version = 1, IsRoot = true, Tools = tools };
+                var manifest = new ToolsManifest() { Version = 1, IsRoot = true, Tools = tools };
                 var directory = new LocalDirectory("./.config");
                 directory.EnsureFileDeleted("dotnet-tools.json");
                 directory.EnsureFileCreated(

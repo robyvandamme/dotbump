@@ -5,7 +5,7 @@ namespace DotBump.Commands.BumpTools.DataModel.LocalTools;
 /// <summary>
 /// Represents the structure of the dotnet-tools.json file.
 /// </summary>
-internal class ToolManifest
+internal class ToolsManifest
 {
     public int Version { get; set; }
 
