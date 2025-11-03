@@ -13,7 +13,6 @@ namespace DotBump.Commands.BumpTools;
 internal class NuGetClient : INuGetClient, IDisposable
 {
     private readonly JsonSerializerOptions _defaultOptions;
-    private readonly JsonSerializerOptions _semanticVersionConverterOptions;
 
     private readonly HttpClient _httpClient;
     private readonly ILogger _logger;
@@ -23,10 +22,7 @@ internal class NuGetClient : INuGetClient, IDisposable
         _httpClient = httpClient;
         _logger = logger;
 
-        var semanticVersionConverter = new SemanticVersionConverter(logger);
         _defaultOptions = new JsonSerializerOptions();
-        _semanticVersionConverterOptions = new JsonSerializerOptions();
-        _semanticVersionConverterOptions.Converters.Add(semanticVersionConverter);
     }
 
     public async Task<ServiceIndex> GetServiceIndexAsync(string source)
@@ -100,7 +96,7 @@ internal class NuGetClient : INuGetClient, IDisposable
         try
         {
             var result = await _httpClient.GetStringAsync(packageUrl).ConfigureAwait(false);
-            var registrationIndex = JsonSerializer.Deserialize<RegistrationIndex>(result, _semanticVersionConverterOptions);
+            var registrationIndex = JsonSerializer.Deserialize<RegistrationIndex>(result, _defaultOptions);
             if (registrationIndex != null)
             {
                 _logger.MethodReturn(nameof(NuGetClient), nameof(GetServiceIndexesAsync), registrationIndex);
@@ -141,7 +137,7 @@ internal class NuGetClient : INuGetClient, IDisposable
             // can also use the "https://api.nuget.org/v3/registration5-semver1/{id-lower}/index.json and replace the id, same result... though
             var packageUrl = new Uri(url + "/" + packageId + "/index.json");
             var result = await _httpClient.GetStringAsync(packageUrl).ConfigureAwait(false);
-            var registrationIndex = JsonSerializer.Deserialize<RegistrationIndex>(result, _semanticVersionConverterOptions);
+            var registrationIndex = JsonSerializer.Deserialize<RegistrationIndex>(result, _defaultOptions);
             if (registrationIndex != null)
             {
                 // NOTE: package information can be found at multiple service indexes, so it is possible we need to a bit more here.

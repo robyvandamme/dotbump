@@ -12,14 +12,10 @@ namespace DotBump.Tests.Commands.BumpTools.Fakes;
 internal class FakeNuGetClient : INuGetClient
 {
     private readonly JsonSerializerOptions _defaultOptions;
-    private readonly JsonSerializerOptions _semanticVersionConverterOptions;
 
     public FakeNuGetClient(ILogger logger)
     {
-        var semanticVersionConverter = new SemanticVersionConverter(logger);
         _defaultOptions = new JsonSerializerOptions();
-        _semanticVersionConverterOptions = new JsonSerializerOptions();
-        _semanticVersionConverterOptions.Converters.Add(semanticVersionConverter);
     }
 
     public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(ICollection<string> sources)
@@ -85,7 +81,7 @@ internal class FakeNuGetClient : INuGetClient
     {
         var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/DotMarkdown/package-registration.json";
         var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
-        var index = JsonSerializer.Deserialize<RegistrationIndex>(json, _semanticVersionConverterOptions);
+        var index = JsonSerializer.Deserialize<RegistrationIndex>(json, _defaultOptions);
         return index;
     }
 
@@ -93,7 +89,7 @@ internal class FakeNuGetClient : INuGetClient
     {
         var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/Moq/package-registration.json";
         var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
-        var index = JsonSerializer.Deserialize<RegistrationIndex>(json, _semanticVersionConverterOptions);
+        var index = JsonSerializer.Deserialize<RegistrationIndex>(json, _defaultOptions);
         return index;
     }
 
@@ -101,7 +97,7 @@ internal class FakeNuGetClient : INuGetClient
     {
         var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/DotBumpGitHub/package-registration.json";
         var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
-        var index = JsonSerializer.Deserialize<RegistrationIndex>(json, _semanticVersionConverterOptions);
+        var index = JsonSerializer.Deserialize<RegistrationIndex>(json, _defaultOptions);
         return index;
     }
 }
