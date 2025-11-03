@@ -82,7 +82,7 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
     /// <param name="currentVersion">The current version.</param>
     /// <param name="bumpType">The bump type.</param>
     /// <returns>A new version if one is found.</returns>
-    public SemanticVersion? TryFindVersionInCatalogPages(
+    public SemanticVersion? TryFindNewVersionInCatalogPages(
         ICollection<CatalogPage> catalogPages,
         SemanticVersion currentVersion,
         BumpType bumpType)

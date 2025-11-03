@@ -13,9 +13,8 @@ namespace DotBump.Tests.Commands.BumpTools;
 
 public class NuGetReleaseFinderTests
 {
-    public class TryFindVersionInCatalogPages
+    public class TryFindNewVersionInCatalogPages
     {
-        // public class Given_Inline_Single_Page
         public class OnePageInlineDetailsNuGet
         {
             // NOTE: this one does not cover all cases, so maybe look for a different one
@@ -30,11 +29,10 @@ public class NuGetReleaseFinderTests
 
             [Fact]
 
-            // public void No_New_Minor_Or_Patch_Version_Found_Returns_Null()
             public void No_New_Version_Found_Returns_Null()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
-                var result = service.TryFindVersionInCatalogPages(
+                var result = service.TryFindNewVersionInCatalogPages(
                     RegistrationIndex!.CatalogPages!,
                     new SemanticVersion("0.3.0"),
                     BumpType.Minor); // 0.3.0 is the latest version in the file.
@@ -43,11 +41,10 @@ public class NuGetReleaseFinderTests
 
             [Fact]
 
-            // public void New_Minor_Or_Patch_Version_Found_Returns_Matching_Highest_Version()
             public void Finds_New_Patch_For_Minor_Type()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
-                var result = service.TryFindVersionInCatalogPages(
+                var result = service.TryFindNewVersionInCatalogPages(
                     RegistrationIndex!.CatalogPages!,
                     new SemanticVersion("0.1.0"),
                     BumpType.Minor); // 0.3.0 is the latest version in the file.
@@ -77,7 +74,7 @@ public class NuGetReleaseFinderTests
             public void No_New_Version_Returns_Null_For_Minor_Type()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
-                var minorTypeResult = service.TryFindVersionInCatalogPages(
+                var minorTypeResult = service.TryFindNewVersionInCatalogPages(
                     RegistrationIndex!.CatalogPages!,
                     new SemanticVersion("4.20.72"), // highest version in the page
                     BumpType.Minor);
@@ -88,7 +85,7 @@ public class NuGetReleaseFinderTests
             public void No_New_Version_Returns_Null_For_Patch_Type()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
-                var patchTypeResult = service.TryFindVersionInCatalogPages(
+                var patchTypeResult = service.TryFindNewVersionInCatalogPages(
                     RegistrationIndex!.CatalogPages!,
                     new SemanticVersion("4.20.72"), // highest version in the page
                     BumpType.Patch);
@@ -102,7 +99,7 @@ public class NuGetReleaseFinderTests
                 var catalogPages = RegistrationIndex!.CatalogPages;
                 if (catalogPages != null)
                 {
-                    var result = service.TryFindVersionInCatalogPages(
+                    var result = service.TryFindNewVersionInCatalogPages(
                         catalogPages,
                         new SemanticVersion("4.7.0"),
                         BumpType.Minor);
@@ -111,13 +108,13 @@ public class NuGetReleaseFinderTests
             }
 
             [Fact]
-            public void Finds_Newest_Patch_For_Minor_Type()
+            public void Finds_New_Patch_For_Minor_Type()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
                 var catalogPages = RegistrationIndex!.CatalogPages;
                 if (catalogPages != null)
                 {
-                    var result = service.TryFindVersionInCatalogPages(
+                    var result = service.TryFindNewVersionInCatalogPages(
                         catalogPages,
                         new SemanticVersion("4.20.0"),
                         BumpType.Minor);
@@ -126,13 +123,13 @@ public class NuGetReleaseFinderTests
             }
 
             [Fact]
-            public void Finds_Newest_Patch_For_Patch_Type()
+            public void Finds_New_Patch_For_Patch_Type()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
                 var catalogPages = RegistrationIndex!.CatalogPages;
                 if (catalogPages != null)
                 {
-                    var result = service.TryFindVersionInCatalogPages(
+                    var result = service.TryFindNewVersionInCatalogPages(
                         catalogPages,
                         new SemanticVersion("4.7.0"),
                         BumpType.Patch);
@@ -157,7 +154,7 @@ public class NuGetReleaseFinderTests
             public void No_New_Version_Returns_Null_For_Minor_Type()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
-                var result = service.TryFindVersionInCatalogPages(
+                var result = service.TryFindNewVersionInCatalogPages(
                     RegistrationIndex!.CatalogPages!,
                     new SemanticVersion("0.1.1-beta.8"),
                     BumpType.Minor);
@@ -168,7 +165,7 @@ public class NuGetReleaseFinderTests
             public void No_New_Version_Returns_Null_For_Patch_Type()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
-                var result = service.TryFindVersionInCatalogPages(
+                var result = service.TryFindNewVersionInCatalogPages(
                     RegistrationIndex!.CatalogPages!,
                     new SemanticVersion("0.1.1-beta.8"),
                     BumpType.Patch);
@@ -176,13 +173,13 @@ public class NuGetReleaseFinderTests
             }
 
             [Fact]
-            public void Finds_Newest_PreRelease_Patch_For_Minor_Type()
+            public void Finds_New_PreRelease_Patch_For_Minor_Type()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
                 var catalogPages = RegistrationIndex!.CatalogPages;
                 if (catalogPages != null)
                 {
-                    var result = service.TryFindVersionInCatalogPages(
+                    var result = service.TryFindNewVersionInCatalogPages(
                         catalogPages,
                         new SemanticVersion("0.1.1-beta.7"),
                         BumpType.Minor);
@@ -191,13 +188,13 @@ public class NuGetReleaseFinderTests
             }
 
             [Fact]
-            public void Finds_Newest_PreRelease_Patch_For_Patch_Type()
+            public void Finds_New_PreRelease_Patch_For_Patch_Type()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
                 var catalogPages = RegistrationIndex!.CatalogPages;
                 if (catalogPages != null)
                 {
-                    var result = service.TryFindVersionInCatalogPages(
+                    var result = service.TryFindNewVersionInCatalogPages(
                         catalogPages,
                         new SemanticVersion("0.1.1-beta.7"),
                         BumpType.Patch);

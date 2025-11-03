@@ -15,7 +15,7 @@ internal interface INuGetReleaseFinder
         SemanticVersion currentVersion,
         BumpType bumpType);
 
-    SemanticVersion? TryFindVersionInCatalogPages(
+    SemanticVersion? TryFindNewVersionInCatalogPages(
         ICollection<CatalogPage> catalogPages,
         SemanticVersion currentVersion,
         BumpType bumpType);

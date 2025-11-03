@@ -57,7 +57,7 @@ internal class BumpToolsHandler(
                     {
                         // we can extract the version from the pages
                         var newVersion =
-                            nuGetReleaseFinder.TryFindVersionInCatalogPages(
+                            nuGetReleaseFinder.TryFindNewVersionInCatalogPages(
                                 pages,
                                 tool.Value.SemanticVersion,
                                 bumpType);
@@ -70,7 +70,7 @@ internal class BumpToolsHandler(
                     {
                         var detailPages = await nuGetClient.GetRelevantCatalogPagesAsync(pages);
                         var newVersion =
-                            nuGetReleaseFinder.TryFindVersionInCatalogPages(
+                            nuGetReleaseFinder.TryFindNewVersionInCatalogPages(
                                 detailPages.ToList(),
                                 tool.Value.SemanticVersion,
                                 bumpType);
