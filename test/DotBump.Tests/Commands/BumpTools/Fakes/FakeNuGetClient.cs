@@ -18,33 +18,33 @@ internal class FakeNuGetClient : INuGetClient
         _defaultOptions = new JsonSerializerOptions();
     }
 
-    public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(ICollection<string> sources)
-    {
-        var result = new List<ServiceIndex>();
-        var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/nuget-service-index.json";
-        var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
-        var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(json);
-        if (serviceIndex != null)
-        {
-            result.Add(serviceIndex);
-        }
+    // public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(ICollection<string> sources)
+    // {
+    //     var result = new List<ServiceIndex>();
+    //     var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/nuget-service-index.json";
+    //     var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+    //     var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(json);
+    //     if (serviceIndex != null)
+    //     {
+    //         result.Add(serviceIndex);
+    //     }
+    //
+    //     return result;
+    // }
 
-        return result;
-    }
-
-    public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IReadOnlyCollection<string> sources)
-    {
-        var result = new List<ServiceIndex>();
-        var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/nuget-service-index.json";
-        var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
-        var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(json);
-        if (serviceIndex != null)
-        {
-            result.Add(serviceIndex);
-        }
-
-        return result;
-    }
+    // public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IReadOnlyCollection<string> sources)
+    // {
+    //     var result = new List<ServiceIndex>();
+    //     var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/nuget-service-index.json";
+    //     var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+    //     var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(json);
+    //     if (serviceIndex != null)
+    //     {
+    //         result.Add(serviceIndex);
+    //     }
+    //
+    //     return result;
+    // }
 
     public Task<RegistrationIndex?> GetPackageInformationAsync(IReadOnlyCollection<string> baseUrls, string packageId)
     {
@@ -66,13 +66,17 @@ internal class FakeNuGetClient : INuGetClient
         return Task.FromResult<RegistrationIndex?>(null);
     }
 
-    public Task<IEnumerable<CatalogPage>> GetRelevantDetailCatalogPagesAsync(
-        IReadOnlyCollection<CatalogPage> catalogPages)
+    public Task<IReadOnlyCollection<CatalogPage>> GetRelevantCatalogPagesAsync(IReadOnlyCollection<CatalogPage> catalogPages)
     {
         throw new NotImplementedException();
     }
 
-    public Task<RegistrationIndex?> GetPackageInformationAsync(string baseUrl, string packageId)
+    public Task<RegistrationIndex?> GetPackageInformationAsync(string registrationBaseUrl, string packageId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<ServiceIndex> GetServiceIndexAsync(string packageSourceUrl)
     {
         throw new NotImplementedException();
     }

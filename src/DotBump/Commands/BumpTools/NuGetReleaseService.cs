@@ -10,11 +10,6 @@ namespace DotBump.Commands.BumpTools;
 
 internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
 {
-    /// <summary>
-    /// Gets the RegistrationsBaseUrl's for the current list of service indexes.
-    /// </summary>
-    /// <param name="serviceIndexes">The list of Nuget Services indices.</param>
-    /// <returns>List of url's.</returns>
     public IReadOnlyCollection<string> GetRegistrationsUrls(IReadOnlyCollection<ServiceIndex> serviceIndexes)
     {
         logger.MethodStart(nameof(NuGetReleaseService), nameof(GetRegistrationsUrls), serviceIndexes);
@@ -39,14 +34,9 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
         return baseUrls;
     }
 
-    /// <summary>
-    /// Gets the RegistrationsBaseUr for the current service index.
-    /// </summary>
-    /// <param name="serviceIndex">The NuGet service index..</param>
-    /// <returns>The base URL.</returns>
-    public string GetRegistrationsUrl(ServiceIndex serviceIndex)
+    public string GetRegistrationsBaseUrl(ServiceIndex serviceIndex)
     {
-        logger.MethodStart(nameof(NuGetReleaseService), nameof(GetRegistrationsUrl), serviceIndex);
+        logger.MethodStart(nameof(NuGetReleaseService), nameof(GetRegistrationsBaseUrl), serviceIndex);
 
         ArgumentNullException.ThrowIfNull(serviceIndex);
 
@@ -56,7 +46,7 @@ internal class NuGetReleaseService(ILogger logger) : INuGetReleaseService
 
         if (registrationResource != null)
         {
-            logger.MethodReturn(nameof(NuGetReleaseService), nameof(GetRegistrationsUrl), registrationResource.Id);
+            logger.MethodReturn(nameof(NuGetReleaseService), nameof(GetRegistrationsBaseUrl), registrationResource.Id);
             return registrationResource.Id;
         }
 

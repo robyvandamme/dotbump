@@ -15,9 +15,9 @@ public class NuGetReleaseServiceTests
     [Fact]
     public async Task Get_Something()
     {
-        var client = new FakeNuGetClient(new Mock<ILogger>().Object);
-        var result = await client.GetServiceIndexesAsync(new Mock<IReadOnlyCollection<string>>().Object);
-        result.ShouldNotBeEmpty();
+        // var client = new FakeNuGetClient(new Mock<ILogger>().Object);
+        // var result = await client.GetServiceIndexesAsync(new Mock<IReadOnlyCollection<string>>().Object);
+        // result.ShouldNotBeEmpty();
     }
 
     public class TryGetNewMinorOrPatchVersionFromCatalogPages

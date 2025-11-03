@@ -13,7 +13,7 @@ internal interface INuGetReleaseService
     /// </summary>
     /// <param name="serviceIndexes">The list of Nuget Services indices.</param>
     /// <returns>List of url's.</returns>
-    IReadOnlyCollection<string> GetRegistrationsUrls(IReadOnlyCollection<ServiceIndex> serviceIndexes);
+    // IReadOnlyCollection<string> GetRegistrationsUrls(IReadOnlyCollection<ServiceIndex> serviceIndexes);
 
     List<CatalogPage> TryFindNewReleaseCatalogPages(
         RegistrationIndex index,
@@ -27,10 +27,5 @@ internal interface INuGetReleaseService
     //     ICollection<NuGetCatalogPage> catalogPages,
     //     SemanticVersion currentVersion);
 
-    /// <summary>
-    /// Gets the RegistrationsBaseUr for the current service index.
-    /// </summary>
-    /// <param name="serviceIndex">The NuGet service index..</param>
-    /// <returns>The base URL.</returns>
-    string GetRegistrationsUrl(ServiceIndex serviceIndex);
+    string GetRegistrationsBaseUrl(ServiceIndex serviceIndex);
 }

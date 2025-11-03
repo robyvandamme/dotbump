@@ -30,7 +30,7 @@ internal class BumpToolsCommand(
                 throw new DotBumpException($"Unsupported command name {context.Name}");
             }
 
-            var bumpType = settings.Type ?? BumpType.Minor;
+            var bumpType = settings.BumpType ?? BumpType.Minor;
             var outputFile = settings.Output;
 
             logger.Debug("Bump type: {Type}", bumpType);

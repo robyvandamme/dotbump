@@ -10,96 +10,65 @@ using Serilog;
 
 namespace DotBump.Commands.BumpTools;
 
-internal class NuGetClient : INuGetClient, IDisposable
+internal class NuGetClient(HttpClient httpClient, ILogger logger) : INuGetClient, IDisposable
 {
-    private readonly JsonSerializerOptions _defaultOptions;
+    private readonly JsonSerializerOptions _defaultOptions = new();
 
-    private readonly HttpClient _httpClient;
-    private readonly ILogger _logger;
-
-    public NuGetClient(HttpClient httpClient, ILogger logger)
+    /// <summary>
+    /// Gets the <see cref="ServiceIndex"/> for the supplied package source URL.
+    /// </summary>
+    /// <param name="packageSourceUrl">The NuGet package source URL.</param>
+    /// <returns>The service index for the package source.</returns>
+    /// <exception cref="DotBumpException">When the service index can not be deserialized.</exception>
+    /// <exception cref="HttpRequestException">When an HttpRequestException occurs.</exception>
+    public async Task<ServiceIndex> GetServiceIndexAsync(string packageSourceUrl)
     {
-        _httpClient = httpClient;
-        _logger = logger;
+        logger.MethodStart(nameof(NuGetClient), nameof(GetServiceIndexAsync), packageSourceUrl);
 
-        _defaultOptions = new JsonSerializerOptions();
-    }
-
-    public async Task<ServiceIndex> GetServiceIndexAsync(string source)
-    {
-        _logger.MethodStart(nameof(NuGetClient), nameof(GetServiceIndexAsync), source);
-
-        ArgumentException.ThrowIfNullOrWhiteSpace(source);
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageSourceUrl);
 
         try
         {
-            var response = await _httpClient.GetStringAsync(new Uri(source)).ConfigureAwait(false);
+            var response = await httpClient.GetStringAsync(new Uri(packageSourceUrl)).ConfigureAwait(false);
             var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(response);
             if (serviceIndex != null)
             {
-                _logger.MethodReturn(nameof(NuGetClient), nameof(GetServiceIndexesAsync), serviceIndex);
+                logger.MethodReturn(nameof(NuGetClient), nameof(GetServiceIndexAsync), serviceIndex);
                 return serviceIndex;
             }
 
-            _logger.Warning("Unable to deserialize service index for {Source}", source);
-            throw new DotBumpException($"Unable to deserialize service index for {source}");
+            logger.Warning("Unable to deserialize service index for {Source}", packageSourceUrl);
+            throw new DotBumpException($"Unable to deserialize service index for {packageSourceUrl}");
         }
         catch (HttpRequestException e)
         {
-            _logger.Error(e, "An error occurred connecting to {Source}", source);
+            logger.Error(e, "An error occurred connecting to {Source}", packageSourceUrl);
             throw;
         }
     }
 
-    public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IReadOnlyCollection<string> sources)
+    /// <summary>
+    /// Gets the package information from the package source.
+    /// </summary>
+    /// <param name="registrationBaseUrl">The RegistrationsBaseUrl from the <see cref="ServiceIndex"/>.</param>
+    /// <param name="packageId">The package ID.</param>
+    /// <returns>A package registration index if the package can be found at the URL.</returns>
+    /// <exception cref="HttpRequestException">When an HttpRequestException occurs that is not caused by a 404 status code.</exception>
+    public async Task<RegistrationIndex?> GetPackageInformationAsync(string registrationBaseUrl, string packageId)
     {
-        _logger.MethodStart(nameof(NuGetClient), nameof(GetServiceIndexesAsync), sources);
+        logger.MethodStart(nameof(NuGetClient), nameof(GetPackageInformationAsync), registrationBaseUrl, packageId);
 
-        ArgumentNullException.ThrowIfNull(sources);
-
-        var list = new List<ServiceIndex>();
-        foreach (var source in sources)
-        {
-            try
-            {
-                var response = await _httpClient.GetStringAsync(new Uri(source)).ConfigureAwait(false);
-                var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(response);
-                if (serviceIndex != null)
-                {
-                    list.Add(serviceIndex);
-                }
-                else
-                {
-                    _logger.Debug("Unable to deserialize service index for {Source}", source);
-                }
-            }
-            catch (HttpRequestException e)
-            {
-                _logger.Error(e, "An error occurred connecting to {Source}", source);
-                throw;
-            }
-        }
-
-        _logger.MethodReturn(nameof(NuGetClient), nameof(GetServiceIndexesAsync), list);
-
-        return list;
-    }
-
-    public async Task<RegistrationIndex?> GetPackageInformationAsync(string baseUrl, string packageId)
-    {
-        _logger.MethodStart(nameof(NuGetClient), nameof(GetPackageInformationAsync), baseUrl, packageId);
-
-        ArgumentException.ThrowIfNullOrWhiteSpace(baseUrl);
+        ArgumentException.ThrowIfNullOrWhiteSpace(registrationBaseUrl);
         ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
 
-        var packageUrl = new Uri(baseUrl + "/" + packageId + "/index.json");
+        var packageUrl = new Uri(registrationBaseUrl + "/" + packageId + "/index.json");
         try
         {
-            var result = await _httpClient.GetStringAsync(packageUrl).ConfigureAwait(false);
+            var result = await httpClient.GetStringAsync(packageUrl).ConfigureAwait(false);
             var registrationIndex = JsonSerializer.Deserialize<RegistrationIndex>(result, _defaultOptions);
             if (registrationIndex != null)
             {
-                _logger.MethodReturn(nameof(NuGetClient), nameof(GetServiceIndexesAsync), registrationIndex);
+                logger.MethodReturn(nameof(NuGetClient), nameof(GetPackageInformationAsync), registrationIndex);
                 return registrationIndex;
             }
         }
@@ -107,55 +76,30 @@ internal class NuGetClient : INuGetClient, IDisposable
         {
             if (e.StatusCode == HttpStatusCode.NotFound)
             {
-                _logger.Debug(
+                logger.Debug(
                     "The package {Package} was not found at the package url {PackageUrl}",
                     packageId,
                     packageUrl);
                 return null;
             }
-            else
-            {
-                throw;
-            }
+
+            logger.Error(e, "An HTTP Request exception occured calling {PackageUrl}", packageUrl);
+            throw;
         }
 
-        _logger.Debug("No service indexes found for package {PackageId} at {BaseUrl}", packageId, baseUrl);
+        logger.Debug("No service indexes found for package {PackageId} at {BaseUrl}", packageId, registrationBaseUrl);
         return null;
     }
 
-    public async Task<RegistrationIndex?> GetPackageInformationAsync(
-        IReadOnlyCollection<string> baseUrls,
-        string packageId)
-    {
-        _logger.MethodStart(nameof(NuGetClient), nameof(GetServiceIndexesAsync), baseUrls, packageId);
-
-        ArgumentNullException.ThrowIfNull(baseUrls);
-        ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
-
-        foreach (var url in baseUrls)
-        {
-            // can also use the "https://api.nuget.org/v3/registration5-semver1/{id-lower}/index.json and replace the id, same result... though
-            var packageUrl = new Uri(url + "/" + packageId + "/index.json");
-            var result = await _httpClient.GetStringAsync(packageUrl).ConfigureAwait(false);
-            var registrationIndex = JsonSerializer.Deserialize<RegistrationIndex>(result, _defaultOptions);
-            if (registrationIndex != null)
-            {
-                // NOTE: package information can be found at multiple service indexes, so it is possible we need to a bit more here.
-                _logger.MethodReturn(nameof(NuGetClient), nameof(GetServiceIndexesAsync), registrationIndex);
-                return registrationIndex;
-            }
-        }
-
-        _logger.Debug("No service indexes found for package {PackageId} at {BaseUrls}", packageId, baseUrls);
-        _logger.MethodReturn(nameof(NuGetClient), nameof(GetServiceIndexesAsync));
-
-        return null;
-    }
-
-    public async Task<IEnumerable<CatalogPage>> GetRelevantDetailCatalogPagesAsync(
+    /// <summary>
+    /// Gets the catalog pages when the releases are not in the <see cref="RegistrationIndex"/>.
+    /// </summary>
+    /// <param name="catalogPages">The list of catalog pages containing the relevant versions. </param>
+    /// <returns>The detail catalog pages.</returns>
+    public async Task<IReadOnlyCollection<CatalogPage>> GetRelevantCatalogPagesAsync(
         IReadOnlyCollection<CatalogPage> catalogPages)
     {
-        _logger.MethodStart(nameof(NuGetClient), nameof(GetRelevantDetailCatalogPagesAsync), catalogPages);
+        logger.MethodStart(nameof(NuGetClient), nameof(GetRelevantCatalogPagesAsync), catalogPages);
 
         ArgumentNullException.ThrowIfNull(catalogPages);
 
@@ -163,7 +107,7 @@ internal class NuGetClient : INuGetClient, IDisposable
 
         foreach (var catalogPage in catalogPages)
         {
-            var json = await _httpClient.GetStringAsync(new Uri(catalogPage.Id)).ConfigureAwait(false);
+            var json = await httpClient.GetStringAsync(new Uri(catalogPage.Id)).ConfigureAwait(false);
             var detailPage = JsonSerializer.Deserialize<CatalogPage>(json, _defaultOptions);
             if (detailPage != null)
             {
@@ -171,13 +115,13 @@ internal class NuGetClient : INuGetClient, IDisposable
             }
         }
 
-        _logger.MethodReturn(nameof(NuGetClient), nameof(GetRelevantDetailCatalogPagesAsync), result);
+        logger.MethodReturn(nameof(NuGetClient), nameof(GetRelevantCatalogPagesAsync), result);
 
         return result;
     }
 
     public void Dispose()
     {
-        _httpClient.Dispose();
+        httpClient.Dispose();
     }
 }

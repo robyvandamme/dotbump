@@ -30,7 +30,7 @@ internal class BumpToolsHandler(
 
             using var nuGetClient = nuGetClientFactory.CreateNuGetClient(clientConfig);
             var index = await nuGetClient.GetServiceIndexAsync(clientConfig.Url).ConfigureAwait(false);
-            var baseUrl = nuGetReleaseService.GetRegistrationsUrl(index);
+            var baseUrl = nuGetReleaseService.GetRegistrationsBaseUrl(index);
 
             for (var i = 0; i < manifest.Tools.Count; i++)
             {
@@ -66,7 +66,7 @@ internal class BumpToolsHandler(
                     }
                     else
                     {
-                        var detailPages = await nuGetClient.GetRelevantDetailCatalogPagesAsync(pages);
+                        var detailPages = await nuGetClient.GetRelevantCatalogPagesAsync(pages);
                         var newVersion =
                             nuGetReleaseService.TryGetNewMinorOrPatchVersionFromCatalogPages(
                                 detailPages.ToList(),
