@@ -11,7 +11,7 @@ namespace DotBump.Commands.BumpTools;
 
 internal class BumpToolsHandler(
     IToolFileService toolFileService,
-    IClientFactory clientFactory,
+    INuGetClientFactory nuGetClientFactory,
     INuGetReleaseService nuGetReleaseService,
     ILogger logger) : IBumpToolsHandler
 {
@@ -28,7 +28,7 @@ internal class BumpToolsHandler(
         {
             var clientConfig = new NuGetClientConfig(nugetPackageSource.Key, nuGetConfiguration, logger);
 
-            using var nuGetClient = clientFactory.CreateNuGetClient(clientConfig);
+            using var nuGetClient = nuGetClientFactory.CreateNuGetClient(clientConfig);
             var index = await nuGetClient.GetServiceIndexAsync(clientConfig.Url).ConfigureAwait(false);
             var baseUrl = nuGetReleaseService.GetRegistrationsUrl(index);
 

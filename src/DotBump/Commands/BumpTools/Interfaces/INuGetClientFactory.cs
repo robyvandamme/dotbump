@@ -4,9 +4,7 @@ using DotBump.Commands.BumpTools.DataModel.NuGetClientConfiguration;
 
 namespace DotBump.Commands.BumpTools.Interfaces;
 
-internal interface IClientFactory
+internal interface INuGetClientFactory
 {
-    HttpClient CreateHttpClient(NuGetClientConfig config);
-
     NuGetClient CreateNuGetClient(NuGetClientConfig config);
 }

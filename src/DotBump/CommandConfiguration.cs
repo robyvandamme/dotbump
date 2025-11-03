@@ -45,7 +45,7 @@ internal static class CommandConfiguration
             config.Settings.Registrar.Register<IToolFileService, ToolFileService>();
             config.Settings.Registrar.Register<INuGetReleaseService, NuGetReleaseService>();
             config.Settings.Registrar.Register<IBumpToolsHandler, BumpToolsHandler>();
-            config.Settings.Registrar.Register<IClientFactory, ClientFactory>();
+            config.Settings.Registrar.Register<INuGetClientFactory, NuGetClientFactory>();
 
             config.AddCommand<BumpToolsCommand>(name: "tools")
                 .WithDescription(
