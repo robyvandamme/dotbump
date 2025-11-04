@@ -36,7 +36,7 @@ internal static class CommandConfiguration
                 .WithDescription(
                     "Bump the global.json SDK version. " +
                     "Use the 'minor' type option to bump the SDK to the latest minor or patch version for the current major version. " +
-                    "Use the 'patch' type option to bump the SDK to the latest patch version for the current major version. ")
+                    "Use the 'patch' type option to bump the SDK to the latest patch version for the current minor version. ")
                 .WithExample("sdk", "-o", "bump-sdk-result.json", "--security-only", "true")
                 .WithExample("sdk", "-t", "patch", "-o", "bump-sdk-result.json", "-s", "true")
                 .WithExample("sdk", "--type", "patch", "-f", "./other/global.json")
@@ -49,11 +49,11 @@ internal static class CommandConfiguration
 
             config.AddCommand<BumpToolsCommand>(name: "tools")
                 .WithDescription(
-                    "Bump the .NET tools versions. " +
+                    "Bump the local .NET tools versions. " +
                     "Use the 'minor' type option to bump the tools to the latest minor or patch versions for the current major version. " +
-                    "Use the 'patch' type option to bump the tools to the latest patch version for the current major version. ")
+                    "Use the 'patch' type option to bump the tools to the latest patch version for the current minor version. ")
                 .WithExample("tools", "-o", "bump-tools-result.json")
-                .WithExample("tools", "-t", "patch", "-o", "bump-tools-result.json")
+                .WithExample("tools", "-t", "patch", "-o", "bump-tools-report.json")
                 .WithExample("tools", "--debug", "true", "--logfile", "log.txt");
         });
     }
