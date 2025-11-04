@@ -61,14 +61,19 @@ public class SemanticVersionTests
         Should.Throw<ArgumentException>(() => new SemanticVersion("   "));
     }
 
-    [Fact]
-    public void Invalid_Format_Throws_ArgumentException()
+    [Theory]
+    [InlineData("1.2")]
+    [InlineData("1.2.3.4")]
+    [InlineData("1.2.3.beta")]
+    [InlineData("version1")]
+    [InlineData("a.b.c")]
+    public void Invalid_Format_Returns_0_Version(string version)
     {
-        Should.Throw<ArgumentException>(() => new SemanticVersion("1.2"));
-        Should.Throw<ArgumentException>(() => new SemanticVersion("1.2.3.4"));
-        Should.Throw<ArgumentException>(() => new SemanticVersion("1.2.3.beta"));
-        Should.Throw<ArgumentException>(() => new SemanticVersion("version1"));
-        Should.Throw<ArgumentException>(() => new SemanticVersion("a.b.c"));
+        var semanticVersion = new SemanticVersion(version);
+        semanticVersion.IsValid.ShouldBeFalse();
+        semanticVersion.Major.ShouldBe(0);
+        semanticVersion.Minor.ShouldBe(0);
+        semanticVersion.Patch.ShouldBe(0);
     }
 
     public new class ToString
