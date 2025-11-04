@@ -1,6 +1,7 @@
 ﻿// Copyright © 2025 Roby Van Damme.
 
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace DotBump.Common;
 
@@ -10,6 +11,10 @@ namespace DotBump.Common;
 /// </summary>
 internal record SemanticVersion : IComparable<SemanticVersion>
 {
+    private static readonly Regex s_versionPattern = new(
+        @"^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:-(?<prerelease>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$",
+        RegexOptions.Compiled);
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SemanticVersion"/> class.
     /// Creates a new semantic version from a version string.
@@ -21,14 +26,14 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     /// When the version parameter does not match the sematic version pattern the semantic version is set to 0.0.0 and
     /// the <see cref="IsValid"/> property is set to false.
     /// </param>
-    /// <exception cref="ArgumentException">When the version parameter does not match the sematic version pattern.</exception>
+    /// <exception cref="ArgumentException">When the version parameter is null.</exception>
     public SemanticVersion(string version)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
         Version = version;
 
-        var match = version.MatchesSemanticVersionPattern();
+        var match = s_versionPattern.Match(version);
         if (!match.Success)
         {
             Major = Minor = Patch = 0;
