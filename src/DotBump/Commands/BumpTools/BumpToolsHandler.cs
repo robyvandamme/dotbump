@@ -42,8 +42,7 @@ internal class BumpToolsHandler(
                 {
                     var pages = nuGetReleaseFinder.TryFindNewReleaseCatalogPages(
                         releaseIndex,
-                        tool.Value.SemanticVersion,
-                        bumpType);
+                        tool.Value.SemanticVersion);
 
                     if (pages.Count == 0)
                     {

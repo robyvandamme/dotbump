@@ -55,13 +55,11 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
 
     public List<CatalogPage> TryFindNewReleaseCatalogPages(
         RegistrationIndex index,
-        SemanticVersion currentVersion,
-        BumpType bumpType)
+        SemanticVersion currentVersion)
     {
         ArgumentNullException.ThrowIfNull(index);
         ArgumentNullException.ThrowIfNull(currentVersion);
 
-        // TODO: is there a difference between minor and patch here? I assume there should be....
         if (index.CatalogPages != null)
         {
             var results = index.CatalogPages.FindAll(o => o.UpperSemanticVersion > currentVersion
