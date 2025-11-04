@@ -103,7 +103,7 @@ internal class ToolFileService(ILogger logger) : IToolFileService
         logger.MethodReturn(nameof(ToolFileService), nameof(SaveToolManifest));
     }
 
-    internal NuGetConfig ReadFromConfigFile(string filePath)
+    private NuGetConfig ReadFromConfigFile(string filePath)
     {
         var config = new NuGetConfig();
         XDocument doc;

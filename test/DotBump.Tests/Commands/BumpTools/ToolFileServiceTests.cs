@@ -209,7 +209,7 @@ public class ToolFileServiceTests
                     try
                     {
                         // Act
-                        Should.Throw<XmlException>(() => service.ReadFromConfigFile(tempFile));
+                        Should.Throw<XmlException>(() => service.GetNuGetConfiguration());
                     }
                     finally
                     {
