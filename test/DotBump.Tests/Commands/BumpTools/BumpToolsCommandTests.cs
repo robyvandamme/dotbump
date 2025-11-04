@@ -1,11 +1,9 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Text.Json;
-using DotBump.Commands.BumpSdk;
-using DotBump.Commands.BumpSdk.DataModel;
+using DotBump.Commands;
 using DotBump.Commands.BumpTools;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
-using DotBump.Tests.Commands.BumpSdk.Fakes;
 using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
@@ -24,170 +22,141 @@ public class BumpToolsCommandTests
             WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
 
-        public class No_Tools_Manifest
+        [Fact]
+        public async Task No_Tools_Manifest_Returns_1_And_FileNotFoundException()
         {
-            [Fact]
-            public async Task Returns_1_And_FileNotFoundException()
-            {
-                var directory = new LocalDirectory("./.config");
-                directory.EnsureFileDeleted("dotnet-tools.json");
+            var directory = new LocalDirectory("./.config");
+            directory.EnsureFileDeleted("dotnet-tools.json");
 
-                var loggerMock = new Mock<ILogger>().Object;
-                using var testConsole = new TestConsole();
-                var fileService = new ToolFileService(loggerMock);
-                var clientFactory = new NuGetClientFactory(loggerMock);
-                var releaseService = new NuGetReleaseFinder(loggerMock);
-                var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
+            var loggerMock = new Mock<ILogger>().Object;
+            using var testConsole = new TestConsole();
+            var fileService = new ToolFileService(loggerMock);
+            var clientFactory = new NuGetClientFactory(loggerMock);
+            var releaseService = new NuGetReleaseFinder(loggerMock);
+            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
 
-                var command = new BumpToolsCommand(testConsole, loggerMock, handler);
-                var arguments = new[] { "bump", "tools" };
-                var remainingArguments = new Mock<IRemainingArguments>();
-                var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-                var result = await command.ExecuteAsync(context, new BumpToolsSettings());
-                result.ShouldBe(1);
-                testConsole.Output.ShouldContain("FileNotFoundException: Tool manifest file not found");
-            }
+            var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+            var arguments = new[] { "bump", "tools" };
+            var remainingArguments = new Mock<IRemainingArguments>();
+            var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
+            var result = await command.ExecuteAsync(context, new BumpToolsSettings());
+            result.ShouldBe(1);
+            testConsole.Output.ShouldContain("FileNotFoundException: Tool manifest file not found");
         }
 
-        public class No_Config_Parameter_And_No_BumpType_Parameter
+        [Fact]
+        public async Task Updates_Tools_To_Latest_Minor_Or_Patch_Version_And_Returns_0()
         {
-            [Fact]
-            public async Task Updates_Tools_To_Latest_Minor_Or_Patch_Version_And_Returns_0()
-            {
-                var tools = new Dictionary<string, ToolManifestEntry>();
+            ConfigureToolsManifest();
 
-                // latest minor is 10.4.1. Should be stable since version 11 has been released.
-                // latest patch should be 10.1.2
-                tools.Add(
-                    "dotnet-sonarscanner",
-                    new ToolManifestEntry
-                    {
-                        Version = "10.1.0", RollForward = false, Commands = ["dotnet-sonarscanner"],
-                    });
+            var loggerMock = new Mock<ILogger>().Object;
+            using var testConsole = new TestConsole();
+            var fileService = new ToolFileService(loggerMock);
+            var clientFactory = new NuGetClientFactory(loggerMock);
+            var releaseService = new NuGetReleaseFinder(loggerMock);
+            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
 
-                // this is an old version. Minor should bump to 3.3.1. Patch should bump to 3.2.3
-                tools.Add(
-                    "amazon.lambda.tools",
-                    new ToolManifestEntry { Version = "3.2.0", RollForward = false, Commands = ["dotnet-lambda"], });
+            var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+            var arguments = new[] { "bump", "tools" };
+            var remainingArguments = new Mock<IRemainingArguments>();
+            var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
+            var result = await command.ExecuteAsync(context, new BumpToolsSettings());
+            result.ShouldBe(0);
 
-                var manifest = new ToolsManifest() { Version = 1, IsRoot = true, Tools = tools };
-                var directory = new LocalDirectory("./.config");
-                directory.EnsureFileDeleted("dotnet-tools.json");
-                directory.EnsureFileCreated(
-                    "dotnet-tools.json",
-                    JsonSerializer.Serialize(manifest, s_serializerOptions));
+            var updatedManifest = fileService.GetToolManifest();
+            updatedManifest.Tools.First(o => o.Key.Equals("dotnet-sonarscanner"))
+                .Value.Version.ShouldBe("10.4.1");
+            updatedManifest.Tools.First(o => o.Key.Equals("amazon.lambda.tools"))
+                .Value.Version.ShouldBe("3.3.1");
+            updatedManifest.Tools.First(o => o.Key.Equals("dotnet-reportgenerator-globaltool"))
+                .Value.Version.ShouldBe("4.8.13"); // 4.9.0 is unlisted.
+        }
 
-                var loggerMock = new Mock<ILogger>().Object;
-                using var testConsole = new TestConsole();
-                var fileService = new ToolFileService(loggerMock);
-                var clientFactory = new NuGetClientFactory(loggerMock);
-                var releaseService = new NuGetReleaseFinder(loggerMock);
-                var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
+        [Fact]
+        public async Task Updates_Tools_To_Latest_Patch_Version_And_Returns_0()
+        {
+            ConfigureToolsManifest();
 
-                var command = new BumpToolsCommand(testConsole, loggerMock, handler);
-                var arguments = new[] { "bump", "tools" };
-                var remainingArguments = new Mock<IRemainingArguments>();
-                var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-                var result = await command.ExecuteAsync(context, new BumpToolsSettings());
-                result.ShouldBe(0);
+            var loggerMock = new Mock<ILogger>().Object;
+            using var testConsole = new TestConsole();
+            var fileService = new ToolFileService(loggerMock);
+            var clientFactory = new NuGetClientFactory(loggerMock);
+            var releaseService = new NuGetReleaseFinder(loggerMock);
+            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
 
-                var updatedManifest = fileService.GetToolManifest();
-                updatedManifest.Tools.First(o => o.Key.Equals("dotnet-sonarscanner"))
-                    .Value.Version.ShouldBe("10.4.1");
-                updatedManifest.Tools.First(o => o.Key.Equals("amazon.lambda.tools"))
-                    .Value.Version.ShouldBe("3.3.1");
-            }
+            var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+            var arguments = new[] { "bump", "tools" };
+            var remainingArguments = new Mock<IRemainingArguments>();
+            var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
+            var result = await command.ExecuteAsync(context, new BumpToolsSettings() { BumpType = BumpType.Patch });
+            result.ShouldBe(0);
 
-            [Fact(Skip = "SDK Test - Review - Needed for Tools?")]
-            public async Task Sdk_Version_Not_Updated_Returns_0()
-            {
-                var json = new GlobalJson(new Sdk("8.0.406", "disable"));
-                var directory = new LocalDirectory("./temp");
-                directory.EnsureFileDeleted("global.json");
-                directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
+            var updatedManifest = fileService.GetToolManifest();
+            updatedManifest.Tools.First(o => o.Key.Equals("dotnet-sonarscanner"))
+                .Value.Version.ShouldBe("10.1.2");
+            updatedManifest.Tools.First(o => o.Key.Equals("amazon.lambda.tools"))
+                .Value.Version.ShouldBe("3.2.3");
+            updatedManifest.Tools.First(o => o.Key.Equals("dotnet-reportgenerator-globaltool"))
+                .Value.Version.ShouldBe("4.6.7");
+        }
 
-                var loggerMock = new Mock<ILogger>().Object;
-                using var testConsole = new TestConsole();
-                var sdkFileService = new SdkFileService(loggerMock);
-                var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
-                var releaseFinder = new ReleaseFinder(loggerMock);
-                var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+        [Fact]
+        public async Task With_Output_Parameter_Writes_Report_To_File()
+        {
+            var resultFile = new FileInfo("bump-tools-report.json");
+            resultFile.Delete();
 
-                var command = new BumpSdkCommand(testConsole, loggerMock, handler);
-                var arguments = new[] { "bump", "sdk" };
-                var remainingArguments = new Mock<IRemainingArguments>();
-                var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-                var result = await command.ExecuteAsync(
-                    context,
-                    new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" });
-                result.ShouldBe(0);
+            ConfigureToolsManifest();
 
-                var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
-                globalJson.Version.ShouldBe("8.0.406");
+            var loggerMock = new Mock<ILogger>().Object;
+            using var testConsole = new TestConsole();
+            var fileService = new ToolFileService(loggerMock);
+            var clientFactory = new NuGetClientFactory(loggerMock);
+            var releaseService = new NuGetReleaseFinder(loggerMock);
+            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
 
-                testConsole.Output.ShouldContain("Updated = False");
-            }
+            var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+            var arguments = new[] { "bump", "tools" };
+            var remainingArguments = new Mock<IRemainingArguments>();
+            var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
+            var result = await command.ExecuteAsync(
+                context,
+                new BumpToolsSettings() { BumpType = BumpType.Patch, Output = "bump-tools-report.json" });
+            result.ShouldBe(0);
 
-            [Fact(Skip = "SDK Test - Adapt")]
-            public async Task Invalid_FilePath_Returns_1()
-            {
-                var directory = new LocalDirectory("./temp");
-                directory.EnsureFileDeleted("global.json");
+            resultFile.Refresh();
+            resultFile.Exists.ShouldBeTrue();
+        }
 
-                var loggerMock = new Mock<ILogger>().Object;
-                using var testConsole = new TestConsole();
-                var sdkFileService = new SdkFileService(loggerMock);
-                var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
-                var releaseFinder = new ReleaseFinder(loggerMock);
-                var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+        private static void ConfigureToolsManifest()
+        {
+            var tools = new Dictionary<string, ToolManifestEntry>();
 
-                var command = new BumpSdkCommand(testConsole, loggerMock, handler);
-                var arguments = new[] { "bump", "sdk" };
-                var remainingArguments = new Mock<IRemainingArguments>();
-                var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-                var result = await command.ExecuteAsync(
-                    context,
-                    new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" });
-                result.ShouldBe(1);
+            // latest minor is 10.4.1. Should be stable since version 11 has been released.
+            // latest patch should be 10.1.2
+            tools.Add(
+                "dotnet-sonarscanner",
+                new ToolManifestEntry { Version = "10.1.0", RollForward = false, Commands = ["dotnet-sonarscanner"], });
 
-                testConsole.Output.ShouldContain("DotBumpException");
-            }
+            // this is an old version. Minor should bump to 3.3.1. Patch should bump to 3.2.3
+            tools.Add(
+                "amazon.lambda.tools",
+                new ToolManifestEntry { Version = "3.2.0", RollForward = false, Commands = ["dotnet-lambda"], });
 
-            [Fact(Skip = "SDK Test - Adapt")]
-            public async Task With_Output_Parameter_Writes_Result_To_File()
-            {
-                var json = new GlobalJson(new Sdk("8.0.405", "disable"));
-                var directory = new LocalDirectory("./temp");
-                directory.EnsureFileDeleted("global.json");
-                directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
+            // this one contains a version that fails the semantic version match test
+            // using an old version 4.6.1. Minor should bump to 4.8.13. Patch should bump to 4.6.7.
+            // and .... there appears to be a version 4.9.0.... which does not show up on the NuGet page...
+            // because it has been unlisted.... So this is a good one to add to the release finder tests as well.
+            tools.Add(
+                "dotnet-reportgenerator-globaltool",
+                new ToolManifestEntry { Version = "4.6.1", RollForward = false, Commands = ["reportgenerator"], });
 
-                var resultFile = new FileInfo("bump-sdk.result.json");
-                resultFile.Delete();
-
-                var loggerMock = new Mock<ILogger>().Object;
-                using var testConsole = new TestConsole();
-                var sdkFileService = new SdkFileService(loggerMock);
-                var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
-                var releaseFinder = new ReleaseFinder(loggerMock);
-                var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
-
-                var command = new BumpSdkCommand(testConsole, loggerMock, handler);
-                var arguments = new[] { "bump", "sdk" };
-                var remainingArguments = new Mock<IRemainingArguments>();
-                var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-                var result = await command.ExecuteAsync(
-                    context,
-                    new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", Output = "bump-sdk.result.json" });
-                result.ShouldBe(0);
-
-                var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
-                globalJson.Version.ShouldBe("8.0.406");
-
-                testConsole.Output.ShouldContain("Updated = True");
-
-                resultFile.Refresh();
-                resultFile.Exists.ShouldBeTrue();
-            }
+            var manifest = new ToolsManifest() { Version = 1, IsRoot = true, Tools = tools };
+            var directory = new LocalDirectory("./.config");
+            directory.EnsureFileDeleted("dotnet-tools.json");
+            directory.EnsureFileCreated(
+                "dotnet-tools.json",
+                JsonSerializer.Serialize(manifest, s_serializerOptions));
         }
     }
 }
