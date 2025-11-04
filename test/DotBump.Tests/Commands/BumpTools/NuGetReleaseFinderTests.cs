@@ -22,7 +22,7 @@ public class NuGetReleaseFinderTests
                 new(() =>
                 {
                     var client = new FakeNuGetClient(new Mock<ILogger>().Object);
-                    return client.GetPackageInformationAsync(new List<string>(), "dotmarkdown").Result;
+                    return client.GetPackageInformationAsync(string.Empty, "dotmarkdown").Result;
                 });
 
             private RegistrationIndex? RegistrationIndex => s_lazyRegistrationIndex.Value;
@@ -58,7 +58,7 @@ public class NuGetReleaseFinderTests
                 new(() =>
                 {
                     var client = new FakeNuGetClient(new Mock<ILogger>().Object);
-                    return client.GetPackageInformationAsync(new List<string>(), "moq").Result;
+                    return client.GetPackageInformationAsync(string.Empty, "moq").Result;
                 });
 
             /// <summary>
@@ -145,7 +145,7 @@ public class NuGetReleaseFinderTests
                 new(() =>
                 {
                     var client = new FakeNuGetClient(new Mock<ILogger>().Object);
-                    return client.GetPackageInformationAsync(new List<string>(), "dotbump").Result;
+                    return client.GetPackageInformationAsync(string.Empty, "dotbump").Result;
                 });
 
             private RegistrationIndex? RegistrationIndex => s_lazyRegistrationIndex.Value;

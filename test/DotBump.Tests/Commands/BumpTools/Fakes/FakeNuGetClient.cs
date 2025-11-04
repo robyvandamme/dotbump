@@ -18,35 +18,21 @@ internal class FakeNuGetClient : INuGetClient
         _defaultOptions = new JsonSerializerOptions();
     }
 
-    // public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(ICollection<string> sources)
-    // {
-    //     var result = new List<ServiceIndex>();
-    //     var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/nuget-service-index.json";
-    //     var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
-    //     var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(json);
-    //     if (serviceIndex != null)
-    //     {
-    //         result.Add(serviceIndex);
-    //     }
-    //
-    //     return result;
-    // }
+    public async Task<ServiceIndex> GetServiceIndexAsync(string packageSourceUrl)
+    {
+        var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/nuget-service-index.json";
+        var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+        var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(json);
+        return serviceIndex ?? throw new DotBumpException();
+    }
 
-    // public async Task<IReadOnlyCollection<ServiceIndex>> GetServiceIndexesAsync(IReadOnlyCollection<string> sources)
-    // {
-    //     var result = new List<ServiceIndex>();
-    //     var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/nuget-service-index.json";
-    //     var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
-    //     var serviceIndex = JsonSerializer.Deserialize<ServiceIndex>(json);
-    //     if (serviceIndex != null)
-    //     {
-    //         result.Add(serviceIndex);
-    //     }
-    //
-    //     return result;
-    // }
+    public Task<IReadOnlyCollection<CatalogPage>> GetRelevantCatalogPagesAsync(
+        IReadOnlyCollection<CatalogPage> catalogPages)
+    {
+        return Task.FromResult<IReadOnlyCollection<CatalogPage>>(new List<CatalogPage>());
+    }
 
-    public Task<RegistrationIndex?> GetPackageInformationAsync(IReadOnlyCollection<string> baseUrls, string packageId)
+    public Task<RegistrationIndex?> GetPackageInformationAsync(string registrationBaseUrl, string packageId)
     {
         if (packageId.Equals("dotmarkdown", StringComparison.OrdinalIgnoreCase))
         {
@@ -64,21 +50,6 @@ internal class FakeNuGetClient : INuGetClient
         }
 
         return Task.FromResult<RegistrationIndex?>(null);
-    }
-
-    public Task<IReadOnlyCollection<CatalogPage>> GetRelevantCatalogPagesAsync(IReadOnlyCollection<CatalogPage> catalogPages)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<RegistrationIndex?> GetPackageInformationAsync(string registrationBaseUrl, string packageId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<ServiceIndex> GetServiceIndexAsync(string packageSourceUrl)
-    {
-        throw new NotImplementedException();
     }
 
     private async Task<RegistrationIndex?> GetDotMarkdownPackageInformation()
