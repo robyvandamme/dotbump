@@ -22,7 +22,7 @@ internal record CatalogPage
     {
         get;
         init;
-    } // If there are no package items we need to get the page that contains the information we are looking for
+    }
 
     [JsonPropertyName("lower")]
     public required string Lower { get; init; }
@@ -47,7 +47,6 @@ internal record CatalogPage
     {
         get
         {
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (Items == null)
             {
                 return false;
