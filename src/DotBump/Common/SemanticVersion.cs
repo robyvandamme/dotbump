@@ -11,7 +11,7 @@ namespace DotBump.Common;
 /// </summary>
 internal record SemanticVersion : IComparable<SemanticVersion>
 {
-    private static readonly Regex s_versionPattern = new Regex(
+    private static readonly Regex s_versionPattern = new(
         @"^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:-(?<prerelease>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$",
         RegexOptions.Compiled);
 
@@ -23,29 +23,46 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     /// Version string in format x.y.z or x.y.z-prerelease
     /// where prerelease can be any combination of alphanumerics and hyphens separated by dots
     /// (e.g., "1.0.0-alpha", "1.0.0-beta.2", "1.0.0-rc.1", "1.0.0-preview.1.25080.5", etc.)
+    /// When the version parameter does not match the sematic version pattern the semantic version is set to 0.0.0 and
+    /// the <see cref="IsValid"/> property is set to false.
     /// </param>
+    /// <exception cref="ArgumentException">When the version parameter is null.</exception>
     public SemanticVersion(string version)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
+        Version = version;
+
         var match = s_versionPattern.Match(version);
         if (!match.Success)
         {
-            throw new ArgumentException(
-                $"The version '{version}' does not have the expected format x.y.z[-prerelease]",
-                nameof(version));
+            Major = Minor = Patch = 0;
+            IsValid = false;
         }
-
-        Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
-        Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
-        Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
-
-        if (match.Groups["prerelease"].Success)
+        else
         {
-            PreRelease = match.Groups["prerelease"].Value;
-            IsPreRelease = true;
+            Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
+            Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
+            Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
+            IsValid = true;
+
+            if (match.Groups["prerelease"].Success)
+            {
+                PreRelease = match.Groups["prerelease"].Value;
+                IsPreRelease = true;
+            }
         }
     }
+
+    /// <summary>
+    /// Gets the input version string.
+    /// </summary>
+    public string Version { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the input version string is valid.
+    /// </summary>
+    public bool IsValid { get; }
 
     /// <summary>
     /// Gets the major version number.

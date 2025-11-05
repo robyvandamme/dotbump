@@ -1,0 +1,512 @@
+{
+  "@id": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json",
+  "@type": [
+    "catalog:CatalogRoot",
+    "PackageRegistration",
+    "catalog:Permalink"
+  ],
+  "commitId": "ba2a7ae0-8469-408f-b053-1d50415c31e8",
+  "commitTimeStamp": "2023-08-17T14:31:56.7666853+00:00",
+  "count": 1,
+  "items": [
+    {
+      "@id": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json#page/0.1.0-beta/0.3.0",
+      "@type": "catalog:CatalogPage",
+      "commitId": "ba2a7ae0-8469-408f-b053-1d50415c31e8",
+      "commitTimeStamp": "2023-08-17T14:31:56.7666853+00:00",
+      "count": 8,
+      "items": [
+        {
+          "@id": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/0.1.0-beta.json",
+          "@type": "Package",
+          "commitId": "794839ae-6ae7-4ce7-9b4f-032de9f04606",
+          "commitTimeStamp": "2020-02-08T01:36:35.4184187+00:00",
+          "catalogEntry": {
+            "@id": "https://api.nuget.org/v3/catalog0/data/2018.12.19.11.13.24/dotmarkdown.0.1.0-beta.json",
+            "@type": "PackageDetails",
+            "authors": "Josef Pihrt",
+            "dependencyGroups": [
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2018.12.19.11.13.24/dotmarkdown.0.1.0-beta.json#dependencygroup/.netframework4.5",
+                "@type": "PackageDependencyGroup",
+                "targetFramework": ".NETFramework4.5"
+              },
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2018.12.19.11.13.24/dotmarkdown.0.1.0-beta.json#dependencygroup/.netstandard1.3",
+                "@type": "PackageDependencyGroup",
+                "dependencies": [
+                  {
+                    "@id": "https://api.nuget.org/v3/catalog0/data/2018.12.19.11.13.24/dotmarkdown.0.1.0-beta.json#dependencygroup/.netstandard1.3/netstandard.library",
+                    "@type": "PackageDependency",
+                    "id": "NETStandard.Library",
+                    "range": "[1.6.1, )",
+                    "registration": "https://api.nuget.org/v3/registration5-gz-semver2/netstandard.library/index.json"
+                  }
+                ],
+                "targetFramework": ".NETStandard1.3"
+              }
+            ],
+            "description": "DotMarkdown is Markdown framework for .NET\n\nCommonly Used Types:\nDotMarkdown.MarkdownWriter\nDotMarkdown.MarkdownFormat\nDotMarkdown.Linq.MFactory",
+            "iconUrl": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.0-beta/icon",
+            "id": "DotMarkdown",
+            "language": "",
+            "licenseExpression": "",
+            "licenseUrl": "http://github.com/JosefPihrt/DotMarkdown/blob/master/LICENSE.txt",
+            "listed": true,
+            "minClientVersion": "",
+            "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.0-beta/dotmarkdown.0.1.0-beta.nupkg",
+            "projectUrl": "http://github.com/JosefPihrt/DotMarkdown",
+            "published": "2018-01-30T03:02:50.67+00:00",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": [
+              "markdown",
+              "md",
+              "linq"
+            ],
+            "title": "",
+            "version": "0.1.0-beta"
+          },
+          "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.0-beta/dotmarkdown.0.1.0-beta.nupkg",
+          "registration": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json"
+        },
+        {
+          "@id": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/0.1.0-rc.json",
+          "@type": "Package",
+          "commitId": "794839ae-6ae7-4ce7-9b4f-032de9f04606",
+          "commitTimeStamp": "2020-02-08T01:36:35.4184187+00:00",
+          "catalogEntry": {
+            "@id": "https://api.nuget.org/v3/catalog0/data/2018.12.19.11.13.13/dotmarkdown.0.1.0-rc.json",
+            "@type": "PackageDetails",
+            "authors": "Josef Pihrt",
+            "dependencyGroups": [
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2018.12.19.11.13.13/dotmarkdown.0.1.0-rc.json#dependencygroup/.netframework4.5",
+                "@type": "PackageDependencyGroup",
+                "targetFramework": ".NETFramework4.5"
+              },
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2018.12.19.11.13.13/dotmarkdown.0.1.0-rc.json#dependencygroup/.netstandard1.3",
+                "@type": "PackageDependencyGroup",
+                "dependencies": [
+                  {
+                    "@id": "https://api.nuget.org/v3/catalog0/data/2018.12.19.11.13.13/dotmarkdown.0.1.0-rc.json#dependencygroup/.netstandard1.3/netstandard.library",
+                    "@type": "PackageDependency",
+                    "id": "NETStandard.Library",
+                    "range": "[1.6.1, )",
+                    "registration": "https://api.nuget.org/v3/registration5-gz-semver2/netstandard.library/index.json"
+                  }
+                ],
+                "targetFramework": ".NETStandard1.3"
+              }
+            ],
+            "description": "DotMarkdown is Markdown framework for .NET\n\nCommonly Used Types:\nDotMarkdown.MarkdownWriter\nDotMarkdown.MarkdownFormat\nDotMarkdown.Linq.MFactory",
+            "iconUrl": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.0-rc/icon",
+            "id": "DotMarkdown",
+            "language": "",
+            "licenseExpression": "",
+            "licenseUrl": "http://github.com/JosefPihrt/DotMarkdown/blob/master/LICENSE.txt",
+            "listed": true,
+            "minClientVersion": "",
+            "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.0-rc/dotmarkdown.0.1.0-rc.nupkg",
+            "projectUrl": "http://github.com/JosefPihrt/DotMarkdown",
+            "published": "2018-04-04T16:16:45.777+00:00",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": [
+              "markdown",
+              "md",
+              "linq"
+            ],
+            "title": "",
+            "version": "0.1.0-rc"
+          },
+          "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.0-rc/dotmarkdown.0.1.0-rc.nupkg",
+          "registration": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json"
+        },
+        {
+          "@id": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/0.1.0.json",
+          "@type": "Package",
+          "commitId": "794839ae-6ae7-4ce7-9b4f-032de9f04606",
+          "commitTimeStamp": "2020-02-08T01:36:35.4184187+00:00",
+          "catalogEntry": {
+            "@id": "https://api.nuget.org/v3/catalog0/data/2018.08.21.10.45.45/dotmarkdown.0.1.0.json",
+            "@type": "PackageDetails",
+            "authors": "Josef Pihrt",
+            "dependencyGroups": [
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2018.08.21.10.45.45/dotmarkdown.0.1.0.json#dependencygroup/.netframework4.5",
+                "@type": "PackageDependencyGroup",
+                "targetFramework": ".NETFramework4.5"
+              },
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2018.08.21.10.45.45/dotmarkdown.0.1.0.json#dependencygroup/.netstandard1.3",
+                "@type": "PackageDependencyGroup",
+                "dependencies": [
+                  {
+                    "@id": "https://api.nuget.org/v3/catalog0/data/2018.08.21.10.45.45/dotmarkdown.0.1.0.json#dependencygroup/.netstandard1.3/netstandard.library",
+                    "@type": "PackageDependency",
+                    "id": "NETStandard.Library",
+                    "range": "[1.6.1, )",
+                    "registration": "https://api.nuget.org/v3/registration5-gz-semver2/netstandard.library/index.json"
+                  }
+                ],
+                "targetFramework": ".NETStandard1.3"
+              }
+            ],
+            "description": "DotMarkdown is Markdown framework for .NET\n\nCommonly Used Types:\nDotMarkdown.MarkdownWriter\nDotMarkdown.MarkdownFormat\nDotMarkdown.Linq.MFactory",
+            "iconUrl": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.0/icon",
+            "id": "DotMarkdown",
+            "language": "",
+            "licenseExpression": "",
+            "licenseUrl": "http://github.com/JosefPihrt/DotMarkdown/blob/master/LICENSE.txt",
+            "listed": true,
+            "minClientVersion": "",
+            "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.0/dotmarkdown.0.1.0.nupkg",
+            "projectUrl": "http://github.com/JosefPihrt/DotMarkdown",
+            "published": "2018-08-21T10:41:20.153+00:00",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": [
+              "markdown",
+              "md",
+              "linq"
+            ],
+            "title": "",
+            "version": "0.1.0"
+          },
+          "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.0/dotmarkdown.0.1.0.nupkg",
+          "registration": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json"
+        },
+        {
+          "@id": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/0.1.1.json",
+          "@type": "Package",
+          "commitId": "f401ac39-247b-4ae1-8c04-172b558896b8",
+          "commitTimeStamp": "2020-10-27T14:25:20.468811+00:00",
+          "catalogEntry": {
+            "@id": "https://api.nuget.org/v3/catalog0/data/2020.10.27.14.24.13/dotmarkdown.0.1.1.json",
+            "@type": "PackageDetails",
+            "authors": "Josef Pihrt",
+            "dependencyGroups": [
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2020.10.27.14.24.13/dotmarkdown.0.1.1.json#dependencygroup/.netframework4.5",
+                "@type": "PackageDependencyGroup",
+                "targetFramework": ".NETFramework4.5"
+              },
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2020.10.27.14.24.13/dotmarkdown.0.1.1.json#dependencygroup/.netstandard1.3",
+                "@type": "PackageDependencyGroup",
+                "dependencies": [
+                  {
+                    "@id": "https://api.nuget.org/v3/catalog0/data/2020.10.27.14.24.13/dotmarkdown.0.1.1.json#dependencygroup/.netstandard1.3/netstandard.library",
+                    "@type": "PackageDependency",
+                    "id": "NETStandard.Library",
+                    "range": "[1.6.1, )",
+                    "registration": "https://api.nuget.org/v3/registration5-gz-semver2/netstandard.library/index.json"
+                  }
+                ],
+                "targetFramework": ".NETStandard1.3"
+              }
+            ],
+            "description": "DotMarkdown is Markdown framework for .NET\n\nCommonly Used Types:\nDotMarkdown.MarkdownWriter\nDotMarkdown.MarkdownFormat\nDotMarkdown.Linq.MFactory",
+            "iconUrl": "",
+            "id": "DotMarkdown",
+            "language": "",
+            "licenseExpression": "Apache-2.0",
+            "licenseUrl": "https://www.nuget.org/packages/DotMarkdown/0.1.1/license",
+            "listed": true,
+            "minClientVersion": "",
+            "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.1/dotmarkdown.0.1.1.nupkg",
+            "projectUrl": "http://github.com/JosefPihrt/DotMarkdown",
+            "published": "2020-10-27T14:22:07.2+00:00",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": [
+              "markdown",
+              "md",
+              "linq"
+            ],
+            "title": "",
+            "version": "0.1.1"
+          },
+          "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.1.1/dotmarkdown.0.1.1.nupkg",
+          "registration": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json"
+        },
+        {
+          "@id": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/0.2.0.json",
+          "@type": "Package",
+          "commitId": "42ab6a1d-f2e2-4f7b-9d42-504888bd9357",
+          "commitTimeStamp": "2022-06-26T16:53:37.3257327+00:00",
+          "catalogEntry": {
+            "@id": "https://api.nuget.org/v3/catalog0/data/2022.06.26.16.52.52/dotmarkdown.0.2.0.json",
+            "@type": "PackageDetails",
+            "authors": "Josef Pihrt",
+            "dependencyGroups": [
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2022.06.26.16.52.52/dotmarkdown.0.2.0.json#dependencygroup/.netframework4.6.2",
+                "@type": "PackageDependencyGroup",
+                "targetFramework": ".NETFramework4.6.2"
+              },
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2022.06.26.16.52.52/dotmarkdown.0.2.0.json#dependencygroup/.netstandard1.3",
+                "@type": "PackageDependencyGroup",
+                "dependencies": [
+                  {
+                    "@id": "https://api.nuget.org/v3/catalog0/data/2022.06.26.16.52.52/dotmarkdown.0.2.0.json#dependencygroup/.netstandard1.3/netstandard.library",
+                    "@type": "PackageDependency",
+                    "id": "NETStandard.Library",
+                    "range": "[1.6.1, )",
+                    "registration": "https://api.nuget.org/v3/registration5-gz-semver2/netstandard.library/index.json"
+                  }
+                ],
+                "targetFramework": ".NETStandard1.3"
+              }
+            ],
+            "description": "DotMarkdown enables to conveniently create markdown content from the code.\n\nCommonly Used Types:\nDotMarkdown.MarkdownWriter\nDotMarkdown.MarkdownFormat\nDotMarkdown.Linq.MFactory",
+            "iconUrl": "",
+            "id": "DotMarkdown",
+            "language": "",
+            "licenseExpression": "Apache-2.0",
+            "licenseUrl": "https://www.nuget.org/packages/DotMarkdown/0.2.0/license",
+            "readmeUrl": "https://www.nuget.org/packages/DotMarkdown/0.2.0#show-readme-container",
+            "listed": true,
+            "minClientVersion": "",
+            "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.2.0/dotmarkdown.0.2.0.nupkg",
+            "projectUrl": "http://github.com/josefpihrt/dotmarkdown",
+            "published": "2022-06-26T16:50:50.323+00:00",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": [
+              "markdown",
+              "md",
+              "linq"
+            ],
+            "title": "",
+            "version": "0.2.0"
+          },
+          "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.2.0/dotmarkdown.0.2.0.nupkg",
+          "registration": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json"
+        },
+        {
+          "@id": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/0.3.0-beta.json",
+          "@type": "Package",
+          "commitId": "137db6bf-7fa6-40e2-9c3c-972f3037d840",
+          "commitTimeStamp": "2023-07-27T01:08:27.8381713+00:00",
+          "catalogEntry": {
+            "@id": "https://api.nuget.org/v3/catalog0/data/2023.07.27.01.07.36/dotmarkdown.0.3.0-beta.json",
+            "@type": "PackageDetails",
+            "authors": "Josef Pihrt",
+            "dependencyGroups": [
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2023.07.27.01.07.36/dotmarkdown.0.3.0-beta.json#dependencygroup/.netframework4.6.2",
+                "@type": "PackageDependencyGroup",
+                "targetFramework": ".NETFramework4.6.2"
+              },
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2023.07.27.01.07.36/dotmarkdown.0.3.0-beta.json#dependencygroup/.netstandard1.3",
+                "@type": "PackageDependencyGroup",
+                "dependencies": [
+                  {
+                    "@id": "https://api.nuget.org/v3/catalog0/data/2023.07.27.01.07.36/dotmarkdown.0.3.0-beta.json#dependencygroup/.netstandard1.3/netstandard.library",
+                    "@type": "PackageDependency",
+                    "id": "NETStandard.Library",
+                    "range": "[1.6.1, )",
+                    "registration": "https://api.nuget.org/v3/registration5-gz-semver2/netstandard.library/index.json"
+                  }
+                ],
+                "targetFramework": ".NETStandard1.3"
+              }
+            ],
+            "description": "DotMarkdown enables to conveniently create markdown content from the code.\n\nCommonly Used Types:\nDotMarkdown.MarkdownWriter\nDotMarkdown.MarkdownFormat\nDotMarkdown.Linq.MFactory",
+            "iconUrl": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.3.0-beta/icon",
+            "id": "DotMarkdown",
+            "language": "",
+            "licenseExpression": "Apache-2.0",
+            "licenseUrl": "https://www.nuget.org/packages/DotMarkdown/0.3.0-beta/license",
+            "readmeUrl": "https://www.nuget.org/packages/DotMarkdown/0.3.0-beta#show-readme-container",
+            "listed": true,
+            "minClientVersion": "",
+            "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.3.0-beta/dotmarkdown.0.3.0-beta.nupkg",
+            "projectUrl": "http://github.com/josefpihrt/dotmarkdown",
+            "published": "2023-07-27T01:05:30.083+00:00",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": [
+              "markdown",
+              "md",
+              "linq"
+            ],
+            "title": "",
+            "version": "0.3.0-beta"
+          },
+          "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.3.0-beta/dotmarkdown.0.3.0-beta.nupkg",
+          "registration": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json"
+        },
+        {
+          "@id": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/0.3.0-tags-v0-3-0-rc.1.json",
+          "@type": "Package",
+          "commitId": "a2fc6a0d-ba1e-4cea-a8f8-fdc0fbe144d8",
+          "commitTimeStamp": "2023-07-26T23:27:54.5440185+00:00",
+          "catalogEntry": {
+            "@id": "https://api.nuget.org/v3/catalog0/data/2023.07.26.23.27.06/dotmarkdown.0.3.0-tags-v0-3-0-rc.1.json",
+            "@type": "PackageDetails",
+            "authors": "Josef Pihrt",
+            "dependencyGroups": [
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2023.07.26.23.27.06/dotmarkdown.0.3.0-tags-v0-3-0-rc.1.json#dependencygroup/.netframework4.6.2",
+                "@type": "PackageDependencyGroup",
+                "targetFramework": ".NETFramework4.6.2"
+              },
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2023.07.26.23.27.06/dotmarkdown.0.3.0-tags-v0-3-0-rc.1.json#dependencygroup/.netstandard1.3",
+                "@type": "PackageDependencyGroup",
+                "dependencies": [
+                  {
+                    "@id": "https://api.nuget.org/v3/catalog0/data/2023.07.26.23.27.06/dotmarkdown.0.3.0-tags-v0-3-0-rc.1.json#dependencygroup/.netstandard1.3/netstandard.library",
+                    "@type": "PackageDependency",
+                    "id": "NETStandard.Library",
+                    "range": "[1.6.1, )",
+                    "registration": "https://api.nuget.org/v3/registration5-gz-semver2/netstandard.library/index.json"
+                  }
+                ],
+                "targetFramework": ".NETStandard1.3"
+              }
+            ],
+            "description": "DotMarkdown enables to conveniently create markdown content from the code.\n\nCommonly Used Types:\nDotMarkdown.MarkdownWriter\nDotMarkdown.MarkdownFormat\nDotMarkdown.Linq.MFactory",
+            "iconUrl": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.3.0-tags-v0-3-0-rc.1/icon",
+            "id": "DotMarkdown",
+            "language": "",
+            "licenseExpression": "Apache-2.0",
+            "licenseUrl": "https://www.nuget.org/packages/DotMarkdown/0.3.0-tags-v0-3-0-rc.1/license",
+            "readmeUrl": "https://www.nuget.org/packages/DotMarkdown/0.3.0-tags-v0-3-0-rc.1#show-readme-container",
+            "listed": false,
+            "minClientVersion": "",
+            "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.3.0-tags-v0-3-0-rc.1/dotmarkdown.0.3.0-tags-v0-3-0-rc.1.nupkg",
+            "projectUrl": "http://github.com/josefpihrt/dotmarkdown",
+            "published": "1900-01-01T00:00:00+00:00",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": [
+              "markdown",
+              "md",
+              "linq"
+            ],
+            "title": "",
+            "version": "0.3.0-tags-v0-3-0-rc.1"
+          },
+          "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.3.0-tags-v0-3-0-rc.1/dotmarkdown.0.3.0-tags-v0-3-0-rc.1.nupkg",
+          "registration": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json"
+        },
+        {
+          "@id": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/0.3.0.json",
+          "@type": "Package",
+          "commitId": "ba2a7ae0-8469-408f-b053-1d50415c31e8",
+          "commitTimeStamp": "2023-08-17T14:31:56.7666853+00:00",
+          "catalogEntry": {
+            "@id": "https://api.nuget.org/v3/catalog0/data/2023.08.17.14.31.20/dotmarkdown.0.3.0.json",
+            "@type": "PackageDetails",
+            "authors": "Josef Pihrt",
+            "dependencyGroups": [
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2023.08.17.14.31.20/dotmarkdown.0.3.0.json#dependencygroup/.netframework4.6.2",
+                "@type": "PackageDependencyGroup",
+                "targetFramework": ".NETFramework4.6.2"
+              },
+              {
+                "@id": "https://api.nuget.org/v3/catalog0/data/2023.08.17.14.31.20/dotmarkdown.0.3.0.json#dependencygroup/.netstandard1.3",
+                "@type": "PackageDependencyGroup",
+                "dependencies": [
+                  {
+                    "@id": "https://api.nuget.org/v3/catalog0/data/2023.08.17.14.31.20/dotmarkdown.0.3.0.json#dependencygroup/.netstandard1.3/netstandard.library",
+                    "@type": "PackageDependency",
+                    "id": "NETStandard.Library",
+                    "range": "[1.6.1, )",
+                    "registration": "https://api.nuget.org/v3/registration5-gz-semver2/netstandard.library/index.json"
+                  }
+                ],
+                "targetFramework": ".NETStandard1.3"
+              }
+            ],
+            "description": "DotMarkdown enables to conveniently create markdown content from the code.\n\nCommonly Used Types:\nDotMarkdown.MarkdownWriter\nDotMarkdown.MarkdownFormat\nDotMarkdown.Linq.MFactory",
+            "iconUrl": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.3.0/icon",
+            "id": "DotMarkdown",
+            "language": "",
+            "licenseExpression": "Apache-2.0",
+            "licenseUrl": "https://www.nuget.org/packages/DotMarkdown/0.3.0/license",
+            "readmeUrl": "https://www.nuget.org/packages/DotMarkdown/0.3.0#show-readme-container",
+            "listed": true,
+            "minClientVersion": "",
+            "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.3.0/dotmarkdown.0.3.0.nupkg",
+            "projectUrl": "http://github.com/josefpihrt/dotmarkdown",
+            "published": "2023-08-17T14:28:38.443+00:00",
+            "requireLicenseAcceptance": false,
+            "summary": "",
+            "tags": [
+              "markdown",
+              "md",
+              "linq"
+            ],
+            "title": "",
+            "version": "0.3.0"
+          },
+          "packageContent": "https://api.nuget.org/v3-flatcontainer/dotmarkdown/0.3.0/dotmarkdown.0.3.0.nupkg",
+          "registration": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json"
+        }
+      ],
+      "parent": "https://api.nuget.org/v3/registration5-gz-semver2/dotmarkdown/index.json",
+      "lower": "0.1.0-beta",
+      "upper": "0.3.0"
+    }
+  ],
+  "@context": {
+    "@vocab": "http://schema.nuget.org/schema#",
+    "catalog": "http://schema.nuget.org/catalog#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "items": {
+      "@id": "catalog:item",
+      "@container": "@set"
+    },
+    "commitTimeStamp": {
+      "@id": "catalog:commitTimeStamp",
+      "@type": "xsd:dateTime"
+    },
+    "commitId": {
+      "@id": "catalog:commitId"
+    },
+    "count": {
+      "@id": "catalog:count"
+    },
+    "parent": {
+      "@id": "catalog:parent",
+      "@type": "@id"
+    },
+    "tags": {
+      "@id": "tag",
+      "@container": "@set"
+    },
+    "reasons": {
+      "@container": "@set"
+    },
+    "packageTargetFrameworks": {
+      "@id": "packageTargetFramework",
+      "@container": "@set"
+    },
+    "dependencyGroups": {
+      "@id": "dependencyGroup",
+      "@container": "@set"
+    },
+    "dependencies": {
+      "@id": "dependency",
+      "@container": "@set"
+    },
+    "packageContent": {
+      "@type": "@id"
+    },
+    "published": {
+      "@type": "xsd:dateTime"
+    },
+    "registration": {
+      "@type": "@id"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
+using DotBump.Commands;
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.DataModel;
 using Moq;

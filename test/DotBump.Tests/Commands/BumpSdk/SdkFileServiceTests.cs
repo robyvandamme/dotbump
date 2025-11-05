@@ -36,12 +36,17 @@ public class SdkFileServiceTests
         }
 
         [Fact]
-        public void With_Bad_Version_Data_Throws_ArgumentException()
+        public void With_Bad_Version_Data_Sets_0_Version()
         {
             var filePath = Directory.GetCurrentDirectory() + "/Data/bad-global.json";
             var loggerMock = new Mock<ILogger>();
             var service = new SdkFileService(loggerMock.Object);
-            Should.Throw<ArgumentException>(() => service.GetCurrentSdkVersionFromFile(filePath));
+            var currentSdk = service.GetCurrentSdkVersionFromFile(filePath);
+            currentSdk.ShouldNotBeNull();
+            currentSdk.SemanticVersion.IsValid.ShouldBeFalse();
+            currentSdk.SemanticVersion.Major.ShouldBe(0);
+            currentSdk.SemanticVersion.Minor.ShouldBe(0);
+            currentSdk.SemanticVersion.Patch.ShouldBe(0);
         }
     }
 }
