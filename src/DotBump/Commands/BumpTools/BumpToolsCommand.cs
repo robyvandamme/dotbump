@@ -16,6 +16,8 @@ internal class BumpToolsCommand(
     IBumpToolsHandler bumpToolsHandler)
     : AsyncCommand<BumpToolsSettings>
 {
+    private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
+
     public override async Task<int> ExecuteAsync(CommandContext context, BumpToolsSettings settings)
     {
         logger.MethodStart(nameof(BumpToolsCommand), nameof(ExecuteAsync));
@@ -32,13 +34,15 @@ internal class BumpToolsCommand(
 
             var bumpType = settings.BumpType ?? BumpType.Minor;
             var outputFile = settings.Output;
+            var nugetConfigPath = !string.IsNullOrWhiteSpace(settings.NuGetConfigPath)
+                ? Path.GetFullPath(settings.NuGetConfigPath)
+                : _defaultNugetConfigPath;
 
-            logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("Output file : {OutputFile}", outputFile);
 
             console.MarkupLine($"Bumping Tools with settings: type={bumpType}, output: {outputFile ?? "none"}");
 
-            var bumpReport = await bumpToolsHandler.HandleAsync(bumpType);
+            var bumpReport = await bumpToolsHandler.HandleAsync(bumpType, nugetConfigPath);
 
             if (!bumpReport.HasChanges)
             {

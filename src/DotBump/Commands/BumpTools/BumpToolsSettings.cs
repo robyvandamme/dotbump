@@ -17,4 +17,8 @@ internal class BumpToolsSettings : BumpSettings
     [Description("Output file name. The name of the file to write the result to. The output format is json.")]
     [CommandOption("-o|--output")]
     public string? Output { get; init; }
+
+    [Description("The nuget config file to use. Defaults to `./nuget.config`.")]
+    [CommandOption("-c|--config")]
+    public string? NuGetConfigPath { get; init; }
 }

@@ -15,14 +15,14 @@ internal class BumpToolsHandler(
     INuGetReleaseFinder nuGetReleaseFinder,
     ILogger logger) : IBumpToolsHandler
 {
-    public async Task<BumpReport> HandleAsync(BumpType bumpType)
+    public async Task<BumpReport> HandleAsync(BumpType bumpType, string nugetConfigPath)
     {
         logger.MethodStart(nameof(BumpSdkHandler), nameof(HandleAsync), bumpType);
 
         var manifest = toolFileService.GetToolManifest();
         var bumpReport = new BumpReport(manifest);
 
-        var nuGetConfiguration = toolFileService.GetNuGetConfiguration();
+        var nuGetConfiguration = toolFileService.GetNuGetConfiguration(nugetConfigPath);
 
         foreach (var nugetPackageSource in nuGetConfiguration.PackageSources)
         {

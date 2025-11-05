@@ -22,7 +22,7 @@ public class ToolFileServiceTests
                 var directory = new LocalDirectory(Environment.CurrentDirectory);
                 directory.EnsureFileDeleted("nuget.config");
                 var service = new ToolFileService(new Mock<ILogger>().Object);
-                var result = service.GetNuGetConfiguration();
+                var result = service.GetNuGetConfiguration(TODO);
                 result.Credentials.ShouldBeEmpty();
                 result.PackageSources.ShouldHaveSingleItem();
                 result.PackageSources.First().Key.ShouldBe("nuget.org");
@@ -53,7 +53,7 @@ public class ToolFileServiceTests
                     try
                     {
                         // Act
-                        var result = service.GetNuGetConfiguration();
+                        var result = service.GetNuGetConfiguration(TODO);
 
                         // Assert
                         result.ShouldNotBeNull();
@@ -102,7 +102,7 @@ public class ToolFileServiceTests
 
                     try
                     {
-                        Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration());
+                        Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(TODO));
                     }
                     finally
                     {
@@ -137,7 +137,7 @@ public class ToolFileServiceTests
                     try
                     {
                         // Act
-                        var result = service.GetNuGetConfiguration();
+                        var result = service.GetNuGetConfiguration(TODO);
 
                         // Assert
                         result.ShouldNotBeNull();
@@ -186,7 +186,7 @@ public class ToolFileServiceTests
 
                     try
                     {
-                        Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration());
+                        Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(TODO));
                     }
                     finally
                     {
@@ -209,7 +209,7 @@ public class ToolFileServiceTests
                     try
                     {
                         // Act
-                        Should.Throw<XmlException>(() => service.GetNuGetConfiguration());
+                        Should.Throw<XmlException>(() => service.GetNuGetConfiguration(TODO));
                     }
                     finally
                     {

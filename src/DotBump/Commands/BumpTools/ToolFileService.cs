@@ -23,8 +23,6 @@ internal class ToolFileService(ILogger logger) : IToolFileService
         ".config",
         "dotnet-tools.json");
 
-    private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
-
     public ToolsManifest GetToolManifest()
     {
         logger.MethodStart(nameof(ToolFileService), nameof(GetToolManifest));
@@ -51,18 +49,19 @@ internal class ToolFileService(ILogger logger) : IToolFileService
     /// Tries to read a NuGet configuration named "nuget.config" in the current directory.
     /// If not found a default NuGet configuration is returned with the default https://api.nuget.org/v3/index.json package source.
     /// </summary>
+    /// <param name="nugetConfigPath">The NuGet config file path.</param>
     /// <returns>A NuGet configuration.</returns>
-    public NuGetConfig GetNuGetConfiguration()
+    public NuGetConfig GetNuGetConfiguration(string nugetConfigPath)
     {
         logger.MethodStart(nameof(ToolFileService), nameof(GetNuGetConfiguration));
 
-        logger.Debug("Looking for default nuget config file {ConfigFile}", _defaultNugetConfigPath);
+        logger.Debug("Looking for the nuget config file {ConfigFile}", nugetConfigPath);
 
-        if (!File.Exists(_defaultNugetConfigPath))
+        if (!File.Exists(nugetConfigPath))
         {
             logger.Debug(
-                "Default nuget config file {ConfigFile} not found, using default source https://api.nuget.org/v3/index.json",
-                _defaultNugetConfigPath);
+                "Nuget config file {ConfigFile} not found, using default source https://api.nuget.org/v3/index.json",
+                nugetConfigPath);
             var defaultConfig = new NuGetConfig();
             defaultConfig.PackageSources.Add(
                 new PackageSource
@@ -73,7 +72,7 @@ internal class ToolFileService(ILogger logger) : IToolFileService
             return defaultConfig;
         }
 
-        var config = ReadFromConfigFile(_defaultNugetConfigPath);
+        var config = ReadFromConfigFile(nugetConfigPath);
 
         logger.MethodReturn(nameof(ToolFileService), nameof(GetNuGetConfiguration), config);
         return config;
