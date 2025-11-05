@@ -14,6 +14,8 @@ public class ToolFileServiceTests
 {
     public class GetNuGetConfiguration
     {
+        private static readonly string s_defaultNugetConfig = "nuget.config";
+
         public class NoConfigFile
         {
             [Fact]
@@ -22,7 +24,7 @@ public class ToolFileServiceTests
                 var directory = new LocalDirectory(Environment.CurrentDirectory);
                 directory.EnsureFileDeleted("nuget.config");
                 var service = new ToolFileService(new Mock<ILogger>().Object);
-                var result = service.GetNuGetConfiguration(TODO);
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
                 result.Credentials.ShouldBeEmpty();
                 result.PackageSources.ShouldHaveSingleItem();
                 result.PackageSources.First().Key.ShouldBe("nuget.org");
@@ -31,7 +33,7 @@ public class ToolFileServiceTests
             }
         }
 
-        public class DefaultConfigFile
+        public class WithConfigFile
         {
             public class WhenConfigFileContainsPackageSourcesOnly
             {
@@ -47,13 +49,13 @@ public class ToolFileServiceTests
                     </packageSources>
                 </configuration>";
 
-                    var tempFile = CreateTempFile(xmlContent);
+                    var tempFile = CreateTempConfigFile(xmlContent);
                     var service = new ToolFileService(new Mock<ILogger>().Object);
 
                     try
                     {
                         // Act
-                        var result = service.GetNuGetConfiguration(TODO);
+                        var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
 
                         // Assert
                         result.ShouldNotBeNull();
@@ -97,12 +99,12 @@ public class ToolFileServiceTests
                     </packageSourceCredentials>
                 </configuration>";
 
-                    var tempFile = CreateTempFile(xmlContent);
+                    var tempFile = CreateTempConfigFile(xmlContent);
                     var service = new ToolFileService(new Mock<ILogger>().Object);
 
                     try
                     {
-                        Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(TODO));
+                        Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
                     }
                     finally
                     {
@@ -131,13 +133,13 @@ public class ToolFileServiceTests
                     </packageSourceCredentials>
                 </configuration>";
 
-                    var tempFile = CreateTempFile(xmlContent);
+                    var tempFile = CreateTempConfigFile(xmlContent);
                     var service = new ToolFileService(new Mock<ILogger>().Object);
 
                     try
                     {
                         // Act
-                        var result = service.GetNuGetConfiguration(TODO);
+                        var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
 
                         // Assert
                         result.ShouldNotBeNull();
@@ -181,12 +183,12 @@ public class ToolFileServiceTests
                 <configuration>
                 </configuration>";
 
-                    var tempFile = CreateTempFile(xmlContent);
+                    var tempFile = CreateTempConfigFile(xmlContent);
                     var service = new ToolFileService(new Mock<ILogger>().Object);
 
                     try
                     {
-                        Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(TODO));
+                        Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
                     }
                     finally
                     {
@@ -203,13 +205,13 @@ public class ToolFileServiceTests
                     // Arrange
                     var xmlContent = "Just some text";
 
-                    var tempFile = CreateTempFile(xmlContent);
+                    var tempFile = CreateTempConfigFile(xmlContent);
                     var service = new ToolFileService(new Mock<ILogger>().Object);
 
                     try
                     {
                         // Act
-                        Should.Throw<XmlException>(() => service.GetNuGetConfiguration(TODO));
+                        Should.Throw<XmlException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
                     }
                     finally
                     {
@@ -218,10 +220,10 @@ public class ToolFileServiceTests
                 }
             }
 
-            private static string CreateTempFile(string content)
+            private static string CreateTempConfigFile(string content)
             {
                 var localDirectory = new LocalDirectory(Environment.CurrentDirectory);
-                var filename = "nuget.config";
+                var filename = s_defaultNugetConfig;
                 localDirectory.EnsureFileDeleted(filename);
                 localDirectory.EnsureFileCreated(filename, content);
                 return "nuget.config";
