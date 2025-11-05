@@ -46,14 +46,14 @@ internal class ToolFileService(ILogger logger) : IToolFileService
     }
 
     /// <summary>
-    /// Tries to read a NuGet configuration named "nuget.config" in the current directory.
+    /// Tries to read the NuGet configuration from the nugetConfigPath.
     /// If not found a default NuGet configuration is returned with the default https://api.nuget.org/v3/index.json package source.
     /// </summary>
     /// <param name="nugetConfigPath">The NuGet config file path.</param>
     /// <returns>A NuGet configuration.</returns>
     public NuGetConfig GetNuGetConfiguration(string nugetConfigPath)
     {
-        logger.MethodStart(nameof(ToolFileService), nameof(GetNuGetConfiguration));
+        logger.MethodStart(nameof(ToolFileService), nameof(GetNuGetConfiguration), nugetConfigPath);
 
         logger.Debug("Looking for the nuget config file {ConfigFile}", nugetConfigPath);
 
