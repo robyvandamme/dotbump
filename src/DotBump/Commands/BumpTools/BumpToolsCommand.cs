@@ -38,9 +38,12 @@ internal class BumpToolsCommand(
                 ? Path.GetFullPath(settings.NuGetConfigPath)
                 : _defaultNugetConfigPath;
 
+            logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("Output file : {OutputFile}", outputFile);
+            logger.Debug("NuGet config : {NuGetConfig}", nugetConfigPath);
 
-            console.MarkupLine($"Bumping Tools with settings: type={bumpType}, output: {outputFile ?? "none"}");
+            console.MarkupLine(
+                $"Bumping Tools with settings: type={bumpType}, output: {outputFile ?? "none"}, config: {nugetConfigPath}");
 
             var bumpReport = await bumpToolsHandler.HandleAsync(bumpType, nugetConfigPath);
 
