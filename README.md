@@ -54,16 +54,15 @@ OPTIONS:
 ```text
 
 DESCRIPTION:
-Bump the local .NET tools versions. Use the 'minor' type option to bump the tools to 
-the latest minor or patch version for the current major version. Use the 'patch' 
-type option to bump the tools to the latest patch version for the current minor version. 
+Bump the local .NET tools versions. Use the 'minor' type option to bump the tools to the latest minor or patch versions for the current major version. Use the 'patch' type option to bump the tools to 
+the latest patch version for the current minor version. 
 
 USAGE:
     dotnet dotbump tools [OPTIONS]
 
 EXAMPLES:
-    dotnet dotbump tools -o bump-tools-result.json
-    dotnet dotbump tools -t patch -o bump-tools-report.json
+    dotnet dotbump tools -o bump-tools-report.json
+    dotnet dotbump tools -c other-nuget.config -t patch -o bump-tools-report.json
     dotnet dotbump tools --debug true --logfile log.txt
 
 OPTIONS:
@@ -72,7 +71,7 @@ OPTIONS:
         --logfile    The file to send the log output to                                                      
     -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`           
     -o, --output     Output file name. The name of the file to write the result to. The output format is json
-
+    -c, --config     The nuget config file to use. Defaults to `./nuget.config`      
 
 ```
 
@@ -94,14 +93,14 @@ Example:
 <configuration>
   <packageSources>
     <clear />
-    <add key="robyvandamme" value="https://nuget.pkg.github.com/robyvandamme/index.json" protocolVersion="3" />
+    <add key="myfeed" value="https://nuget.pkg.github.com/robyvandamme/index.json" protocolVersion="3" />
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
   </packageSources>
   <packageSourceCredentials>
-    <robyvandamme>
+    <myfeed>
       <add key="Username" value="%PRIVATE_GITHUB_FEED_USER%" />
       <add key="ClearTextPassword" value="%PRIVATE_GITHUB_FEED_PASSWORD%" />
-    </robyvandamme>
+    </myfeed>
   </packageSourceCredentials> 
 </configuration>
 
