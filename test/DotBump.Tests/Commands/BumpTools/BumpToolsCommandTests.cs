@@ -69,7 +69,7 @@ public class BumpToolsCommandTests
                 var result = await command.ExecuteAsync(context, new BumpToolsSettings());
                 result.ShouldBe(0);
 
-                var updatedManifest = fileService.GetToolManifest();
+                var updatedManifest = fileService.GetToolsManifest();
                 updatedManifest.Tools.First(o => o.Key.Equals("dotnet-sonarscanner"))
                     .Value.Version.ShouldBe("10.4.1");
                 updatedManifest.Tools.First(o => o.Key.Equals("amazon.lambda.tools"))
@@ -98,7 +98,7 @@ public class BumpToolsCommandTests
                 var result = await command.ExecuteAsync(context, new BumpToolsSettings() { BumpType = BumpType.Patch });
                 result.ShouldBe(0);
 
-                var updatedManifest = fileService.GetToolManifest();
+                var updatedManifest = fileService.GetToolsManifest();
                 updatedManifest.Tools.First(o => o.Key.Equals("dotnet-sonarscanner"))
                     .Value.Version.ShouldBe("10.1.2");
                 updatedManifest.Tools.First(o => o.Key.Equals("amazon.lambda.tools"))
@@ -183,7 +183,7 @@ public class BumpToolsCommandTests
                         new BumpToolsSettings() { BumpType = BumpType.Patch });
                     result.ShouldBe(0);
 
-                    var updatedManifest = fileService.GetToolManifest();
+                    var updatedManifest = fileService.GetToolsManifest();
 
                     updatedManifest.Tools.First(o => o.Key.Equals("dotbump"))
                         .Value.Version.ShouldBe("0.1.1-beta.8");

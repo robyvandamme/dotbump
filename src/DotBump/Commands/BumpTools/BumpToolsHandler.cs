@@ -20,7 +20,7 @@ internal class BumpToolsHandler(
     {
         logger.MethodStart(nameof(BumpSdkHandler), nameof(HandleAsync), bumpType);
 
-        var manifest = toolFileService.GetToolManifest();
+        var manifest = toolFileService.GetToolsManifest();
         var bumpReport = new BumpReport(manifest);
 
         var nuGetConfiguration = toolFileService.GetNuGetConfiguration(nugetConfigPath);
@@ -94,7 +94,7 @@ internal class BumpToolsHandler(
 
         if (bumpReport.HasChanges)
         {
-            toolFileService.SaveToolManifest(manifest);
+            toolFileService.SaveToolsManifest(manifest);
         }
 
         logger.MethodReturn(nameof(BumpSdkHandler), nameof(HandleAsync), bumpReport);

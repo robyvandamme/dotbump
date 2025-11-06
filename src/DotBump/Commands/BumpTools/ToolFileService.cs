@@ -23,9 +23,9 @@ internal class ToolFileService(ILogger logger) : IToolFileService
         ".config",
         "dotnet-tools.json");
 
-    public ToolsManifest GetToolManifest()
+    public ToolsManifest GetToolsManifest()
     {
-        logger.MethodStart(nameof(ToolFileService), nameof(GetToolManifest));
+        logger.MethodStart(nameof(ToolFileService), nameof(GetToolsManifest));
 
         if (!File.Exists(_defaultToolManifestPath))
         {
@@ -40,7 +40,7 @@ internal class ToolFileService(ILogger logger) : IToolFileService
             throw new DotBumpException("The tool manifest file could not be deserialized.");
         }
 
-        logger.MethodReturn(nameof(ToolFileService), nameof(GetToolManifest), manifest);
+        logger.MethodReturn(nameof(ToolFileService), nameof(GetToolsManifest), manifest);
 
         return manifest;
     }
@@ -83,9 +83,9 @@ internal class ToolFileService(ILogger logger) : IToolFileService
     /// </summary>
     /// <param name="manifest">The updated tools manifest.</param>
     /// <exception cref="DotBumpException">If the manifest can not be found.</exception>
-    public void SaveToolManifest(ToolsManifest manifest)
+    public void SaveToolsManifest(ToolsManifest manifest)
     {
-        logger.MethodStart(nameof(ToolFileService), nameof(SaveToolManifest));
+        logger.MethodStart(nameof(ToolFileService), nameof(SaveToolsManifest));
 
         ArgumentNullException.ThrowIfNull(manifest);
 
@@ -99,7 +99,7 @@ internal class ToolFileService(ILogger logger) : IToolFileService
 
         File.WriteAllText(_defaultToolManifestPath, json);
 
-        logger.MethodReturn(nameof(ToolFileService), nameof(SaveToolManifest));
+        logger.MethodReturn(nameof(ToolFileService), nameof(SaveToolsManifest));
     }
 
     private NuGetConfig ReadFromConfigFile(string filePath)
