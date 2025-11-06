@@ -41,6 +41,12 @@ internal record NuGetClientConfig
             throw new ArgumentException(nameof(NuGetConfig));
         }
 
+        if (packageSource.ProtocolVersion != "3")
+        {
+            throw new ArgumentException(
+                $"Only protocol version 3 is supported. {packageSourceName} has protocol version {packageSource.ProtocolVersion}");
+        }
+
         return packageSource.Value;
     }
 
@@ -63,13 +69,32 @@ internal record NuGetClientConfig
                 StringComparison.OrdinalIgnoreCase));
             if (userNamePlaceHolder != null && passwordPlaceHolder != null)
             {
-                var userNameVariable = userNamePlaceHolder.Value.Replace("%", string.Empty);
-                var passwordVariable = passwordPlaceHolder.Value.Replace("%", string.Empty);
+                if (!HasPercentBoundaries(userNamePlaceHolder.Value))
+                {
+                    // TODO: should we throw here? Probably...
+                    _logger.Debug(
+                        "UserName value for {Source} should have percent boundaries",
+                        sourceCredential.SourceName);
+                    return null;
+                }
+
+                // TODO: should we throw here? Probably....
+                if (!HasPercentBoundaries(passwordPlaceHolder.Value))
+                {
+                    _logger.Debug(
+                        "ClearTextPassword value for {Source} should have percent boundaries",
+                        sourceCredential.SourceName);
+                    return null;
+                }
+
+                var userNameVariable = userNamePlaceHolder.Value.Trim('%');
+                var passwordVariable = passwordPlaceHolder.Value.Trim('%');
 
                 var userName = Environment.GetEnvironmentVariable(userNameVariable);
                 var password = Environment.GetEnvironmentVariable(passwordVariable);
                 if (string.IsNullOrWhiteSpace(userName))
                 {
+                    // TODO: should we throw here?
                     _logger.Debug(
                         "Environment variable {UserName} not found for {PackageSource}",
                         userNameVariable,
@@ -79,6 +104,7 @@ internal record NuGetClientConfig
 
                 if (string.IsNullOrWhiteSpace(password))
                 {
+                    // TODO: should we throw here?
                     _logger.Debug(
                         "Environment variable {Password} not found for {PackageSource}",
                         passwordVariable,
@@ -91,5 +117,10 @@ internal record NuGetClientConfig
         }
 
         return null;
+    }
+
+    private bool HasPercentBoundaries(string input)
+    {
+        return !string.IsNullOrEmpty(input) && input.StartsWith('%') && input.EndsWith('%');
     }
 }

@@ -6,7 +6,7 @@ namespace DotBump.Commands.BumpTools.DataModel.NuGetClientConfiguration;
 
 internal record NuGetClientCredential(string UserName, string Password)
 {
-    [LogMasked(ShowFirst = 3)]
+    [LogMasked]
     public string UserName { get; } = UserName;
 
     [LogMasked]
