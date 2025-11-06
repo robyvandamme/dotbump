@@ -33,12 +33,12 @@ internal class NuGetConfigValidator(ILogger logger) : INuGetConfigValidator
             if (!IsValidUrl(source.Value))
             {
                 logger.Error(
-                    "Package source {PackageSource} has an invalid URL version {URL}",
+                    "Package source {PackageSource} has an invalid URL {URL}. Should be HTTPS.",
                     source.Key,
                     source.Value);
                 validationResults.Add(
                     new ValidationResult(
-                        $"Package source {source.Key} has invalid URL: {source.Value}.",
+                        $"Package source {source.Key} has invalid URL: {source.Value}. Should be HTTPS.",
                         [nameof(PackageSource.Value)]));
             }
         }
@@ -51,17 +51,27 @@ internal class NuGetConfigValidator(ILogger logger) : INuGetConfigValidator
                 // Validate that Value starts and ends with '%'
                 if (!cred.Value.StartsWith("%") || !cred.Value.EndsWith("%"))
                 {
-                    if (credential != null)
-                    {
                         logger.Error(
-                            "Credential value {Key} for source {Source} should start and end with %",
+                            "Credential value for {Key} for source {Source} should start and end with %",
                             cred.Key,
                             credential.SourceName);
                         validationResults.Add(
                             new ValidationResult(
-                                $"Credential {cred.Key} for source {credential.SourceName} must start and end with a % character.",
+                                $"Credential value for {cred.Key} for source {credential.SourceName} must start and end with a % character.",
                                 [nameof(Credential.Value)]));
-                    }
+                }
+
+                if (!cred.Key.Equals("UserName", StringComparison.OrdinalIgnoreCase) &&
+                    !cred.Key.Equals("ClearTextPassword"))
+                {
+                    logger.Error(
+                        "Credential key for source {Source} should be UserName or ClearTextPassword",
+                        cred.Key,
+                        credential.SourceName);
+                    validationResults.Add(
+                        new ValidationResult(
+                            $"Credential key for source {credential.SourceName} should be UserName or ClearTextPassword.",
+                            [nameof(Credential.Value)]));
                 }
             }
         }
@@ -72,6 +82,6 @@ internal class NuGetConfigValidator(ILogger logger) : INuGetConfigValidator
     private static bool IsValidUrl(string url)
     {
         return Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
-               (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+               (uri.Scheme == Uri.UriSchemeHttps);
     }
 }

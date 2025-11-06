@@ -73,18 +73,16 @@ internal record NuGetClientConfig
                 {
                     // NOTE: Decided not to throw here. Configuration is validated in the NuGetConfigValidator so the chance of
                     // this happening should be low. Revisit if this would pop up.
-                    _logger.Warning(
+                    _logger.Error(
                         "UserName value for {Source} should have percent boundaries",
                         sourceCredential.SourceName);
-                    return null;
                 }
 
                 if (!HasPercentBoundaries(passwordPlaceHolder.Value))
                 {
-                    _logger.Warning(
+                    _logger.Error(
                         "ClearTextPassword value for {Source} should have percent boundaries",
                         sourceCredential.SourceName);
-                    return null;
                 }
 
                 var userNameVariable = userNamePlaceHolder.Value.Trim('%');
@@ -92,22 +90,22 @@ internal record NuGetClientConfig
 
                 var userName = Environment.GetEnvironmentVariable(userNameVariable);
                 var password = Environment.GetEnvironmentVariable(passwordVariable);
+
+                // If an environment variable is not found, NuGet uses the literal value from the configuration file.
                 if (string.IsNullOrWhiteSpace(userName))
                 {
-                    _logger.Warning(
-                        "Environment variable {UserName} not found for {PackageSource}",
-                        userNameVariable,
+                    _logger.Error(
+                        "Environment variable for UserName not found for {PackageSource}",
                         packageSourceKey);
-                    return null;
+                    userName = userNamePlaceHolder.Value;
                 }
 
                 if (string.IsNullOrWhiteSpace(password))
                 {
-                    _logger.Warning(
-                        "Environment variable {Password} not found for {PackageSource}",
-                        passwordVariable,
+                    _logger.Error(
+                        "Environment variable for ClearTextPassword not found for {PackageSource}",
                         packageSourceKey);
-                    return null;
+                    password = passwordPlaceHolder.Value;
                 }
 
                 return new NuGetClientCredential(userName, password);
