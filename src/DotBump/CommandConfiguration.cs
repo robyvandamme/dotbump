@@ -53,8 +53,8 @@ internal static class CommandConfiguration
                     "Bump the local .NET tools versions. " +
                     "Use the 'minor' type option to bump the tools to the latest minor or patch versions for the current major version. " +
                     "Use the 'patch' type option to bump the tools to the latest patch version for the current minor version. ")
-                .WithExample("tools", "-o", "bump-tools-result.json")
-                .WithExample("tools", "-t", "patch", "-o", "bump-tools-report.json")
+                .WithExample("tools", "-o", "bump-tools-report.json")
+                .WithExample("tools", "-c", "other-nuget.config", "-t", "patch", "-o", "bump-tools-report.json")
                 .WithExample("tools", "--debug", "true", "--logfile", "log.txt");
         });
     }
