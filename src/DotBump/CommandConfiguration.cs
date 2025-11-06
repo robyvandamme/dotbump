@@ -46,6 +46,7 @@ internal static class CommandConfiguration
             config.Settings.Registrar.Register<INuGetReleaseFinder, NuGetReleaseFinder>();
             config.Settings.Registrar.Register<IBumpToolsHandler, BumpToolsHandler>();
             config.Settings.Registrar.Register<INuGetClientFactory, NuGetClientFactory>();
+            config.Settings.Registrar.Register<INuGetConfigValidator, NuGetConfigValidator>();
 
             config.AddCommand<BumpToolsCommand>(name: "tools")
                 .WithDescription(

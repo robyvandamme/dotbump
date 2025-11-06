@@ -13,6 +13,7 @@ internal class BumpToolsHandler(
     IToolFileService toolFileService,
     INuGetClientFactory nuGetClientFactory,
     INuGetReleaseFinder nuGetReleaseFinder,
+    INuGetConfigValidator nugetConfigValidator,
     ILogger logger) : IBumpToolsHandler
 {
     public async Task<BumpReport> HandleAsync(BumpType bumpType, string nugetConfigPath)
@@ -23,6 +24,13 @@ internal class BumpToolsHandler(
         var bumpReport = new BumpReport(manifest);
 
         var nuGetConfiguration = toolFileService.GetNuGetConfiguration(nugetConfigPath);
+        var validationErrors = nugetConfigValidator.Validate(nuGetConfiguration);
+        if (validationErrors.Any())
+        {
+            bumpReport.ReportErrors(validationErrors);
+            logger.MethodReturn(nameof(BumpSdkHandler), nameof(HandleAsync), bumpReport);
+            return bumpReport;
+        }
 
         foreach (var nugetPackageSource in nuGetConfiguration.PackageSources)
         {

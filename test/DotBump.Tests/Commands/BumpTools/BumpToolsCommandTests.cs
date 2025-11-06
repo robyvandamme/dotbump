@@ -33,7 +33,8 @@ public class BumpToolsCommandTests
             var fileService = new ToolFileService(loggerMock);
             var clientFactory = new NuGetClientFactory(loggerMock);
             var releaseService = new NuGetReleaseFinder(loggerMock);
-            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
+            var validator = new NuGetConfigValidator(loggerMock);
+            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, validator, loggerMock);
 
             var command = new BumpToolsCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "tools" };
@@ -54,7 +55,8 @@ public class BumpToolsCommandTests
             var fileService = new ToolFileService(loggerMock);
             var clientFactory = new NuGetClientFactory(loggerMock);
             var releaseService = new NuGetReleaseFinder(loggerMock);
-            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
+            var validator = new NuGetConfigValidator(loggerMock);
+            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, validator, loggerMock);
 
             var command = new BumpToolsCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "tools" };
@@ -82,7 +84,8 @@ public class BumpToolsCommandTests
             var fileService = new ToolFileService(loggerMock);
             var clientFactory = new NuGetClientFactory(loggerMock);
             var releaseService = new NuGetReleaseFinder(loggerMock);
-            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
+            var validator = new NuGetConfigValidator(loggerMock);
+            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, validator, loggerMock);
 
             var command = new BumpToolsCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "tools" };
@@ -113,7 +116,8 @@ public class BumpToolsCommandTests
             var fileService = new ToolFileService(loggerMock);
             var clientFactory = new NuGetClientFactory(loggerMock);
             var releaseService = new NuGetReleaseFinder(loggerMock);
-            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, loggerMock);
+            var validator = new NuGetConfigValidator(loggerMock);
+            var handler = new BumpToolsHandler(fileService, clientFactory, releaseService, validator, loggerMock);
 
             var command = new BumpToolsCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "tools" };

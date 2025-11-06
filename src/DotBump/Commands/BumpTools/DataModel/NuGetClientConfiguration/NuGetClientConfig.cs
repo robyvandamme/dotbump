@@ -71,17 +71,17 @@ internal record NuGetClientConfig
             {
                 if (!HasPercentBoundaries(userNamePlaceHolder.Value))
                 {
-                    // TODO: should we throw here? Probably...
-                    _logger.Debug(
+                    // NOTE: Decided not to throw here. Configuration is validated in the NuGetConfigValidator so the chance of
+                    // this happening should be low. Revisit if this would pop up.
+                    _logger.Warning(
                         "UserName value for {Source} should have percent boundaries",
                         sourceCredential.SourceName);
                     return null;
                 }
 
-                // TODO: should we throw here? Probably....
                 if (!HasPercentBoundaries(passwordPlaceHolder.Value))
                 {
-                    _logger.Debug(
+                    _logger.Warning(
                         "ClearTextPassword value for {Source} should have percent boundaries",
                         sourceCredential.SourceName);
                     return null;
@@ -94,8 +94,7 @@ internal record NuGetClientConfig
                 var password = Environment.GetEnvironmentVariable(passwordVariable);
                 if (string.IsNullOrWhiteSpace(userName))
                 {
-                    // TODO: should we throw here?
-                    _logger.Debug(
+                    _logger.Warning(
                         "Environment variable {UserName} not found for {PackageSource}",
                         userNameVariable,
                         packageSourceKey);
@@ -104,8 +103,7 @@ internal record NuGetClientConfig
 
                 if (string.IsNullOrWhiteSpace(password))
                 {
-                    // TODO: should we throw here?
-                    _logger.Debug(
+                    _logger.Warning(
                         "Environment variable {Password} not found for {PackageSource}",
                         passwordVariable,
                         packageSourceKey);

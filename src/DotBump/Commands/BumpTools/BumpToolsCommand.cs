@@ -47,18 +47,29 @@ internal class BumpToolsCommand(
 
             var bumpReport = await bumpToolsHandler.HandleAsync(bumpType, nugetConfigPath);
 
-            if (!bumpReport.HasChanges)
+            if (bumpReport.Errors.Any())
             {
-                console.MarkupLine("No tool versions were bumped.");
+                console.MarkupLine("An error occured bumping tool versions.");
+                foreach (var bumpReportError in bumpReport.Errors)
+                {
+                    console.MarkupLine(bumpReportError);
+                }
             }
             else
             {
-                console.MarkupLine("Tool versions bumped:");
-                foreach (var bumpResult in bumpReport.Results)
+                if (!bumpReport.HasChanges)
                 {
-                    if (bumpResult.WasBumped)
+                    console.MarkupLine("No tool versions were bumped.");
+                }
+                else
+                {
+                    console.MarkupLine("Tool versions bumped:");
+                    foreach (var bumpResult in bumpReport.Results)
                     {
-                        console.MarkupLine(bumpResult.ToString());
+                        if (bumpResult.WasBumped)
+                        {
+                            console.MarkupLine(bumpResult.ToString());
+                        }
                     }
                 }
             }
@@ -71,6 +82,12 @@ internal class BumpToolsCommand(
                     WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 };
                 File.WriteAllText(outputFile, JsonSerializer.Serialize(bumpReport, options), new UTF8Encoding());
+            }
+
+            if (bumpReport.Errors.Any())
+            {
+                logger.MethodReturn(nameof(BumpToolsCommand), nameof(ExecuteAsync));
+                return 1;
             }
         }
 #pragma warning disable CA1031
