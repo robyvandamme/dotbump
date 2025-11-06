@@ -1,5 +1,9 @@
 name: Release
 
+env:
+  PRIVATE_GITHUB_FEED_USER: ${{ secrets.PRIVATE_NUGET_FEED_USER }}
+  PRIVATE_GITHUB_FEED_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
 on:
   push:
     tags:
