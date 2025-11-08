@@ -117,7 +117,7 @@ class Build : NukeBuild
                         .SetProjectFile(test.Path)
                         .EnableNoBuild()
                         .SetConfiguration(Configuration)
-                        .SetDataCollector("XPlat Code Coverage")
+                        .SetSettingsFile($"{test.Directory}/coverlet.runsettings")
                         .SetResultsDirectory(TestReportsDirectory)
                         .SetLoggers($"html;logfilename={TestReportsDirectory}/testResults.html"));
                 }
