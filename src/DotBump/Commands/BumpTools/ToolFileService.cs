@@ -23,11 +23,9 @@ internal class ToolFileService(ILogger logger) : IToolFileService
         ".config",
         "dotnet-tools.json");
 
-    private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
-
-    public ToolsManifest GetToolManifest()
+    public ToolsManifest GetToolsManifest()
     {
-        logger.MethodStart(nameof(ToolFileService), nameof(GetToolManifest));
+        logger.MethodStart(nameof(ToolFileService), nameof(GetToolsManifest));
 
         if (!File.Exists(_defaultToolManifestPath))
         {
@@ -42,27 +40,28 @@ internal class ToolFileService(ILogger logger) : IToolFileService
             throw new DotBumpException("The tool manifest file could not be deserialized.");
         }
 
-        logger.MethodReturn(nameof(ToolFileService), nameof(GetToolManifest), manifest);
+        logger.MethodReturn(nameof(ToolFileService), nameof(GetToolsManifest), manifest);
 
         return manifest;
     }
 
     /// <summary>
-    /// Tries to read a NuGet configuration named "nuget.config" in the current directory.
+    /// Tries to read the NuGet configuration from the nugetConfigPath.
     /// If not found a default NuGet configuration is returned with the default https://api.nuget.org/v3/index.json package source.
     /// </summary>
+    /// <param name="nugetConfigPath">The NuGet config file path.</param>
     /// <returns>A NuGet configuration.</returns>
-    public NuGetConfig GetNuGetConfiguration()
+    public NuGetConfig GetNuGetConfiguration(string nugetConfigPath)
     {
-        logger.MethodStart(nameof(ToolFileService), nameof(GetNuGetConfiguration));
+        logger.MethodStart(nameof(ToolFileService), nameof(GetNuGetConfiguration), nugetConfigPath);
 
-        logger.Debug("Looking for default nuget config file {ConfigFile}", _defaultNugetConfigPath);
+        logger.Debug("Looking for the nuget config file {ConfigFile}", nugetConfigPath);
 
-        if (!File.Exists(_defaultNugetConfigPath))
+        if (!File.Exists(nugetConfigPath))
         {
             logger.Debug(
-                "Default nuget config file {ConfigFile} not found, using default source https://api.nuget.org/v3/index.json",
-                _defaultNugetConfigPath);
+                "Nuget config file {ConfigFile} not found, using default source https://api.nuget.org/v3/index.json",
+                nugetConfigPath);
             var defaultConfig = new NuGetConfig();
             defaultConfig.PackageSources.Add(
                 new PackageSource
@@ -73,7 +72,7 @@ internal class ToolFileService(ILogger logger) : IToolFileService
             return defaultConfig;
         }
 
-        var config = ReadFromConfigFile(_defaultNugetConfigPath);
+        var config = ReadFromConfigFile(nugetConfigPath);
 
         logger.MethodReturn(nameof(ToolFileService), nameof(GetNuGetConfiguration), config);
         return config;
@@ -84,9 +83,9 @@ internal class ToolFileService(ILogger logger) : IToolFileService
     /// </summary>
     /// <param name="manifest">The updated tools manifest.</param>
     /// <exception cref="DotBumpException">If the manifest can not be found.</exception>
-    public void SaveToolManifest(ToolsManifest manifest)
+    public void SaveToolsManifest(ToolsManifest manifest)
     {
-        logger.MethodStart(nameof(ToolFileService), nameof(SaveToolManifest));
+        logger.MethodStart(nameof(ToolFileService), nameof(SaveToolsManifest));
 
         ArgumentNullException.ThrowIfNull(manifest);
 
@@ -100,7 +99,7 @@ internal class ToolFileService(ILogger logger) : IToolFileService
 
         File.WriteAllText(_defaultToolManifestPath, json);
 
-        logger.MethodReturn(nameof(ToolFileService), nameof(SaveToolManifest));
+        logger.MethodReturn(nameof(ToolFileService), nameof(SaveToolsManifest));
     }
 
     private NuGetConfig ReadFromConfigFile(string filePath)

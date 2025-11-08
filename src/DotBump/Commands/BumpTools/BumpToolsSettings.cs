@@ -1,6 +1,7 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.ComponentModel;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace DotBump.Commands.BumpTools;
@@ -17,4 +18,29 @@ internal class BumpToolsSettings : BumpSettings
     [Description("Output file name. The name of the file to write the result to. The output format is json.")]
     [CommandOption("-o|--output")]
     public string? Output { get; init; }
+
+    [Description("The nuget config file to use. Defaults to `./nuget.config`.")]
+    [CommandOption("-c|--config")]
+    public string? NuGetConfigPath { get; init; }
+
+    public override ValidationResult Validate()
+    {
+        // If a config file is passed, verify it exists before passing it on.
+        if (!string.IsNullOrWhiteSpace(NuGetConfigPath))
+        {
+            var normalizedPath = Path.GetFullPath(NuGetConfigPath);
+            if (!File.Exists(normalizedPath))
+            {
+                return ValidationResult.Error($"The file {NuGetConfigPath} does not exist.");
+            }
+        }
+
+        // Only accept supported bump types.
+        if (BumpType != null && (BumpType != Commands.BumpType.Patch || BumpType == Commands.BumpType.Minor))
+        {
+            return ValidationResult.Error("Only patch and minor bump types are supported at the moment.");
+        }
+
+        return ValidationResult.Success();
+    }
 }

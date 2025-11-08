@@ -41,6 +41,12 @@ internal record NuGetClientConfig
             throw new ArgumentException(nameof(NuGetConfig));
         }
 
+        if (packageSource.ProtocolVersion != "3")
+        {
+            throw new ArgumentException(
+                $"Only protocol version 3 is supported. {packageSourceName} has protocol version {packageSource.ProtocolVersion}");
+        }
+
         return packageSource.Value;
     }
 
@@ -63,27 +69,43 @@ internal record NuGetClientConfig
                 StringComparison.OrdinalIgnoreCase));
             if (userNamePlaceHolder != null && passwordPlaceHolder != null)
             {
-                var userNameVariable = userNamePlaceHolder.Value.Replace("%", string.Empty);
-                var passwordVariable = passwordPlaceHolder.Value.Replace("%", string.Empty);
+                if (!HasPercentBoundaries(userNamePlaceHolder.Value))
+                {
+                    // NOTE: Decided not to throw here. Configuration is validated in the NuGetConfigValidator so the chance of
+                    // this happening should be low. Revisit if this would pop up.
+                    _logger.Error(
+                        "UserName value for {Source} should have percent boundaries",
+                        sourceCredential.SourceName);
+                }
+
+                if (!HasPercentBoundaries(passwordPlaceHolder.Value))
+                {
+                    _logger.Error(
+                        "ClearTextPassword value for {Source} should have percent boundaries",
+                        sourceCredential.SourceName);
+                }
+
+                var userNameVariable = userNamePlaceHolder.Value.Trim('%');
+                var passwordVariable = passwordPlaceHolder.Value.Trim('%');
 
                 var userName = Environment.GetEnvironmentVariable(userNameVariable);
                 var password = Environment.GetEnvironmentVariable(passwordVariable);
+
+                // If an environment variable is not found, NuGet uses the literal value from the configuration file.
                 if (string.IsNullOrWhiteSpace(userName))
                 {
-                    _logger.Debug(
-                        "Environment variable {UserName} not found for {PackageSource}",
-                        userNameVariable,
+                    _logger.Error(
+                        "Environment variable for UserName not found for {PackageSource}",
                         packageSourceKey);
-                    return null;
+                    userName = userNamePlaceHolder.Value;
                 }
 
                 if (string.IsNullOrWhiteSpace(password))
                 {
-                    _logger.Debug(
-                        "Environment variable {Password} not found for {PackageSource}",
-                        passwordVariable,
+                    _logger.Error(
+                        "Environment variable for ClearTextPassword not found for {PackageSource}",
                         packageSourceKey);
-                    return null;
+                    password = passwordPlaceHolder.Value;
                 }
 
                 return new NuGetClientCredential(userName, password);
@@ -91,5 +113,10 @@ internal record NuGetClientConfig
         }
 
         return null;
+    }
+
+    private bool HasPercentBoundaries(string input)
+    {
+        return !string.IsNullOrEmpty(input) && input.StartsWith('%') && input.EndsWith('%');
     }
 }

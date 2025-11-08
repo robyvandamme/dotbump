@@ -16,6 +16,8 @@ internal class BumpToolsCommand(
     IBumpToolsHandler bumpToolsHandler)
     : AsyncCommand<BumpToolsSettings>
 {
+    private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
+
     public override async Task<int> ExecuteAsync(CommandContext context, BumpToolsSettings settings)
     {
         logger.MethodStart(nameof(BumpToolsCommand), nameof(ExecuteAsync));
@@ -32,26 +34,42 @@ internal class BumpToolsCommand(
 
             var bumpType = settings.BumpType ?? BumpType.Minor;
             var outputFile = settings.Output;
+            var nugetConfigPath = !string.IsNullOrWhiteSpace(settings.NuGetConfigPath)
+                ? Path.GetFullPath(settings.NuGetConfigPath)
+                : _defaultNugetConfigPath;
 
             logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("Output file : {OutputFile}", outputFile);
+            logger.Debug("NuGet config : {NuGetConfig}", nugetConfigPath);
 
-            console.MarkupLine($"Bumping Tools with settings: type={bumpType}, output: {outputFile ?? "none"}");
+            console.MarkupLine(
+                $"Bumping Tools with settings: type={bumpType}, output: {outputFile ?? "none"}, config: {nugetConfigPath}");
 
-            var bumpReport = await bumpToolsHandler.HandleAsync(bumpType);
+            var bumpReport = await bumpToolsHandler.HandleAsync(bumpType, nugetConfigPath);
 
-            if (!bumpReport.HasChanges)
+            if (bumpReport.Errors.Any())
             {
-                console.MarkupLine("No tool versions were bumped.");
+                console.MarkupLine("An error occured bumping tool versions.");
+                foreach (var bumpReportError in bumpReport.Errors)
+                {
+                    console.MarkupLine(bumpReportError);
+                }
             }
             else
             {
-                console.MarkupLine("Tool versions bumped:");
-                foreach (var bumpResult in bumpReport.Results)
+                if (!bumpReport.HasChanges)
                 {
-                    if (bumpResult.WasBumped)
+                    console.MarkupLine("No tool versions were bumped.");
+                }
+                else
+                {
+                    console.MarkupLine("Tool versions bumped:");
+                    foreach (var bumpResult in bumpReport.Results)
                     {
-                        console.MarkupLine(bumpResult.ToString());
+                        if (bumpResult.WasBumped)
+                        {
+                            console.MarkupLine(bumpResult.ToString());
+                        }
                     }
                 }
             }
@@ -64,6 +82,12 @@ internal class BumpToolsCommand(
                     WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 };
                 File.WriteAllText(outputFile, JsonSerializer.Serialize(bumpReport, options), new UTF8Encoding());
+            }
+
+            if (bumpReport.Errors.Any())
+            {
+                logger.MethodReturn(nameof(BumpToolsCommand), nameof(ExecuteAsync));
+                return 1;
             }
         }
 #pragma warning disable CA1031
