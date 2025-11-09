@@ -2,6 +2,7 @@
 
 using System.Text;
 using System.Text.Json;
+using DotBump.Commands.BumpTools.DataModel.Report;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
 using Serilog;
@@ -25,13 +26,13 @@ internal class BumpToolsCommand(
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(settings);
 
+        if (context.Name != "tools")
+        {
+            throw new DotBumpException($"Unsupported command name {context.Name}");
+        }
+
         try
         {
-            if (context.Name != "tools")
-            {
-                throw new DotBumpException($"Unsupported command name {context.Name}");
-            }
-
             var bumpType = settings.BumpType ?? BumpType.Minor;
             var outputFile = settings.Output;
             var nugetConfigPath = !string.IsNullOrWhiteSpace(settings.NuGetConfigPath)
@@ -47,42 +48,9 @@ internal class BumpToolsCommand(
 
             var bumpReport = await bumpToolsHandler.HandleAsync(bumpType, nugetConfigPath);
 
-            if (bumpReport.Errors.Any())
-            {
-                console.MarkupLine("An error occured bumping tool versions.");
-                foreach (var bumpReportError in bumpReport.Errors)
-                {
-                    console.MarkupLine(bumpReportError);
-                }
-            }
-            else
-            {
-                if (!bumpReport.HasChanges)
-                {
-                    console.MarkupLine("No tool versions were bumped.");
-                }
-                else
-                {
-                    console.MarkupLine("Tool versions bumped:");
-                    foreach (var bumpResult in bumpReport.Results)
-                    {
-                        if (bumpResult.WasBumped)
-                        {
-                            console.MarkupLine(bumpResult.ToString());
-                        }
-                    }
-                }
-            }
+            WriteReportToConsole(bumpReport);
 
-            if (!string.IsNullOrWhiteSpace(outputFile))
-            {
-                logger.Debug("Writing output to file {File}", outputFile);
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                };
-                await File.WriteAllTextAsync(outputFile, JsonSerializer.Serialize(bumpReport, options), new UTF8Encoding());
-            }
+            await WriteOutputFileAsync(outputFile, bumpReport);
 
             if (bumpReport.Errors.Any())
             {
@@ -102,5 +70,51 @@ internal class BumpToolsCommand(
 
         logger.MethodReturn(nameof(BumpToolsCommand), nameof(ExecuteAsync));
         return 0;
+    }
+
+    private async Task WriteOutputFileAsync(string? outputFile, BumpReport bumpReport)
+    {
+        if (!string.IsNullOrWhiteSpace(outputFile))
+        {
+            logger.Debug("Writing output to file {File}", outputFile);
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            };
+            await File.WriteAllTextAsync(
+                outputFile,
+                JsonSerializer.Serialize(bumpReport, options),
+                new UTF8Encoding());
+        }
+    }
+
+    private void WriteReportToConsole(BumpReport bumpReport)
+    {
+        if (bumpReport.Errors.Any())
+        {
+            console.MarkupLine("An error occured bumping tool versions.");
+            foreach (var bumpReportError in bumpReport.Errors)
+            {
+                console.MarkupLine(bumpReportError);
+            }
+        }
+        else
+        {
+            if (!bumpReport.HasChanges)
+            {
+                console.MarkupLine("No tool versions were bumped.");
+            }
+            else
+            {
+                console.MarkupLine("Tool versions bumped:");
+                foreach (var bumpResult in bumpReport.Results)
+                {
+                    if (bumpResult.WasBumped)
+                    {
+                        console.MarkupLine(bumpResult.ToString());
+                    }
+                }
+            }
+        }
     }
 }
