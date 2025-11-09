@@ -81,7 +81,7 @@ internal class BumpToolsCommand(
                 {
                     WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 };
-                File.WriteAllText(outputFile, JsonSerializer.Serialize(bumpReport, options), new UTF8Encoding());
+                await File.WriteAllTextAsync(outputFile, JsonSerializer.Serialize(bumpReport, options), new UTF8Encoding());
             }
 
             if (bumpReport.Errors.Any())

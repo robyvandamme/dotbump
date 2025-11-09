@@ -2,6 +2,7 @@
 
 using System.Globalization;
 using System.Text.RegularExpressions;
+using static System.TimeSpan;
 
 namespace DotBump.Common;
 
@@ -13,7 +14,8 @@ internal record SemanticVersion : IComparable<SemanticVersion>
 {
     private static readonly Regex s_versionPattern = new(
         @"^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:-(?<prerelease>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$",
-        RegexOptions.Compiled);
+        RegexOptions.Compiled,
+        FromMilliseconds(100));
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SemanticVersion"/> class.
@@ -33,24 +35,33 @@ internal record SemanticVersion : IComparable<SemanticVersion>
 
         Version = version;
 
-        var match = s_versionPattern.Match(version);
-        if (!match.Success)
+        try
         {
+            var match = s_versionPattern.Match(version);
+            if (!match.Success)
+            {
+                Major = Minor = Patch = 0;
+                IsValid = false;
+            }
+            else
+            {
+                Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
+                Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
+                Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
+                IsValid = true;
+
+                if (match.Groups["prerelease"].Success)
+                {
+                    PreRelease = match.Groups["prerelease"].Value;
+                    IsPreRelease = true;
+                }
+            }
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            // Assuming that if this occurs the input string was invalid.
             Major = Minor = Patch = 0;
             IsValid = false;
-        }
-        else
-        {
-            Major = int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture);
-            Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
-            Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
-            IsValid = true;
-
-            if (match.Groups["prerelease"].Success)
-            {
-                PreRelease = match.Groups["prerelease"].Value;
-                IsPreRelease = true;
-            }
         }
     }
 
