@@ -35,12 +35,6 @@ internal class BumpToolsSettings : BumpSettings
             }
         }
 
-        // Only accept supported bump types.
-        if (BumpType != null && (BumpType != Commands.BumpType.Patch || BumpType == Commands.BumpType.Minor))
-        {
-            return ValidationResult.Error("Only patch and minor bump types are supported at the moment.");
-        }
-
         return ValidationResult.Success();
     }
 }
