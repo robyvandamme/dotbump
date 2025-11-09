@@ -45,7 +45,7 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
             if (!string.IsNullOrWhiteSpace(outputFile))
             {
                 logger.Debug("Writing output to file {File}", outputFile);
-                File.WriteAllText(outputFile, JsonSerializer.Serialize(result), new UTF8Encoding());
+                await File.WriteAllTextAsync(outputFile, JsonSerializer.Serialize(result), new UTF8Encoding());
             }
 
             console.MarkupLine(result.ToString());

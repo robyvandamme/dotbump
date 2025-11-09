@@ -31,7 +31,7 @@ commandApp.Configure(Log.Logger);
 try
 {
     Log.Debug("Starting app");
-    return commandApp.Run(args);
+    return await commandApp.RunAsync(args);
 }
 #pragma warning disable CA1031
 catch (Exception ex)
@@ -43,7 +43,7 @@ catch (Exception ex)
 }
 finally
 {
-    Log.CloseAndFlush();
+    await Log.CloseAndFlushAsync();
 }
 
 void ConfigureLogger()
