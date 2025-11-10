@@ -18,7 +18,7 @@ internal class BumpToolsHandler(
 {
     public async Task<BumpReport> HandleAsync(BumpType bumpType, string nugetConfigPath)
     {
-        logger.MethodStart(nameof(BumpSdkHandler), nameof(HandleAsync), bumpType);
+        logger.MethodStart(nameof(BumpToolsHandler), nameof(HandleAsync), bumpType);
 
         var manifest = toolFileService.GetToolsManifest();
         var bumpReport = new BumpReport(manifest, bumpType);
@@ -97,7 +97,7 @@ internal class BumpToolsHandler(
             toolFileService.SaveToolsManifest(manifest);
         }
 
-        logger.MethodReturn(nameof(BumpSdkHandler), nameof(HandleAsync), bumpReport);
+        logger.MethodReturn(nameof(BumpToolsHandler), nameof(HandleAsync), bumpReport);
 
         return bumpReport;
     }

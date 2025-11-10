@@ -1,6 +1,7 @@
 // Copyright © 2025 Roby Van Damme.
 
 using System.Text.Json.Serialization;
+using Destructurama.Attributed;
 using DotBump.Common;
 
 namespace DotBump.Commands.BumpTools.DataModel.Registrations;
@@ -16,6 +17,7 @@ internal record CatalogPage
     [JsonPropertyName("count")]
     public int Count { get; init; }
 
+    [NotLogged]
     [JsonPropertyName("items")]
     public List<Package>?
         Items
