@@ -42,6 +42,16 @@ internal class BumpReport
 
     public IReadOnlyCollection<string> Errors => _errors;
 
+    [JsonIgnore]
+    public bool HasChanges
+    {
+        get
+        {
+            return Results.Any(o =>
+                o.NewVersion != null && !o.NewVersion.Equals(o.OldVersion, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
     public void ReportChanges(ToolsManifest toolsManifest)
     {
         foreach (var toolManifestEntry in toolsManifest.Tools)
@@ -58,6 +68,12 @@ internal class BumpReport
         TimeStamp = DateTime.UtcNow;
     }
 
+    public void ReportChanges(Release sdkRelease)
+    {
+        _results[0].NewVersion = sdkRelease.LatestSdk;
+        TimeStamp = DateTime.UtcNow;
+    }
+
     public void ReportErrors(List<ValidationResult> validationErrors)
     {
         foreach (var error in validationErrors)
@@ -71,25 +87,9 @@ internal class BumpReport
         TimeStamp = DateTime.UtcNow;
     }
 
-    [JsonIgnore]
-    public bool HasChanges
-    {
-        get
-        {
-            return Results.Any(o =>
-                o.NewVersion != null && !o.NewVersion.Equals(o.OldVersion, StringComparison.OrdinalIgnoreCase));
-        }
-    }
-
-    public void ReportChanges(Release sdkRelease)
-    {
-        _results.First().NewVersion = sdkRelease.LatestSdk;
-        TimeStamp = DateTime.UtcNow;
-    }
-
     public void ReportNoSdkVersionChanges()
     {
-        _results.First().NewVersion = _results.First().OldVersion;
+        _results[0].NewVersion = _results[0].OldVersion;
         TimeStamp = DateTime.UtcNow;
     }
 
