@@ -2,9 +2,10 @@
 
 using System.Text;
 using System.Text.Json;
-using DotBump.Commands.BumpTools.DataModel.Report;
+using System.Text.Json.Serialization;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
+using DotBump.Reports;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -79,7 +80,9 @@ internal class BumpToolsCommand(
             logger.Debug("Writing output to file {File}", outputFile);
             var options = new JsonSerializerOptions
             {
-                WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new JsonStringEnumConverter() },
             };
             await File.WriteAllTextAsync(
                 outputFile,

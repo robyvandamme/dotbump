@@ -2,9 +2,9 @@
 
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpTools.DataModel.NuGetClientConfiguration;
-using DotBump.Commands.BumpTools.DataModel.Report;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
+using DotBump.Reports;
 using Serilog;
 
 namespace DotBump.Commands.BumpTools;
@@ -21,7 +21,7 @@ internal class BumpToolsHandler(
         logger.MethodStart(nameof(BumpSdkHandler), nameof(HandleAsync), bumpType);
 
         var manifest = toolFileService.GetToolsManifest();
-        var bumpReport = new BumpReport(manifest);
+        var bumpReport = new BumpReport(manifest, bumpType);
 
         var nuGetConfiguration = toolFileService.GetNuGetConfiguration(nugetConfigPath);
         var validationErrors = nugetConfigValidator.Validate(nuGetConfiguration);

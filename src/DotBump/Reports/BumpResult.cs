@@ -2,7 +2,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace DotBump.Commands.BumpTools.DataModel.Report;
+namespace DotBump.Reports;
 
 internal class BumpResult(string id, string oldVersion)
 {

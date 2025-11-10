@@ -2,22 +2,29 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using DotBump.Commands;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
 
-namespace DotBump.Commands.BumpTools.DataModel.Report;
+namespace DotBump.Reports;
 
 internal class BumpReport
 {
     private readonly List<BumpResult> _results = new();
     private readonly List<string> _errors = new();
 
-    public BumpReport(ToolsManifest toolsManifest)
+    public BumpReport(ToolsManifest toolsManifest, BumpType bumpType)
     {
+        CommandName = "tools";
+        BumpType = bumpType;
         foreach (var toolManifestEntry in toolsManifest.Tools)
         {
             _results.Add(new BumpResult(toolManifestEntry.Key, toolManifestEntry.Value.Version));
         }
     }
+
+    public string CommandName { get; init; }
+
+    public BumpType BumpType { get; init; }
 
     public DateTime TimeStamp { get; set; }
 

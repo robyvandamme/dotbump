@@ -1,6 +1,6 @@
 // Copyright © 2025 Roby Van Damme.
 
-using DotBump.Commands.BumpTools.DataModel.Report;
+using DotBump.Reports;
 
 namespace DotBump.Commands.BumpTools.Interfaces;
 
