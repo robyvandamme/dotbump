@@ -65,11 +65,11 @@ internal static class LoggerExtensions
         }
     }
 
-    public static void MethodReturn<TResult>(this ILogger logger, string className, string methodName, string message)
+    public static void MethodReturn(this ILogger logger, string className, string methodName, string message)
     {
         if (logger.IsEnabled(LogEventLevel.Debug))
         {
-            logger.Debug("{ClassName} {MethodName} returning, {Message}}", className, methodName, message);
+            logger.Debug("{ClassName} {MethodName} returning, {Message}", className, methodName, message);
         }
     }
 }

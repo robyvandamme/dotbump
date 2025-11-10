@@ -11,27 +11,44 @@ internal record VersionInfo
     {
         ArgumentNullException.ThrowIfNull(assembly);
 
-        var version = assembly.GetName().Version;
-        if (version != null)
-        {
-            AssemblyVersion = version.ToString();
-        }
+        InitializeVersionInfo(assembly);
+    }
 
-        AssemblyFileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location).FileVersion;
-        ProductVersion = FileVersionInfo.GetVersionInfo(assembly.Location).ProductVersion;
+    public string? AssemblyVersion { get; private set; }
 
-        if (ProductVersion != null && ProductVersion.Length > 0)
+    public string? AssemblyFileVersionInfo { get; private set; }
+
+    public string? ProductVersion { get; private set; }
+
+    public string? Version { get; private set; }
+
+    private void InitializeVersionInfo(Assembly assembly)
+    {
+        var fileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
+
+        // Set assembly version
+        var assemblyVersion = assembly.GetName().Version;
+        AssemblyVersion = assemblyVersion?.ToString();
+
+        // Set file version and product version
+        AssemblyFileVersionInfo = fileVersionInfo.FileVersion;
+        ProductVersion = fileVersionInfo.ProductVersion;
+
+        // Extract version from product version
+        if (ProductVersion != null)
         {
-            var plusSign = ProductVersion.IndexOf('+', StringComparison.OrdinalIgnoreCase);
-            Version = ProductVersion.Remove(plusSign);
+            Version = ExtractVersionFromProductVersion(ProductVersion);
         }
     }
 
-    public string? AssemblyVersion { get; }
+    private static string ExtractVersionFromProductVersion(string productVersion)
+    {
+        if (string.IsNullOrEmpty(productVersion))
+        {
+            return string.Empty;
+        }
 
-    public string? AssemblyFileVersionInfo { get; }
-
-    public string? ProductVersion { get; }
-
-    public string? Version { get; }
+        var plusSignIndex = productVersion.IndexOf('+', StringComparison.OrdinalIgnoreCase);
+        return plusSignIndex > 0 ? productVersion.Remove(plusSignIndex) : productVersion;
+    }
 }

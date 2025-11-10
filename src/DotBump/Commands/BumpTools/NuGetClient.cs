@@ -10,7 +10,7 @@ using Serilog;
 
 namespace DotBump.Commands.BumpTools;
 
-internal class NuGetClient(HttpClient httpClient, ILogger logger) : INuGetClient, IDisposable
+internal sealed class NuGetClient(HttpClient httpClient, ILogger logger) : INuGetClient, IDisposable
 {
     private readonly JsonSerializerOptions _defaultOptions = new();
 
@@ -120,8 +120,16 @@ internal class NuGetClient(HttpClient httpClient, ILogger logger) : INuGetClient
         return result;
     }
 
+    private bool _disposed;
+
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
         httpClient.Dispose();
+        _disposed = true;
     }
 }
