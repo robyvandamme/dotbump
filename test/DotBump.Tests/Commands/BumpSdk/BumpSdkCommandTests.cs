@@ -44,7 +44,7 @@ public class BumpSdkCommandTests
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
             globalJson.Version.ShouldBe("8.0.406");
 
-            testConsole.Output.ShouldContain("Updated = True");
+            testConsole.Output.ShouldContain("SDK version bumped");
         }
 
         [Fact]
@@ -74,7 +74,7 @@ public class BumpSdkCommandTests
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
             globalJson.Version.ShouldBe("8.0.406");
 
-            testConsole.Output.ShouldContain("Updated = False");
+            testConsole.Output.ShouldContain("SDK version not bumped.");
         }
 
         [Fact]
@@ -132,7 +132,7 @@ public class BumpSdkCommandTests
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
             globalJson.Version.ShouldBe("8.0.406");
 
-            testConsole.Output.ShouldContain("Updated = True");
+            testConsole.Output.ShouldContain("SDK version bumped");
 
             resultFile.Refresh();
             resultFile.Exists.ShouldBeTrue();
@@ -166,7 +166,7 @@ public class BumpSdkCommandTests
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
             globalJson.Version.ShouldBe("8.0.405");
 
-            testConsole.Output.ShouldContain("Updated = False");
+            testConsole.Output.ShouldContain("SDK version not bumped.");
         }
 
         [Fact]
@@ -197,7 +197,8 @@ public class BumpSdkCommandTests
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
             globalJson.Version.ShouldBe("8.0.406");
 
-            testConsole.Output.ShouldContain("Updated = True");
+            testConsole.Output.ShouldContain("SDK version bumped");
+            testConsole.Output.ShouldContain("sdk: 8.0.405 > 8.0.406");
         }
 
         [Fact]
@@ -228,7 +229,8 @@ public class BumpSdkCommandTests
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
             globalJson.Version.ShouldBe("7.0.410");
 
-            testConsole.Output.ShouldContain("Updated = True");
+            testConsole.Output.ShouldContain("SDK version bumped");
+            testConsole.Output.ShouldContain("sdk: 7.0.400 > 7.0.410");
         }
     }
 }

@@ -4,6 +4,7 @@ using DotBump.Commands;
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Commands.BumpSdk.Interfaces;
+using DotBump.Reports;
 using Moq;
 using Serilog;
 using Shouldly;
@@ -21,7 +22,7 @@ public class BumpSdkHandlerTests
             var releaseService = new Mock<IReleaseService>();
 
             fileService.Setup(service => service.GetCurrentSdkVersionFromFile(It.IsAny<string>()))
-                .Returns(new DotBump.Commands.BumpSdk.DataModel.Sdk("1.1.0", "disable"));
+                .Returns(new Sdk("1.1.0", "disable"));
 
             var releaseFinderMock = new Mock<IReleaseFinder>();
             releaseFinderMock
@@ -40,7 +41,10 @@ public class BumpSdkHandlerTests
                 releaseFinderMock.Object,
                 loggerMock.Object);
             var result = await handler.HandleAsync(BumpType.Minor, "filepath", false);
-            result.ShouldBe(new BumpSdkResult(true, "1.1.0", "1.2.0"));
+
+            result.HasChanges.ShouldBeTrue();
+            result.Results.First().OldVersion.ShouldBe("1.1.0");
+            result.Results.First().NewVersion.ShouldBe("1.2.0");
         }
 
         [Fact]
@@ -69,7 +73,10 @@ public class BumpSdkHandlerTests
                 releaseFinderMock.Object,
                 loggerMock.Object);
             var result = await handler.HandleAsync(BumpType.Minor, "filepath", false);
-            result.ShouldBe(new BumpSdkResult(false, "1.1.0", "1.1.0"));
+
+            result.HasChanges.ShouldBeFalse();
+            result.Results.First().OldVersion.ShouldBe("1.1.0");
+            result.Results.First().NewVersion.ShouldBe("1.1.0");
         }
     }
 }
