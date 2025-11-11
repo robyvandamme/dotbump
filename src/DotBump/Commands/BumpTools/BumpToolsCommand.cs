@@ -2,9 +2,10 @@
 
 using System.Text;
 using System.Text.Json;
-using DotBump.Commands.BumpTools.DataModel.Report;
+using System.Text.Json.Serialization;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
+using DotBump.Reports;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -50,7 +51,7 @@ internal class BumpToolsCommand(
 
             WriteReportToConsole(bumpReport);
 
-            await WriteOutputFileAsync(outputFile, bumpReport);
+            await bumpReport.WriteToFileAsync(outputFile);
 
             if (bumpReport.Errors.Any())
             {
@@ -70,22 +71,6 @@ internal class BumpToolsCommand(
 
         logger.MethodReturn(nameof(BumpToolsCommand), nameof(ExecuteAsync));
         return 0;
-    }
-
-    private async Task WriteOutputFileAsync(string? outputFile, BumpReport bumpReport)
-    {
-        if (!string.IsNullOrWhiteSpace(outputFile))
-        {
-            logger.Debug("Writing output to file {File}", outputFile);
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            };
-            await File.WriteAllTextAsync(
-                outputFile,
-                JsonSerializer.Serialize(bumpReport, options),
-                new UTF8Encoding());
-        }
     }
 
     private void WriteReportToConsole(BumpReport bumpReport)

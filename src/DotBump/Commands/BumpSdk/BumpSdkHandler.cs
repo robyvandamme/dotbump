@@ -2,6 +2,7 @@
 
 using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Common;
+using DotBump.Reports;
 using Serilog;
 
 namespace DotBump.Commands.BumpSdk;
@@ -12,13 +13,15 @@ internal class BumpSdkHandler(
     IReleaseFinder releaseFinder,
     ILogger logger) : IBumpSdkHandler
 {
-    public async Task<BumpSdkResult> HandleAsync(BumpType bumpType, string filePath, bool securityOnly)
+    public async Task<BumpReport> HandleAsync(BumpType bumpType, string filePath, bool securityOnly)
     {
         logger.MethodStart(nameof(BumpSdkHandler), nameof(HandleAsync));
 
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
 
         var currentSdk = fileService.GetCurrentSdkVersionFromFile(filePath);
+        var bumpReport = new BumpReport(currentSdk, bumpType);
+
         var releases = await releaseService.GetReleasesAsync().ConfigureAwait(false);
         var newRelease = releaseFinder.TryFindNewRelease(currentSdk, releases.ToList(), bumpType, securityOnly);
 
@@ -28,22 +31,14 @@ internal class BumpSdkHandler(
                 "New release found. Updating sdk version to {Version}",
                 newRelease.LatestSdkVersion.ToString());
             fileService.UpdateSdkVersion(currentSdk.Version, newRelease.LatestSdk, filePath);
-            var result = new BumpSdkResult(
-                true,
-                currentSdk.SemanticVersion.ToString(),
-                newRelease.LatestSdkVersion.ToString());
-            logger.MethodReturn(nameof(BumpSdkHandler), nameof(HandleAsync), result);
-            return result;
+            bumpReport.ReportChanges(newRelease);
+            logger.MethodReturn(nameof(BumpSdkHandler), nameof(HandleAsync), bumpReport);
+            return bumpReport;
         }
-        else
-        {
-            logger.Debug("No new release found. Current Sdk version {Version}", currentSdk.SemanticVersion.ToString());
-            var result = new BumpSdkResult(
-                false,
-                currentSdk.SemanticVersion.ToString(),
-                currentSdk.SemanticVersion.ToString());
-            logger.MethodReturn(nameof(BumpSdkHandler), nameof(HandleAsync), result);
-            return result;
-        }
+
+        logger.Debug("No new release found. Current Sdk version {Version}", currentSdk.SemanticVersion.ToString());
+        bumpReport.ReportNoSdkVersionChanges();
+        logger.MethodReturn(nameof(BumpSdkHandler), nameof(HandleAsync), bumpReport);
+        return bumpReport;
     }
 }

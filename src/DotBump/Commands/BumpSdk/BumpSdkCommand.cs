@@ -1,9 +1,8 @@
 // Copyright © 2025 Roby Van Damme.
 
-using System.Text;
-using System.Text.Json;
 using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Common;
+using DotBump.Reports;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -40,15 +39,18 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
             console.MarkupLine(
                 $"Bumping SDK with settings: type={bumpType}, file={globalJsonPath}, output: {outputFile ?? "none"}, securityOnly: {securityOnly}");
 
-            var result = await bumpSdkHandler.HandleAsync(bumpType, globalJsonPath, securityOnly).ConfigureAwait(false);
+            var bumpReport = await bumpSdkHandler.HandleAsync(bumpType, globalJsonPath, securityOnly)
+                .ConfigureAwait(false);
 
-            if (!string.IsNullOrWhiteSpace(outputFile))
+            WriteReportToConsole(bumpReport);
+
+            await bumpReport.WriteToFileAsync(outputFile);
+
+            if (bumpReport.Errors.Any())
             {
-                logger.Debug("Writing output to file {File}", outputFile);
-                await File.WriteAllTextAsync(outputFile, JsonSerializer.Serialize(result), new UTF8Encoding());
+                logger.MethodReturn(nameof(BumpSdkCommand), nameof(ExecuteAsync));
+                return 1;
             }
-
-            console.MarkupLine(result.ToString());
         }
 #pragma warning disable CA1031
         catch (Exception e)
@@ -62,5 +64,35 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
 
         logger.MethodReturn(nameof(BumpSdkCommand), nameof(ExecuteAsync));
         return 0;
+    }
+
+    private void WriteReportToConsole(BumpReport bumpReport)
+    {
+        if (bumpReport.Errors.Any())
+        {
+            console.MarkupLine($"An error occured bumping the SDK version.");
+            foreach (var bumpReportError in bumpReport.Errors)
+            {
+                console.MarkupLine(bumpReportError);
+            }
+        }
+        else
+        {
+            if (!bumpReport.HasChanges)
+            {
+                console.MarkupLine("SDK version not bumped.");
+            }
+            else
+            {
+                console.MarkupLine("SDK version bumped:");
+                foreach (var bumpResult in bumpReport.Results)
+                {
+                    if (bumpResult.WasBumped)
+                    {
+                        console.MarkupLine(bumpResult.ToString());
+                    }
+                }
+            }
+        }
     }
 }
