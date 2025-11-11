@@ -1,4 +1,4 @@
-name: Beta Release
+name: Pre Release
 
 env:
   PRIVATE_GITHUB_FEED_USER: ${{ secrets.PRIVATE_NUGET_FEED_USER }}
