@@ -1,7 +1,6 @@
 name: Update .NET Dependencies
 
 # Updates dependencies in a .NET solution.
-# At the moment we have 2 cases: bump the SDK version (security updates only) and bump packages versions.
 # Only run the packages step when a solution file is available in the root directory.
 # For the PR: check what has changed and use the relevant commit/ PR message.
 
