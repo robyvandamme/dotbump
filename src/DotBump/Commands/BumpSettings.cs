@@ -18,7 +18,7 @@ internal abstract class BumpSettings : CommandSettings
     /// argument list which seemed to not be possible with the default Spectre approach and to pick it up as early as
     /// possible to configure logging.
     /// </summary>
-    [Description("Enable debug logging for troubleshooting")]
+    [Description("Enable debug logging for troubleshooting. Includes response data.")]
     [CommandOption("--debug")]
     [DefaultValue(false)]
     public bool Debug { get; set; }
