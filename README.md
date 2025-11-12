@@ -4,7 +4,8 @@
 
 [![Release](https://github.com/robyvandamme/dotbump/actions/workflows/release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/release.yml)
 [![NuGet Version](https://img.shields.io/nuget/v/DotBump?color=004D81)](https://www.nuget.org/packages/DotBump/)
-[![Beta Release](https://github.com/robyvandamme/dotbump/actions/workflows/beta-release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/beta-release.yml)
+[![Pre Release](https://github.com/robyvandamme/dotbump/actions/workflows/pre-release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/pre-release.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=robyvandamme_dotbump&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=robyvandamme_dotbump)
 
 ## Installation
 
@@ -36,7 +37,7 @@ EXAMPLES:
 
 OPTIONS:
     -h, --help             Prints help information                              
-        --debug            Enable debug logging for troubleshooting             
+        --debug            Enable debug logging for troubleshooting. Includes response data             
         --logfile          The file to send the log output to                   
     -t, --type             The bump type. Defaults to `minor`. Available options
                            are `minor` and `patch`                              
@@ -67,7 +68,7 @@ EXAMPLES:
 
 OPTIONS:
     -h, --help       Prints help information                                                                 
-        --debug      Enable debug logging for troubleshooting                                                
+        --debug      Enable debug logging for troubleshooting. Includes response data                                                
         --logfile    The file to send the log output to                                                      
     -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`           
     -o, --output     Output file name. The name of the file to write the result to. The output format is json
@@ -105,3 +106,9 @@ Example:
 </configuration>
 
 ```
+
+#### Pre-releases
+
+When the current version is a pre-release version, pre-release versions will be taken into account for new versions.
+
+
