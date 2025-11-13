@@ -57,8 +57,9 @@ OPTIONS:
 ```text
 
 DESCRIPTION:
-Bump the local .NET tools versions. Use the 'minor' type option to bump the tools to the latest minor or patch versions for the current major version. Use the 'patch' type option to bump the tools to 
-the latest patch version for the current minor version. 
+Bump the local .NET tools versions. Use the 'minor' type option to bump the tools to
+the latest minor or patch versions for the current major version. Use the 'patch' type 
+option to bump the tools to the latest patch version for the current minor version. 
 
 USAGE:
     dotnet dotbump tools [OPTIONS]
