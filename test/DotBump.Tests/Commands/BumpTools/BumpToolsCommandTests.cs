@@ -44,7 +44,7 @@ public class BumpToolsCommandTests
                 var arguments = new[] { "bump", "tools" };
                 var remainingArguments = new Mock<IRemainingArguments>();
                 var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-                var result = await command.ExecuteAsync(context, new BumpToolsSettings());
+                var result = await command.ExecuteAsync(context, new BumpToolsSettings(), CancellationToken.None);
                 result.ShouldBe(1);
                 testConsole.Output.ShouldContain("FileNotFoundException: Tool manifest file not found");
             }
@@ -66,7 +66,7 @@ public class BumpToolsCommandTests
                 var arguments = new[] { "bump", "tools" };
                 var remainingArguments = new Mock<IRemainingArguments>();
                 var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-                var result = await command.ExecuteAsync(context, new BumpToolsSettings());
+                var result = await command.ExecuteAsync(context, new BumpToolsSettings(), CancellationToken.None);
                 result.ShouldBe(0);
 
                 var updatedManifest = fileService.GetToolsManifest();
@@ -95,7 +95,7 @@ public class BumpToolsCommandTests
                 var arguments = new[] { "bump", "tools" };
                 var remainingArguments = new Mock<IRemainingArguments>();
                 var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-                var result = await command.ExecuteAsync(context, new BumpToolsSettings() { BumpType = BumpType.Patch });
+                var result = await command.ExecuteAsync(context, new BumpToolsSettings() { BumpType = BumpType.Patch }, CancellationToken.None);
                 result.ShouldBe(0);
 
                 var updatedManifest = fileService.GetToolsManifest();
@@ -129,7 +129,8 @@ public class BumpToolsCommandTests
                 var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
                 var result = await command.ExecuteAsync(
                     context,
-                    new BumpToolsSettings() { BumpType = BumpType.Patch, Output = "bump-tools-report.json" });
+                    new BumpToolsSettings() { BumpType = BumpType.Patch, Output = "bump-tools-report.json" },
+                    CancellationToken.None);
                 result.ShouldBe(0);
 
                 resultFile.Refresh();
@@ -180,7 +181,8 @@ public class BumpToolsCommandTests
                     var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
                     var result = await command.ExecuteAsync(
                         context,
-                        new BumpToolsSettings() { BumpType = BumpType.Patch });
+                        new BumpToolsSettings() { BumpType = BumpType.Patch },
+                        CancellationToken.None);
                     result.ShouldBe(0);
 
                     var updatedManifest = fileService.GetToolsManifest();
