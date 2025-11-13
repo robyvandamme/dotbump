@@ -37,10 +37,10 @@ internal static class CommandConfiguration
                     "Bump the global.json SDK version. " +
                     "Use the 'minor' type option to bump the SDK to the latest minor or patch version for the current major version. " +
                     "Use the 'patch' type option to bump the SDK to the latest patch version for the current minor version. ")
-                .WithExample("sdk", "-o", "bump-sdk-result.json", "--security-only", "true")
-                .WithExample("sdk", "-t", "patch", "-o", "bump-sdk-result.json", "-s", "true")
-                .WithExample("sdk", "--type", "patch", "-f", "./other/global.json")
-                .WithExample("sdk", "--debug", "true", "--logfile", "log.txt");
+                .WithExample("sdk")
+                .WithExample("sdk", "--type", "patch")
+                .WithExample("sdk", "--file", "./other/global.json", "--output", "bump-sdk-report.json")
+                .WithExample("sdk", "--security-only", "true", "--debug", "true", "--logfile", "bump-sdk-log.txt");
 
             config.Settings.Registrar.Register<IToolFileService, ToolFileService>();
             config.Settings.Registrar.Register<INuGetReleaseFinder, NuGetReleaseFinder>();
@@ -56,7 +56,7 @@ internal static class CommandConfiguration
                 .WithExample("tools")
                 .WithExample("tools", "--type", "patch")
                 .WithExample("tools", "--config", "./custom-nuget.config", "--output", "bump-tools-report.json")
-                .WithExample("tools", "--debug", "true", "--logfile", "bump-tools.txt");
+                .WithExample("tools", "--debug", "true", "--logfile", "bump-tools-log.txt");
         });
     }
 }

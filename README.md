@@ -1,6 +1,6 @@
 # DotBump
 
-.NET Tool to automate dependency upgrade tasks in .NET solutions.
+.NET tool to automate dependency upgrade tasks in .NET solutions.
 
 [![Release](https://github.com/robyvandamme/dotbump/actions/workflows/release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/release.yml)
 [![NuGet Version](https://img.shields.io/nuget/v/DotBump?color=004D81)](https://www.nuget.org/packages/DotBump/)
@@ -30,14 +30,16 @@ USAGE:
     dotnet dotbump sdk [OPTIONS]
 
 EXAMPLES:
-    dotnet dotbump sdk -o bump-sdk-result.json --security-only true
-    dotnet dotbump sdk -t patch -o bump-sdk-result.json -s true
-    dotnet dotbump sdk --type patch -f ./other/global.json
-    dotnet dotbump sdk --debug true --logfile log.txt
+    dotnet dotbump sdk
+    dotnet dotbump sdk --type patch
+    dotnet dotbump sdk --file ./other/global.json --output bump-sdk-report.json
+    dotnet dotbump sdk --security-only true --debug true --logfile bump-sdk-log.txt
+
 
 OPTIONS:
     -h, --help             Prints help information                              
-        --debug            Enable debug logging for troubleshooting. Includes response data             
+        --debug            Enable debug logging for troubleshooting. Includes   
+                           response data                                        
         --logfile          The file to send the log output to                   
     -t, --type             The bump type. Defaults to `minor`. Available options
                            are `minor` and `patch`                              
@@ -46,7 +48,7 @@ OPTIONS:
     -o, --output           Output file name. The name of the file to write the  
                            result to. The output format is json                 
     -s, --security-only    Only bump the version if the new release is a        
-                           security release. Defaults to false                  
+                           security release. Defaults to false      
 
 ```
 
@@ -65,7 +67,7 @@ EXAMPLES:
     dotnet dotbump tools
     dotnet dotbump tools --type patch
     dotnet dotbump tools --config ./custom-nuget.config --output bump-tools-report.json
-    dotnet dotbump tools --debug true --logfile bump-tools.txt
+    dotnet dotbump tools --debug true --logfile bump-tools-log.txt
 
 
 OPTIONS:
