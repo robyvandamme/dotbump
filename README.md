@@ -62,19 +62,26 @@ USAGE:
     dotnet dotbump tools [OPTIONS]
 
 EXAMPLES:
-    dotnet dotbump tools -o bump-tools-report.json
-    dotnet dotbump tools -c other-nuget.config -t patch -o bump-tools-report.json
-    dotnet dotbump tools --debug true --logfile log.txt
+    dotnet dotbump tools
+    dotnet dotbump tools --type patch
+    dotnet dotbump tools --config ./custom-nuget.config --output bump-tools-report.json
+    dotnet dotbump tools --debug true --logfile bump-tools.txt
+
 
 OPTIONS:
     -h, --help       Prints help information                                                                 
-        --debug      Enable debug logging for troubleshooting. Includes response data                                                
+        --debug      Enable debug logging for troubleshooting. Includes response data                        
         --logfile    The file to send the log output to                                                      
     -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`           
     -o, --output     Output file name. The name of the file to write the result to. The output format is json
-    -c, --config     The nuget config file to use. Defaults to `./nuget.config`      
+    -c, --config     The nuget config file to use. Defaults to `./nuget.config`     
 
 ```
+
+#### Pre-releases
+
+If the current .NET tool version is a pre-release version, pre-release versions will be taken into account for new 
+versions.
 
 #### Private Feeds
 
@@ -106,9 +113,4 @@ Example:
 </configuration>
 
 ```
-
-#### Pre-releases
-
-When the current version is a pre-release version, pre-release versions will be taken into account for new versions.
-
 
