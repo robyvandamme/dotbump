@@ -38,7 +38,8 @@ public class BumpSdkCommandTests
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
             var result = await command.ExecuteAsync(
                 context,
-                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" });
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" },
+                CancellationToken.None);
             result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
@@ -68,7 +69,8 @@ public class BumpSdkCommandTests
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
             var result = await command.ExecuteAsync(
                 context,
-                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" });
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" },
+                CancellationToken.None);
             result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
@@ -96,7 +98,8 @@ public class BumpSdkCommandTests
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
             var result = await command.ExecuteAsync(
                 context,
-                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" });
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" },
+                CancellationToken.None);
             result.ShouldBe(1);
 
             testConsole.Output.ShouldContain("DotBumpException");
@@ -126,7 +129,8 @@ public class BumpSdkCommandTests
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
             var result = await command.ExecuteAsync(
                 context,
-                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", Output = "bump-sdk.result.json" });
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", Output = "bump-sdk.result.json" },
+                CancellationToken.None);
             result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
@@ -160,7 +164,8 @@ public class BumpSdkCommandTests
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
             var result = await command.ExecuteAsync(
                 context,
-                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true });
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true },
+                CancellationToken.None);
             result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
@@ -191,7 +196,8 @@ public class BumpSdkCommandTests
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
             var result = await command.ExecuteAsync(
                 context,
-                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = false });
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = false },
+                CancellationToken.None);
             result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
@@ -223,7 +229,8 @@ public class BumpSdkCommandTests
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
             var result = await command.ExecuteAsync(
                 context,
-                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true });
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true },
+                CancellationToken.None);
             result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");

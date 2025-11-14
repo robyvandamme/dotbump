@@ -20,7 +20,7 @@ internal class BumpToolsCommand(
 {
     private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
 
-    public override async Task<int> ExecuteAsync(CommandContext context, BumpToolsSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, BumpToolsSettings settings, CancellationToken cancellationToken)
     {
         logger.MethodStart(nameof(BumpToolsCommand), nameof(ExecuteAsync));
 
