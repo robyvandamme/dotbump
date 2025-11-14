@@ -1,10 +1,11 @@
 # DotBump
 
-.NET Tool to automate dependency upgrade tasks in .NET solutions.
+.NET tool to automate dependency upgrade tasks in .NET solutions.
 
 [![Release](https://github.com/robyvandamme/dotbump/actions/workflows/release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/release.yml)
 [![NuGet Version](https://img.shields.io/nuget/v/DotBump?color=004D81)](https://www.nuget.org/packages/DotBump/)
-[![Beta Release](https://github.com/robyvandamme/dotbump/actions/workflows/beta-release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/beta-release.yml)
+[![Pre Release](https://github.com/robyvandamme/dotbump/actions/workflows/pre-release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/pre-release.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=robyvandamme_dotbump&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=robyvandamme_dotbump)
 
 ## Installation
 
@@ -29,14 +30,16 @@ USAGE:
     dotnet dotbump sdk [OPTIONS]
 
 EXAMPLES:
-    dotnet dotbump sdk -o bump-sdk-result.json --security-only true
-    dotnet dotbump sdk -t patch -o bump-sdk-result.json -s true
-    dotnet dotbump sdk --type patch -f ./other/global.json
-    dotnet dotbump sdk --debug true --logfile log.txt
+    dotnet dotbump sdk
+    dotnet dotbump sdk --type patch
+    dotnet dotbump sdk --file ./other/global.json --output bump-sdk-report.json
+    dotnet dotbump sdk --security-only true --debug true --logfile bump-sdk-log.txt
+
 
 OPTIONS:
     -h, --help             Prints help information                              
-        --debug            Enable debug logging for troubleshooting             
+        --debug            Enable debug logging for troubleshooting. Includes   
+                           response data                                        
         --logfile          The file to send the log output to                   
     -t, --type             The bump type. Defaults to `minor`. Available options
                            are `minor` and `patch`                              
@@ -45,7 +48,7 @@ OPTIONS:
     -o, --output           Output file name. The name of the file to write the  
                            result to. The output format is json                 
     -s, --security-only    Only bump the version if the new release is a        
-                           security release. Defaults to false                  
+                           security release. Defaults to false      
 
 ```
 
@@ -54,26 +57,34 @@ OPTIONS:
 ```text
 
 DESCRIPTION:
-Bump the local .NET tools versions. Use the 'minor' type option to bump the tools to the latest minor or patch versions for the current major version. Use the 'patch' type option to bump the tools to 
-the latest patch version for the current minor version. 
+Bump the local .NET tools versions. Use the 'minor' type option to bump the tools to
+the latest minor or patch versions for the current major version. Use the 'patch' type 
+option to bump the tools to the latest patch version for the current minor version. 
 
 USAGE:
     dotnet dotbump tools [OPTIONS]
 
 EXAMPLES:
-    dotnet dotbump tools -o bump-tools-report.json
-    dotnet dotbump tools -c other-nuget.config -t patch -o bump-tools-report.json
-    dotnet dotbump tools --debug true --logfile log.txt
+    dotnet dotbump tools
+    dotnet dotbump tools --type patch
+    dotnet dotbump tools --config ./custom-nuget.config --output bump-tools-report.json
+    dotnet dotbump tools --debug true --logfile bump-tools-log.txt
+
 
 OPTIONS:
     -h, --help       Prints help information                                                                 
-        --debug      Enable debug logging for troubleshooting                                                
+        --debug      Enable debug logging for troubleshooting. Includes response data                        
         --logfile    The file to send the log output to                                                      
     -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`           
     -o, --output     Output file name. The name of the file to write the result to. The output format is json
-    -c, --config     The nuget config file to use. Defaults to `./nuget.config`      
+    -c, --config     The nuget config file to use. Defaults to `./nuget.config`     
 
 ```
+
+#### Pre-releases
+
+If the current .NET tool version is a pre-release version, pre-release versions will be taken into account for new 
+versions.
 
 #### Private Feeds
 
@@ -105,3 +116,4 @@ Example:
 </configuration>
 
 ```
+
