@@ -61,11 +61,15 @@ internal sealed class NuGetClient(HttpClient httpClient, ILogger logger) : INuGe
         ArgumentException.ThrowIfNullOrWhiteSpace(registrationBaseUrl);
         ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
 
-        // NOTE: it probably makes sense to use the PackageDisplayMetadataUriTemplate here instead to avoid future problems?
-        var packageUrl = new Uri(registrationBaseUrl.TrimEnd('/') + "/" + packageId + "/index.json");
+        var builder = new UriBuilder(registrationBaseUrl);
+        var basePath = builder.Path.TrimEnd('/');
+        builder.Path = $"{basePath}/{packageId}/index.json";
+
+        logger.Debug("Package url {PackageUrl}", builder.Uri);
+
         try
         {
-            var result = await httpClient.GetStringAsync(packageUrl).ConfigureAwait(false);
+            var result = await httpClient.GetStringAsync(builder.Uri).ConfigureAwait(false);
             var registrationIndex = JsonSerializer.Deserialize<RegistrationIndex>(result, _defaultOptions);
             if (registrationIndex != null)
             {
@@ -80,11 +84,11 @@ internal sealed class NuGetClient(HttpClient httpClient, ILogger logger) : INuGe
                 logger.Debug(
                     "The package {Package} was not found at the package url {PackageUrl}",
                     packageId,
-                    packageUrl);
+                    builder.Uri);
                 return null;
             }
 
-            logger.Error(e, "An HTTP Request exception occured calling {PackageUrl}", packageUrl);
+            logger.Error(e, "An HTTP Request exception occured calling {PackageUrl}", builder.Uri);
             throw;
         }
 
