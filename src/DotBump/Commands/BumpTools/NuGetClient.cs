@@ -61,7 +61,7 @@ internal sealed class NuGetClient(HttpClient httpClient, ILogger logger) : INuGe
         ArgumentException.ThrowIfNullOrWhiteSpace(registrationBaseUrl);
         ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
 
-        var packageUrl = new Uri(registrationBaseUrl + "/" + packageId + "/index.json");
+        var packageUrl = new Uri(registrationBaseUrl + packageId + "/index.json");
         try
         {
             var result = await httpClient.GetStringAsync(packageUrl).ConfigureAwait(false);
