@@ -65,7 +65,9 @@ class Build : NukeBuild
         .Executes(() =>
         {
             Log.Information("Cleaning solution: {Solution}", Solution.Path);
-            DotNetTasks.DotNetClean(o => o.SetProject(Solution.Path));
+            DotNetTasks.DotNetClean(o => o
+                .SetProject(Solution.Path)
+                .SetConfiguration(Configuration));
         });
 
     Target Restore => t => t
