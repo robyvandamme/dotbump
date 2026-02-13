@@ -45,7 +45,11 @@ jobs:
           dotnet dotnet-outdated -vl Major -u -o ./artifacts/results/bump-nuget-result.json
       - name: Bump SDK
         run: |
-          dotnet dotbump sdk -o ./artifacts/results/bump-sdk-report.json -s true
+          dotnet dotbump sdk -o ./artifacts/results/bump-sdk-report.json
+      - name: Refresh .NET SDK after update
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: ./global.json
       - name: Bump Tools
         run: |
           dotnet dotbump tools -o ./artifacts/results/bump-tools-report.json          
