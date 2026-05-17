@@ -36,7 +36,7 @@ public class BumpSdkCommandTests
             var arguments = new[] { "bump", "sdk" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-            var result = await command.ExecuteAsync(
+            var result = await command.ExecuteForTestAsync(
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" },
                 CancellationToken.None);
@@ -67,7 +67,7 @@ public class BumpSdkCommandTests
             var arguments = new[] { "bump", "sdk" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-            var result = await command.ExecuteAsync(
+            var result = await command.ExecuteForTestAsync(
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" },
                 CancellationToken.None);
@@ -96,7 +96,7 @@ public class BumpSdkCommandTests
             var arguments = new[] { "bump", "sdk" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-            var result = await command.ExecuteAsync(
+            var result = await command.ExecuteForTestAsync(
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" },
                 CancellationToken.None);
@@ -127,7 +127,7 @@ public class BumpSdkCommandTests
             var arguments = new[] { "bump", "sdk" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-            var result = await command.ExecuteAsync(
+            var result = await command.ExecuteForTestAsync(
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", Output = "bump-sdk.result.json" },
                 CancellationToken.None);
@@ -162,7 +162,7 @@ public class BumpSdkCommandTests
             var arguments = new[] { "bump", "sdk" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-            var result = await command.ExecuteAsync(
+            var result = await command.ExecuteForTestAsync(
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true },
                 CancellationToken.None);
@@ -194,7 +194,7 @@ public class BumpSdkCommandTests
             var arguments = new[] { "bump", "sdk" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-            var result = await command.ExecuteAsync(
+            var result = await command.ExecuteForTestAsync(
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = false },
                 CancellationToken.None);
@@ -227,7 +227,7 @@ public class BumpSdkCommandTests
             var arguments = new[] { "bump", "sdk" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-            var result = await command.ExecuteAsync(
+            var result = await command.ExecuteForTestAsync(
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true },
                 CancellationToken.None);
