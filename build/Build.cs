@@ -1,4 +1,4 @@
-// Copyright © 2025 Roby Van Damme.
+// Copyright © Roby Van Damme.
 
 using System.IO;
 using System.Linq;
