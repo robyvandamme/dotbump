@@ -16,6 +16,7 @@ on:
       - '!GitVersion.yml'
       - '!scripts/**'
       - '!.config/**'
+      - '!AGENTS.md'
   workflow_dispatch:
 
 permissions:
