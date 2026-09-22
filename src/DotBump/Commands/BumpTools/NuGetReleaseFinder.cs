@@ -153,20 +153,22 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
         List<SemanticVersion> versions,
         bool allowPreRelease)
     {
+        var availableNewVersions =
+            versions.Where(o => o.Major == currentVersion.Major && o > currentVersion).ToList();
+
+        var stableVersions = availableNewVersions.Where(o => !o.IsPreRelease);
+        var newestStable = stableVersions.OrderByDescending(o => o).FirstOrDefault();
+        if (newestStable != null)
+        {
+            return newestStable;
+        }
+
         if (allowPreRelease)
         {
-            var availableNewVersions =
-                versions.Where(o => o.Major == currentVersion.Major && o > currentVersion);
-            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
-            return newestVersion;
+            return availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
         }
-        else
-        {
-            var availableNewVersions =
-                versions.Where(o => o.Major == currentVersion.Major && o > currentVersion && o.IsPreRelease == false);
-            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
-            return newestVersion;
-        }
+
+        return null;
     }
 
     private static SemanticVersion? TryFindNewPatchVersion(
@@ -174,23 +176,23 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
         List<SemanticVersion> versions,
         bool allowPreRelease)
     {
+        var availableNewVersions =
+            versions.Where(o => o.Major == currentVersion.Major
+                                && o.Minor == currentVersion.Minor
+                                && o > currentVersion).ToList();
+
+        var stableVersions = availableNewVersions.Where(o => !o.IsPreRelease);
+        var newestStable = stableVersions.OrderByDescending(o => o).FirstOrDefault();
+        if (newestStable != null)
+        {
+            return newestStable;
+        }
+
         if (allowPreRelease)
         {
-            var availableNewVersions =
-                versions.Where(o => o.Major == currentVersion.Major
-                                    && o.Minor == currentVersion.Minor
-                                    && o > currentVersion);
-            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
-            return newestVersion;
+            return availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
         }
-        else
-        {
-            var availableNewVersions =
-                versions.Where(o => o.Major == currentVersion.Major
-                                    && o.Minor == currentVersion.Minor
-                                    && o > currentVersion && o.IsPreRelease == false);
-            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
-            return newestVersion;
-        }
+
+        return null;
     }
 }

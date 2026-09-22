@@ -22,11 +22,11 @@ public class BumpToolsHandlerTests
     {
         [Fact]
         public async Task
-            When_Tool_Is_PreRelease_And_First_Feed_Has_Higher_Stable_Version_Bumps_To_Higher_PreRelease_From_Second_Feed()
+            When_Tool_Is_PreRelease_And_Stable_Version_Available_Prefers_Stable_Version_Over_Higher_PreRelease()
         {
             // Feed 1 (e.g. nuget.org) has stable 1.0.0 (higher than tool's 1.0.0-preview.1)
-            // Feed 2 (preview feed) has 1.1.0-preview.1 (higher than both 1.0.0-preview.1 and 1.0.0)
-            // When Feed 1 is evaluated first, the tool must still be able to upgrade to 1.1.0-preview.1 from Feed 2.
+            // Feed 2 (preview feed) has 1.1.0-preview.1 (higher SemVer than 1.0.0, but pre-release)
+            // The tool should exit pre-release and bump to the stable 1.0.0 release.
             var manifest = CreateManifest("mytool", "1.0.0-preview.1");
             var nugetConfig = new NuGetConfig
             {
@@ -55,14 +55,14 @@ public class BumpToolsHandlerTests
             var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
 
             report.HasChanges.ShouldBeTrue();
-            manifest.Tools["mytool"].Version.ShouldBe("1.1.0-preview.1");
+            manifest.Tools["mytool"].Version.ShouldBe("1.0.0");
         }
 
         [Fact]
-        public async Task When_Tool_Is_PreRelease_And_Feed_Order_Is_Reversed_Bumps_To_Same_PreRelease_Version()
+        public async Task When_Tool_Is_PreRelease_And_Feed_Order_Is_Reversed_Still_Prefers_Stable_Version()
         {
             // When the feed order is reversed (preview feed first, stable feed second),
-            // the final version must still be 1.1.0-preview.1.
+            // the stable 1.0.0 release must still be preferred over 1.1.0-preview.1.
             var manifest = CreateManifest("mytool", "1.0.0-preview.1");
             var nugetConfig = new NuGetConfig
             {
@@ -86,6 +86,42 @@ public class BumpToolsHandlerTests
                 {
                     ["preview-feed"] = ("https://feeds.example.com/preview", ["1.1.0-preview.1"]),
                     ["stable-feed"] = ("https://feeds.example.com/stable", ["1.0.0"]),
+                });
+
+            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
+
+            report.HasChanges.ShouldBeTrue();
+            manifest.Tools["mytool"].Version.ShouldBe("1.0.0");
+        }
+
+        [Fact]
+        public async Task
+            When_Tool_Is_PreRelease_And_Only_PreReleases_Available_Bumps_To_Highest_PreRelease_Across_Feeds()
+        {
+            // When no stable version is available in any feed, it upgrades to the highest pre-release.
+            var manifest = CreateManifest("mytool", "1.0.0-preview.1");
+            var nugetConfig = new NuGetConfig
+            {
+                PackageSources =
+                [
+                    new PackageSource
+                    {
+                        Key = "feed1", Value = "https://feeds.example.com/feed1", ProtocolVersion = "3",
+                    },
+                    new PackageSource
+                    {
+                        Key = "feed2", Value = "https://feeds.example.com/feed2", ProtocolVersion = "3",
+                    },
+                ],
+            };
+
+            var handler = CreateHandler(
+                manifest,
+                nugetConfig,
+                feedPackages: new Dictionary<string, (string Url, string[] Versions)>
+                {
+                    ["feed1"] = ("https://feeds.example.com/feed1", ["1.0.0-preview.2"]),
+                    ["feed2"] = ("https://feeds.example.com/feed2", ["1.1.0-preview.1"]),
                 });
 
             var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
@@ -155,8 +191,7 @@ public class BumpToolsHandlerTests
             toolFileServiceMock.Setup(s => s.GetNuGetConfiguration(It.IsAny<string>())).Returns(nugetConfig);
 
             var validatorMock = new Mock<INuGetConfigValidator>();
-            validatorMock.Setup(v => v.Validate(It.IsAny<NuGetConfig>())).Returns(
-                new List<ValidationResult>());
+            validatorMock.Setup(v => v.Validate(It.IsAny<NuGetConfig>())).Returns(new List<ValidationResult>());
 
             var releaseFinder = new NuGetReleaseFinder(loggerMock);
 
