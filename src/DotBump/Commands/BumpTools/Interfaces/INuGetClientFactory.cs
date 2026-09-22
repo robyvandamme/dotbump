@@ -6,5 +6,5 @@ namespace DotBump.Commands.BumpTools.Interfaces;
 
 internal interface INuGetClientFactory
 {
-    NuGetClient CreateNuGetClient(NuGetClientConfig config);
+    INuGetClient CreateNuGetClient(NuGetClientConfig config);
 }

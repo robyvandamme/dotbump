@@ -32,6 +32,10 @@ internal class BumpToolsHandler(
             return bumpReport;
         }
 
+        var toolPrereleaseFlags = manifest.Tools.ToDictionary(
+            t => t.Key,
+            t => t.Value.SemanticVersion.IsPreRelease);
+
         foreach (var nugetPackageSource in nuGetConfiguration.PackageSources)
         {
             var clientConfig = new NuGetClientConfig(nugetPackageSource.Key, nuGetConfiguration, logger);
@@ -67,7 +71,8 @@ internal class BumpToolsHandler(
                             nuGetReleaseFinder.TryFindNewVersionInCatalogPages(
                                 pages,
                                 tool.Value.SemanticVersion,
-                                bumpType);
+                                bumpType,
+                                toolPrereleaseFlags[tool.Key]);
                         if (newVersion != null)
                         {
                             tool.Value.Version = newVersion.ToString();
@@ -80,7 +85,8 @@ internal class BumpToolsHandler(
                             nuGetReleaseFinder.TryFindNewVersionInCatalogPages(
                                 detailPages.ToList(),
                                 tool.Value.SemanticVersion,
-                                bumpType);
+                                bumpType,
+                                toolPrereleaseFlags[tool.Key]);
                         if (newVersion != null)
                         {
                             tool.Value.Version = newVersion.ToString();

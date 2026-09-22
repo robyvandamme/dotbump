@@ -5,7 +5,7 @@ using DotBump.Commands.BumpTools.DataModel.Registrations;
 
 namespace DotBump.Commands.BumpTools.Interfaces;
 
-internal interface INuGetClient
+internal interface INuGetClient : IDisposable
 {
     Task<ServiceIndex> GetServiceIndexAsync(string packageSourceUrl);
 

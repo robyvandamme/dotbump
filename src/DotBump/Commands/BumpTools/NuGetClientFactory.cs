@@ -10,7 +10,7 @@ namespace DotBump.Commands.BumpTools;
 
 internal class NuGetClientFactory(ILogger logger) : INuGetClientFactory
 {
-    public NuGetClient CreateNuGetClient(NuGetClientConfig config)
+    public INuGetClient CreateNuGetClient(NuGetClientConfig config)
     {
         logger.MethodStart(nameof(NuGetClientFactory), nameof(CreateNuGetClient), config);
 

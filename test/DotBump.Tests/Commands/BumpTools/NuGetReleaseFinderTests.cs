@@ -201,6 +201,38 @@ public class NuGetReleaseFinderTests
                     result.ShouldBe(new SemanticVersion("0.1.1-beta.8"));
                 }
             }
+
+            [Fact]
+            public void Finds_PreRelease_When_CurrentVersion_Is_Stable_If_AllowPreRelease_Is_True()
+            {
+                var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+                var catalogPages = RegistrationIndex!.CatalogPages;
+                if (catalogPages != null)
+                {
+                    var result = service.TryFindNewVersionInCatalogPages(
+                        catalogPages,
+                        new SemanticVersion("0.1.0"),
+                        BumpType.Minor,
+                        allowPreRelease: true);
+                    result.ShouldBe(new SemanticVersion("0.1.1-beta.8"));
+                }
+            }
+
+            [Fact]
+            public void Excludes_PreRelease_When_AllowPreRelease_Is_False()
+            {
+                var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+                var catalogPages = RegistrationIndex!.CatalogPages;
+                if (catalogPages != null)
+                {
+                    var result = service.TryFindNewVersionInCatalogPages(
+                        catalogPages,
+                        new SemanticVersion("0.1.0"),
+                        BumpType.Minor,
+                        allowPreRelease: false);
+                    result.ShouldBeNull();
+                }
+            }
         }
     }
 }

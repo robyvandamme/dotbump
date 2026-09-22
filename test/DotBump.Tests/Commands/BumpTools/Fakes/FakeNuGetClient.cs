@@ -52,6 +52,10 @@ internal class FakeNuGetClient : INuGetClient
         return Task.FromResult<RegistrationIndex?>(null);
     }
 
+    public void Dispose()
+    {
+    }
+
     private async Task<RegistrationIndex?> GetDotMarkdownPackageInformation()
     {
         var filePath = Directory.GetCurrentDirectory() + "/Data/NuGet/DotMarkdown/package-registration.json";
