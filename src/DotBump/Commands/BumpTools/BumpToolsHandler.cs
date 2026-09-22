@@ -71,7 +71,7 @@ internal class BumpToolsHandler(
                         // either the release info is in the release index itself
                         // or the release info is in a page linked from the release index
                         SemanticVersion? candidateVersion;
-                        if (pages.First().HasPackageDetails)
+                        if (pages[0].HasPackageDetails)
                         {
                             candidateVersion =
                                 nuGetReleaseFinder.TryFindNewVersionInCatalogPages(
