@@ -1,4 +1,4 @@
-// Copyright © 2025 Roby Van Damme.
+// Copyright © Roby Van Damme.
 
 using System.Net;
 using DotBump.Commands.BumpTools.DataModel.NuGetClientConfiguration;
