@@ -11,44 +11,34 @@ internal record VersionInfo
     {
         ArgumentNullException.ThrowIfNull(assembly);
 
-        InitializeVersionInfo(assembly);
-    }
-
-    public string? AssemblyVersion { get; private set; }
-
-    public string? AssemblyFileVersionInfo { get; private set; }
-
-    public string? ProductVersion { get; private set; }
-
-    public string? Version { get; private set; }
-
-    private void InitializeVersionInfo(Assembly assembly)
-    {
-        var fileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
-
-        // Set assembly version
-        var assemblyVersion = assembly.GetName().Version;
-        AssemblyVersion = assemblyVersion?.ToString();
-
-        // Set file version and product version
-        AssemblyFileVersionInfo = fileVersionInfo.FileVersion;
-        ProductVersion = fileVersionInfo.ProductVersion;
-
-        // Extract version from product version
-        if (ProductVersion != null)
+        var version = assembly.GetName().Version;
+        if (version != null)
         {
-            Version = ExtractVersionFromProductVersion(ProductVersion);
+            AssemblyVersion = version.ToString();
         }
+
+        AssemblyFileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location).FileVersion;
+        ProductVersion = FileVersionInfo.GetVersionInfo(assembly.Location).ProductVersion;
+
+        Version = ParseProductVersion(ProductVersion);
     }
 
-    private static string ExtractVersionFromProductVersion(string productVersion)
+    internal static string? ParseProductVersion(string? productVersion)
     {
         if (string.IsNullOrEmpty(productVersion))
         {
-            return string.Empty;
+            return null;
         }
 
-        var plusSignIndex = productVersion.IndexOf('+', StringComparison.OrdinalIgnoreCase);
-        return plusSignIndex > 0 ? productVersion.Remove(plusSignIndex) : productVersion;
+        var plusSign = productVersion.IndexOf('+', StringComparison.OrdinalIgnoreCase);
+        return plusSign >= 0 ? productVersion[..plusSign] : productVersion;
     }
+
+    public string? AssemblyVersion { get; }
+
+    public string? AssemblyFileVersionInfo { get; }
+
+    public string? ProductVersion { get; }
+
+    public string? Version { get; }
 }

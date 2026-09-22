@@ -1,14 +1,11 @@
 ﻿// Copyright © Roby Van Damme.
 
 using System.Diagnostics;
-using System.Globalization;
 using System.Reflection;
-using Destructurama;
+using System.Runtime.InteropServices;
 using DotBump;
 using DotBump.Common;
 using Serilog;
-using Serilog.Core;
-using Serilog.Events;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -16,15 +13,21 @@ using Spectre.Console.Cli;
 Serilog.Debugging.SelfLog.Enable(msg => Debug.WriteLine(msg));
 #endif
 
-ConfigureLogger();
+LoggerConfigurator.Configure(args);
 
 var versionInfo = new VersionInfo(Assembly.GetExecutingAssembly());
-Log.Debug("DotBump version {@Version}", versionInfo);
+var platform = PlatformInfo.GetPlatform();
+
+Log.Debug(
+    "DotBump {Version} running on {Runtime}, {Platform} {Architecture} (OS details: {OSDescription})",
+    versionInfo.Version,
+    RuntimeInformation.FrameworkDescription,
+    platform,
+    RuntimeInformation.ProcessArchitecture,
+    RuntimeInformation.OSDescription);
 Log.Debug("Configuring app");
 
 var commandApp = new CommandApp();
-
-AnsiConsole.WriteLine($"Initializing DotBump version {versionInfo.Version}");
 
 commandApp.Configure(Log.Logger);
 
@@ -44,40 +47,4 @@ catch (Exception ex)
 finally
 {
     await Log.CloseAndFlushAsync();
-}
-
-void ConfigureLogger()
-{
-    var defaultLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Error);
-    if (ArgumentHandler.IsDebugMode(args))
-    {
-        defaultLevelSwitch.MinimumLevel = LogEventLevel.Debug;
-    }
-
-    var logFile = ArgumentHandler.LogFile(args);
-
-    if (!string.IsNullOrWhiteSpace(logFile))
-    {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.ControlledBy(defaultLevelSwitch)
-#if DEBUG
-            .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
-#endif
-            .Destructure.UsingAttributes()
-            .WriteTo.File(
-                logFile,
-                rollingInterval: RollingInterval.Day,
-                formatProvider: CultureInfo.InvariantCulture)
-            .CreateLogger();
-    }
-    else
-    {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.ControlledBy(defaultLevelSwitch)
-#if DEBUG
-            .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
-#endif
-            .Destructure.UsingAttributes()
-            .CreateLogger();
-    }
 }
