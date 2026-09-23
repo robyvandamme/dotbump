@@ -1,8 +1,5 @@
 // Copyright © Roby Van Damme.
 
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
 using DotBump.Reports;
