@@ -9,8 +9,7 @@ xUnit v2, Shouldly, Moq (Loose), Spectre.Console.Testing
 ## Structure
 
 * Layout: Mirror production structure. `src/DotBump/Path/To/Class.cs` -> `test/DotBump.Tests/Path/To/ClassTests.cs`.
-* Hierarchy: One top-level class (`{ClassName}Tests`) containing nested `public class` groups per method (nested classes
-  can further group distinct scenarios when testing multiple fixture variations).
+* Hierarchy: One top-level class (`{ClassName}Tests`) containing nested `public class` groups per method.
 * For constructors use 'Constructor' as the nested class name, for standard methods like `Equals` use 'Equals_' as the
   nested class name to avoid conflicts.
 * Naming: Pascal_Snake_Case: `With_{Condition}_Returns_{Outcome}`, `{Condition}_Returns_{Outcome}`, or
