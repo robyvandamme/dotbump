@@ -6,11 +6,12 @@ using System.Runtime.InteropServices;
 using DotBump;
 using DotBump.Common;
 using Serilog;
+using Serilog.Debugging;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 #if DEBUG
-Serilog.Debugging.SelfLog.Enable(msg => Debug.WriteLine(msg));
+SelfLog.Enable(msg => Debug.WriteLine(msg));
 #endif
 
 LoggerConfigurator.Configure(args);
@@ -29,7 +30,7 @@ Log.Debug("Configuring app");
 
 var commandApp = new CommandApp();
 
-commandApp.Configure(Log.Logger);
+commandApp.Configure(Log.Logger, versionInfo);
 
 try
 {
