@@ -24,7 +24,7 @@ public class BumpToolsHandlerTests
     {
         [Fact]
         public async Task
-            When_Tool_Is_PreRelease_And_Stable_Version_Available_Prefers_Stable_Version_Over_Higher_PreRelease()
+            When_Tool_Is_PreRelease_And_Stable_Available_Returns_Stable_Version()
         {
             // Feed 1 (e.g. nuget.org) has stable 1.0.0 (higher than tool's 1.0.0-preview.1)
             // Feed 2 (preview feed) has 1.1.0-preview.1 (higher SemVer than 1.0.0, but pre-release)
@@ -56,12 +56,13 @@ public class BumpToolsHandlerTests
 
             var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
 
-            report.HasChanges.ShouldBeTrue();
-            manifest.Tools["mytool"].Version.ShouldBe("1.0.0");
+            report.ShouldSatisfyAllConditions(
+                () => report.HasChanges.ShouldBeTrue(),
+                () => manifest.Tools["mytool"].Version.ShouldBe("1.0.0"));
         }
 
         [Fact]
-        public async Task When_Tool_Is_PreRelease_And_Feed_Order_Is_Reversed_Still_Prefers_Stable_Version()
+        public async Task When_Feed_Order_Reversed_Returns_Stable_Version()
         {
             // When the feed order is reversed (preview feed first, stable feed second),
             // the stable 1.0.0 release must still be preferred over 1.1.0-preview.1.
@@ -92,13 +93,14 @@ public class BumpToolsHandlerTests
 
             var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
 
-            report.HasChanges.ShouldBeTrue();
-            manifest.Tools["mytool"].Version.ShouldBe("1.0.0");
+            report.ShouldSatisfyAllConditions(
+                () => report.HasChanges.ShouldBeTrue(),
+                () => manifest.Tools["mytool"].Version.ShouldBe("1.0.0"));
         }
 
         [Fact]
         public async Task
-            When_Tool_Is_PreRelease_And_Only_PreReleases_Available_Bumps_To_Highest_PreRelease_Across_Feeds()
+            When_Only_PreReleases_Available_Returns_Highest_PreRelease()
         {
             // When no stable version is available in any feed, it upgrades to the highest pre-release.
             var manifest = CreateManifest("mytool", "1.0.0-preview.1");
@@ -128,12 +130,13 @@ public class BumpToolsHandlerTests
 
             var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
 
-            report.HasChanges.ShouldBeTrue();
-            manifest.Tools["mytool"].Version.ShouldBe("1.1.0-preview.1");
+            report.ShouldSatisfyAllConditions(
+                () => report.HasChanges.ShouldBeTrue(),
+                () => manifest.Tools["mytool"].Version.ShouldBe("1.1.0-preview.1"));
         }
 
         [Fact]
-        public async Task When_Tool_Is_Stable_PreRelease_In_Second_Feed_Is_Excluded()
+        public async Task When_Tool_Is_Stable_Returns_Stable_Version()
         {
             // When the tool starts on stable 1.0.0, pre-release 1.0.2-preview.1 in the second feed
             // must be ignored, and stable 1.0.1 in the first feed must be chosen for Patch bump.
@@ -164,8 +167,9 @@ public class BumpToolsHandlerTests
 
             var report = await handler.HandleAsync(BumpType.Patch, "nuget.config");
 
-            report.HasChanges.ShouldBeTrue();
-            manifest.Tools["mytool"].Version.ShouldBe("1.0.1");
+            report.ShouldSatisfyAllConditions(
+                () => report.HasChanges.ShouldBeTrue(),
+                () => manifest.Tools["mytool"].Version.ShouldBe("1.0.1"));
         }
 
         private static ToolsManifest CreateManifest(string toolKey, string version)

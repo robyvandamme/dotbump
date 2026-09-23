@@ -10,13 +10,17 @@ namespace DotBump.Commands.BumpSdk;
 
 internal class ReleaseWebService(ILogger logger) : IReleaseService
 {
-    private readonly Uri _releaseUri = new Uri("https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json");
+    private readonly Uri _releaseUri =
+        new("https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json");
 
     public async Task<IEnumerable<Release>> GetReleasesAsync()
     {
         logger.MethodStart(nameof(ReleaseWebService), nameof(GetReleasesAsync));
 
         string json;
+
+        // ReSharper disable once ShortLivedHttpClient
+        // Not relevant to re-use a HttpClient here since it will be used only once within the command context.
         using var client = new HttpClient();
         try
         {

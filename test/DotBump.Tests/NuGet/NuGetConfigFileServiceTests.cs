@@ -19,17 +19,19 @@ public class NuGetConfigFileServiceTests
         public class NoConfigFile
         {
             [Fact]
-            public void Returns_Default_Configuration()
+            public void With_No_Config_File_Returns_Default_Configuration()
             {
                 var directory = new LocalDirectory(Environment.CurrentDirectory);
                 directory.EnsureFileDeleted("nuget.config");
                 var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
                 var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
-                result.Credentials.ShouldBeEmpty();
-                result.PackageSources.ShouldHaveSingleItem();
-                result.PackageSources.First().Key.ShouldBe("nuget.org");
-                result.PackageSources.First().Value.ShouldBe("https://api.nuget.org/v3/index.json");
-                result.PackageSources.First().ProtocolVersion.ShouldBe("3");
+
+                result.ShouldSatisfyAllConditions(
+                    () => result.Credentials.ShouldBeEmpty(),
+                    () => result.PackageSources.ShouldHaveSingleItem(),
+                    () => result.PackageSources.First().Key.ShouldBe("nuget.org"),
+                    () => result.PackageSources.First().Value.ShouldBe("https://api.nuget.org/v3/index.json"),
+                    () => result.PackageSources.First().ProtocolVersion.ShouldBe("3"));
             }
         }
 
@@ -38,7 +40,7 @@ public class NuGetConfigFileServiceTests
             public class WhenConfigFileContainsPackageSourcesOnly
             {
                 [Fact]
-                public void Returns_Correct_Package_Sources_And_No_Credentials()
+                public void When_Package_Sources_Only_Returns_Package_Sources_And_No_Credentials()
                 {
                     // Arrange
                     var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -58,21 +60,17 @@ public class NuGetConfigFileServiceTests
                         var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
 
                         // Assert
-                        result.ShouldNotBeNull();
-                        result.PackageSources.Count.ShouldBe(2);
-
-                        var nugetSource = result.PackageSources.First();
-                        nugetSource.Key.ShouldBe("nuget.org");
-                        nugetSource.Value.ShouldBe("https://api.nuget.org/v3/index.json");
-                        nugetSource.ProtocolVersion.ShouldBe("3");
-
-                        var myorgSource = result.PackageSources.Last();
-                        myorgSource.Key.ShouldBe("myorg");
-                        myorgSource.Value.ShouldBe(
-                            "https://myorg.pkgs.visualstudio.com/_packaging/myorg/nuget/v3/index.json");
-                        myorgSource.ProtocolVersion.ShouldBe("3");
-
-                        result.Credentials.ShouldBeEmpty();
+                        result.ShouldSatisfyAllConditions(
+                            () => result.ShouldNotBeNull(),
+                            () => result.PackageSources.Count.ShouldBe(2),
+                            () => result.PackageSources.First().Key.ShouldBe("nuget.org"),
+                            () => result.PackageSources.First().Value.ShouldBe("https://api.nuget.org/v3/index.json"),
+                            () => result.PackageSources.First().ProtocolVersion.ShouldBe("3"),
+                            () => result.PackageSources.Last().Key.ShouldBe("myorg"),
+                            () => result.PackageSources.Last().Value.ShouldBe(
+                                "https://myorg.pkgs.visualstudio.com/_packaging/myorg/nuget/v3/index.json"),
+                            () => result.PackageSources.Last().ProtocolVersion.ShouldBe("3"),
+                            () => result.Credentials.ShouldBeEmpty());
                     }
                     finally
                     {
@@ -84,7 +82,7 @@ public class NuGetConfigFileServiceTests
             public class WhenConfigFileContainsCredentialsOnly
             {
                 [Fact]
-                public void Throws_DotBump_Exception()
+                public void When_Credentials_Only_Throws_DotBumpException()
                 {
                     var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
                 <configuration>
@@ -116,7 +114,7 @@ public class NuGetConfigFileServiceTests
             public class WhenConfigFileContainsBothPackageSourcesAndCredentials
             {
                 [Fact]
-                public void Parses_Both_Package_Sources_And_Credentials_Correctly()
+                public void When_Both_Sources_And_Credentials_Present_Returns_Both()
                 {
                     // Arrange
                     var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -142,29 +140,28 @@ public class NuGetConfigFileServiceTests
                         var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
 
                         // Assert
-                        result.ShouldNotBeNull();
-                        result.PackageSources.Count.ShouldBe(2);
-                        result.Credentials.Count.ShouldBe(1);
-
-                        result.PackageSources.First().Key.ShouldBe("nuget.org");
-                        result.PackageSources.ShouldContain(o => o.Key.Equals("myorg"));
-
-                        result.Credentials.ShouldContainKey("myorg");
-                        result.Credentials.Values.ShouldContain(o => o.SourceName.Equals("myorg"));
-                        result.Credentials.Values.First().Credentials.Count.ShouldBe(2);
-                        result.Credentials.Values.First().Credentials
-                            .FirstOrDefault(o => o.Key.Equals("username", StringComparison.OrdinalIgnoreCase))
-                            .ShouldNotBeNull();
-                        result.Credentials.Values.First().Credentials
-                            .FirstOrDefault(o => o.Key.Equals("username", StringComparison.OrdinalIgnoreCase))!.Value
-                            .ShouldBe("myuser");
-                        result.Credentials.Values.First().Credentials
-                            .FirstOrDefault(o => o.Key.Equals("ClearTextPassword", StringComparison.OrdinalIgnoreCase))
-                            .ShouldNotBeNull();
-                        result.Credentials.Values.First().Credentials
-                            .FirstOrDefault(o => o.Key.Equals("ClearTextPassword", StringComparison.OrdinalIgnoreCase))!
-                            .Value
-                            .ShouldBe("mypassword");
+                        result.ShouldSatisfyAllConditions(
+                            () => result.ShouldNotBeNull(),
+                            () => result.PackageSources.Count.ShouldBe(2),
+                            () => result.Credentials.Count.ShouldBe(1),
+                            () => result.PackageSources.First().Key.ShouldBe("nuget.org"),
+                            () => result.PackageSources.ShouldContain(o => o.Key.Equals("myorg")),
+                            () => result.Credentials.ShouldContainKey("myorg"),
+                            () => result.Credentials.Values.ShouldContain(o => o.SourceName.Equals("myorg")),
+                            () => result.Credentials.Values.First().Credentials.Count.ShouldBe(2),
+                            () => result.Credentials.Values.First().Credentials
+                                .FirstOrDefault(o => o.Key.Equals("username", StringComparison.OrdinalIgnoreCase))
+                                .ShouldNotBeNull(),
+                            () => result.Credentials.Values.First().Credentials
+                                .FirstOrDefault(o => o.Key.Equals("username", StringComparison.OrdinalIgnoreCase))!.Value
+                                .ShouldBe("myuser"),
+                            () => result.Credentials.Values.First().Credentials
+                                .FirstOrDefault(o => o.Key.Equals("ClearTextPassword", StringComparison.OrdinalIgnoreCase))
+                                .ShouldNotBeNull(),
+                            () => result.Credentials.Values.First().Credentials
+                                .FirstOrDefault(o => o.Key.Equals("ClearTextPassword", StringComparison.OrdinalIgnoreCase))!
+                                .Value
+                                .ShouldBe("mypassword"));
                     }
                     finally
                     {
@@ -176,7 +173,7 @@ public class NuGetConfigFileServiceTests
             public class WhenConfigFileHasNoPackageSourcesOrCredentials
             {
                 [Fact]
-                public void Throws_DotBump_Exception()
+                public void When_No_Sources_Or_Credentials_Throws_DotBumpException()
                 {
                     // Arrange
                     var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -200,7 +197,7 @@ public class NuGetConfigFileServiceTests
             public class WhenNotAValidConfigFile
             {
                 [Fact]
-                public void Throws_XmlException()
+                public void When_Invalid_Xml_Content_Throws_XmlException()
                 {
                     // Arrange
                     var xmlContent = "Just some text";

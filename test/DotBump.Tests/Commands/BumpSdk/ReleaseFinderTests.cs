@@ -14,7 +14,7 @@ public class ReleaseFinderTests
     public class TryFindNewRelease
     {
         [Fact]
-        public void Finds_New_Patch_For_Minor_Type()
+        public void With_Minor_Type_Returns_New_Patch()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
             var release = new Release("1.0", "1.1.14", "eol", false);
@@ -27,7 +27,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Finds_New_Minor_For_Minor_Type()
+        public void With_Minor_Type_Returns_New_Minor()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
             var release = new Release("1.0", "1.2.0", "eol", true);
@@ -40,7 +40,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Ignores_New_Major_For_Minor_Type()
+        public void With_New_Major_And_Minor_Type_Returns_Null()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
             var release = new Release("2.0", "2.2.0", "eol", false);
@@ -53,7 +53,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Ignores_Lower_Patch_For_Minor_Type()
+        public void With_Lower_Patch_And_Minor_Type_Returns_Null()
         {
             var currentSdk = new Sdk("1.1.205", "disable");
             var release = new Release("1.0", "1.1.105", "eol", false);
@@ -66,7 +66,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Ignores_Lower_Minor_For_Minor_Type()
+        public void With_Lower_Minor_And_Minor_Type_Returns_Null()
         {
             var currentSdk = new Sdk("1.1.205", "disable");
             var release = new Release("1.0", "1.0.105", "eol", false);
@@ -79,7 +79,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Ignores_Non_Security_Minor_For_Minor_Type_When_SecurityOnly_Is_True()
+        public void With_Non_Security_Minor_And_SecurityOnly_True_Returns_Null()
         {
             var currentSdk = new Sdk("8.0.405", "disable");
             var release = new Release("8.0", "8.1.100", "active", false);
@@ -92,7 +92,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Finds_Security_Minor_For_Minor_Type_When_SecurityOnly_Is_True()
+        public void With_Security_Minor_And_SecurityOnly_True_Returns_Release()
         {
             var currentSdk = new Sdk("8.0.405", "disable");
             var release = new Release("8.0", "8.1.100", "active", true);
@@ -105,7 +105,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Ignores_Non_Security_Patch_For_Minor_Type_When_SecurityOnly_Is_True()
+        public void With_Non_Security_Patch_And_Minor_Type_And_SecurityOnly_True_Returns_Null()
         {
             var currentSdk = new Sdk("8.0.405", "disable");
             var release = new Release("8.0", "8.0.406", "active", false);
@@ -118,7 +118,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Finds_Security_Patch_For_Minor_Type_When_SecurityOnly_Is_True()
+        public void With_Security_Patch_And_Minor_Type_And_SecurityOnly_True_Returns_Release()
         {
             var currentSdk = new Sdk("8.0.405", "disable");
             var release = new Release("8.0", "8.0.406", "active", true);
@@ -131,7 +131,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Finds_New_Preview_Patch_For_Minor_Type()
+        public void With_Preview_Patch_And_Minor_Type_Returns_Release()
         {
             var currentSdk = new Sdk("10.0.100-preview.4.25258.110", "disable");
             var release = new Release("10.0", "10.0.100-preview.6.25358.103", "preview", false);
@@ -144,7 +144,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Finds_New_Patch_For_Patch_Type()
+        public void With_Patch_Type_Returns_New_Patch()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
             var release = new Release("1.0", "1.1.14", "eol", false);
@@ -157,7 +157,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Ignores_Lower_Patch_For_Patch_Type()
+        public void With_Lower_Patch_And_Patch_Type_Returns_Null()
         {
             var currentSdk = new Sdk("1.1.205", "disable");
             var release = new Release("1.0", "1.1.105", "eol", false);
@@ -170,7 +170,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Ignores_New_Minor_For_Patch_Type()
+        public void With_New_Minor_And_Patch_Type_Returns_Null()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
             var release = new Release("1.0", "1.2.0", "eol", false);
@@ -183,7 +183,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Ignores_New_Major_For_Patch_Type()
+        public void With_New_Major_And_Patch_Type_Returns_Null()
         {
             var currentSdk = new Sdk("1.1.0", "disable");
             var release = new Release("2.0", "2.2.0", "eol", false);
@@ -196,7 +196,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Ignores_Non_Security_Patch_For_Patch_Type_When_SecurityOnly_Is_True()
+        public void With_Non_Security_Patch_And_Patch_Type_And_SecurityOnly_True_Returns_Null()
         {
             var currentSdk = new Sdk("8.0.405", "disable");
             var release = new Release("8.0", "8.0.406", "active", false);
@@ -209,7 +209,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Finds_Security_Patch_For_Patch_Type_When_SecurityOnly_Is_True()
+        public void With_Security_Patch_And_Patch_Type_And_SecurityOnly_True_Returns_Release()
         {
             var currentSdk = new Sdk("8.0.405", "disable");
             var release = new Release("8.0", "8.0.406", "active", true);
@@ -222,7 +222,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void Finds_New_Preview_Patch_For_Patch_Type()
+        public void With_Preview_Patch_And_Patch_Type_Returns_Release()
         {
             var currentSdk = new Sdk("10.0.100-preview.4.25258.110", "disable");
             var release = new Release("10.0", "10.0.100-preview.6.25358.103", "preview", false);
