@@ -18,6 +18,11 @@ on:
       - '!AGENTS.md'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   ubuntu-latest:
     name: ubuntu-latest
@@ -42,3 +47,16 @@ jobs:
         with:
           name: test-reports
           path: artifacts/test-reports
+      - name: Code Coverage Summary Report
+        uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95
+        with:
+          filename: artifacts/test-reports/*/coverage.cobertura.xml
+          badge: true
+          output: both
+          format: markdown
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
