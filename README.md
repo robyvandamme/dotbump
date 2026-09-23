@@ -13,6 +13,21 @@
 dotnet tool install DotBump
 ```
 
+## Usage
+
+```text
+USAGE:
+    dotnet dotbump [OPTIONS] <COMMAND>
+
+COMMANDS:
+    sdk      Bump the global.json SDK version
+    tools    Bump the local .NET tools versions
+
+OPTIONS:
+    -h, --help       Prints help information
+    -v, --version    Prints version information
+```
+
 ## Features
 
 ### Bump the .NET SDK version
