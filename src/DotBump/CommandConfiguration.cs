@@ -1,6 +1,5 @@
 // Copyright © Roby Van Damme.
 
-using System.Diagnostics;
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Commands.BumpTools;
@@ -15,11 +14,10 @@ internal static class CommandConfiguration
 {
     internal static void Configure(this CommandApp commandApp, ILogger logger, VersionInfo versionInfo)
     {
-        ArgumentNullException.ThrowIfNull(nameof(commandApp));
-        ArgumentNullException.ThrowIfNull(nameof(logger));
-        ArgumentNullException.ThrowIfNull(nameof(versionInfo));
+        ArgumentNullException.ThrowIfNull(commandApp);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(versionInfo);
 
-        Debug.Assert(commandApp != null, nameof(commandApp) + " != null");
         commandApp.Configure(config =>
         {
 #if DEBUG
