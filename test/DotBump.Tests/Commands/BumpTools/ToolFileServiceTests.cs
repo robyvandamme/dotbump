@@ -3,6 +3,7 @@
 using System.Text.Json;
 using DotBump.Commands.BumpTools;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
+using DotBump.Common;
 using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
@@ -54,6 +55,17 @@ public class ToolFileServiceTests
             result.Tools.ShouldContainKey("mytool");
             result.Tools["mytool"].Version.ShouldBe("1.0.0");
         }
+
+        [Fact]
+        public void Throws_DotBumpException_When_Manifest_Could_Not_Be_Deserialized()
+        {
+            var directory = new LocalDirectory("./.config");
+            directory.EnsureFileCreated("dotnet-tools.json", "null");
+
+            var service = new ToolFileService(new Mock<ILogger>().Object);
+
+            Should.Throw<DotBumpException>(() => service.GetToolsManifest());
+        }
     }
 
     public class SaveToolsManifest
@@ -67,9 +79,38 @@ public class ToolFileServiceTests
         }
 
         [Fact]
+        public void Throws_DotBumpException_When_Directory_Not_Found()
+        {
+            var directory = new LocalDirectory("./.config");
+            directory.EnsureDirectoryDeleted();
+
+            var manifest = new ToolsManifest
+            {
+                Version = 1,
+                IsRoot = true,
+                Tools = new Dictionary<string, ToolManifestEntry>
+                {
+                    ["mytool"] = new() { Version = "2.0.0", Commands = ["mytool"], RollForward = false },
+                },
+            };
+
+            var service = new ToolFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                Should.Throw<DotBumpException>(() => service.SaveToolsManifest(manifest));
+            }
+            finally
+            {
+                directory.EnsureDirectoryCreated();
+            }
+        }
+
+        [Fact]
         public void Saves_Manifest_Correctly()
         {
             var directory = new LocalDirectory("./.config");
+            directory.EnsureDirectoryCreated();
             var manifest = new ToolsManifest
             {
                 Version = 1,
