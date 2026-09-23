@@ -26,12 +26,14 @@ Key capabilities include:
 
 - `src/DotBump/`: Primary application source code.
   - `Commands/`: Command definitions (`AsyncCommand<TSettings>`) and settings classes inheriting from `CommandSettings`.
-  - `Commands/BumpSdk/`: SDK bump handlers, services, and models (`global.json`, release index).
-  - `Commands/BumpTools/`: Tools bump handlers, NuGet client services, configuration validators, and models.
+  - `Commands/BumpSdk/`: SDK bump command, handler, services, and models (`global.json`, release index).
+  - `Commands/BumpTools/`: Tools bump command, handler, and local tool manifest file services (`dotnet-tools.json`).
+  - `NuGet/`: Reusable NuGet client services, configuration file services (`nuget.config`), validators, release finder, and data models.
   - `Common/`: Shared utilities (`SemanticVersion`, `VersionInfo`, `DotBumpException`, `LoggerExtensions`).
   - `Reports/`: Reporting models (`BumpReport`, `BumpResult`).
 - `test/DotBump.Tests/`: Unit and integration test suite.
   - `Commands/`: Tests for SDK and Tools commands, handlers, and services.
+  - `NuGet/`: Tests for NuGet clients, release finder, configuration validator, and configuration file services.
   - `Common/`: Tests for semantic versioning and argument handling.
   - `Data/`: Static test data (mock NuGet registrations, catalog pages, and `global.json` files).
   - `TESTS.md`: Guide to existing test cases and conventions for NuGet release testing.

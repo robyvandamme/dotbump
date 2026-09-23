@@ -4,12 +4,14 @@ using System.ComponentModel.DataAnnotations;
 using DotBump.Commands;
 using DotBump.Commands.BumpTools;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
-using DotBump.Commands.BumpTools.DataModel.NuGetClientConfiguration;
-using DotBump.Commands.BumpTools.DataModel.NuGetConfiguration;
-using DotBump.Commands.BumpTools.DataModel.NuGetService;
-using DotBump.Commands.BumpTools.DataModel.Registrations;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
+using DotBump.NuGet;
+using DotBump.NuGet.DataModel.NuGetClientConfiguration;
+using DotBump.NuGet.DataModel.NuGetConfiguration;
+using DotBump.NuGet.DataModel.NuGetService;
+using DotBump.NuGet.DataModel.Registrations;
+using DotBump.NuGet.Interfaces;
 using Moq;
 using Serilog;
 using Shouldly;
@@ -188,7 +190,9 @@ public class BumpToolsHandlerTests
 
             var toolFileServiceMock = new Mock<IToolFileService>();
             toolFileServiceMock.Setup(s => s.GetToolsManifest()).Returns(manifest);
-            toolFileServiceMock.Setup(s => s.GetNuGetConfiguration(It.IsAny<string>())).Returns(nugetConfig);
+
+            var nugetConfigFileServiceMock = new Mock<INuGetConfigFileService>();
+            nugetConfigFileServiceMock.Setup(s => s.GetNuGetConfiguration(It.IsAny<string>())).Returns(nugetConfig);
 
             var validatorMock = new Mock<INuGetConfigValidator>();
             validatorMock.Setup(v => v.Validate(It.IsAny<NuGetConfig>())).Returns(new List<ValidationResult>());
@@ -223,6 +227,7 @@ public class BumpToolsHandlerTests
 
             return new BumpToolsHandler(
                 toolFileServiceMock.Object,
+                nugetConfigFileServiceMock.Object,
                 clientFactoryMock.Object,
                 releaseFinder,
                 validatorMock.Object,
@@ -233,7 +238,8 @@ public class BumpToolsHandlerTests
         {
             var packages = versions.Select(v => new Package
             {
-                Id = $"https://example.com/{v}", CatalogEntry = new PackageDetails { Version = v, Listed = true, },
+                Id = $"https://example.com/{v}",
+                CatalogEntry = new PackageDetails { Version = v, Listed = true, },
             }).ToList();
 
             var lowest = versions.OrderBy(v => new SemanticVersion(v)).First();

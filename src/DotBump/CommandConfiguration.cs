@@ -5,6 +5,8 @@ using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Commands.BumpTools;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
+using DotBump.NuGet;
+using DotBump.NuGet.Interfaces;
 using Serilog;
 using Spectre.Console.Cli;
 
@@ -44,6 +46,7 @@ internal static class CommandConfiguration
                 .WithExample("sdk", "--security-only", "true", "--debug", "true", "--logfile", "bump-sdk-log.txt");
 
             config.Settings.Registrar.Register<IToolFileService, ToolFileService>();
+            config.Settings.Registrar.Register<INuGetConfigFileService, NuGetConfigFileService>();
             config.Settings.Registrar.Register<INuGetReleaseFinder, NuGetReleaseFinder>();
             config.Settings.Registrar.Register<IBumpToolsHandler, BumpToolsHandler>();
             config.Settings.Registrar.Register<INuGetClientFactory, NuGetClientFactory>();

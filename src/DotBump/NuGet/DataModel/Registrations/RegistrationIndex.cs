@@ -1,0 +1,17 @@
+// Copyright © Roby Van Damme.
+
+using System.Text.Json.Serialization;
+
+namespace DotBump.NuGet.DataModel.Registrations;
+
+internal record RegistrationIndex
+{
+    [JsonPropertyName("@id")]
+    public string? Id { get; init; }
+
+    [JsonPropertyName("count")]
+    public int Count { get; init; }
+
+    [JsonPropertyName("items")]
+    public List<CatalogPage>? CatalogPages { get; init; }
+}
