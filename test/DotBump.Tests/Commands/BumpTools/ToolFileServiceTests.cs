@@ -33,7 +33,7 @@ public class ToolFileServiceTests
         }
 
         [Fact]
-        public void When_File_Exists_Returns_ToolsManifest()
+        public void With_File_Exists_Returns_ToolsManifest()
         {
             var directory = new LocalDirectory("./.config");
             var manifest = new ToolsManifest

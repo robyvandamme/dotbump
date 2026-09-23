@@ -204,7 +204,7 @@ public class NuGetReleaseFinderTests
         }
 
         [Fact]
-        public void When_Both_Eligible_Returns_Stable_Version()
+        public void With_Both_Eligible_Returns_Stable_Version()
         {
             var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
             var versions = new[] { "1.0.0", "1.1.0-preview.1" };

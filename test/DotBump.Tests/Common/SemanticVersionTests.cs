@@ -154,7 +154,7 @@ public class SemanticVersionTests
         }
 
         [Fact]
-        public void When_Release_Compared_With_PreRelease_Returns_Positive()
+        public void With_Release_Compared_With_PreRelease_Returns_Positive()
         {
             var release = new SemanticVersion("1.0.0");
             var preRelease = new SemanticVersion("1.0.0-beta");
@@ -165,7 +165,7 @@ public class SemanticVersionTests
         }
 
         [Fact]
-        public void When_Alpha_Compared_With_Beta_Returns_Negative()
+        public void With_Alpha_Compared_With_Beta_Returns_Negative()
         {
             var alpha = new SemanticVersion("1.0.0-alpha");
             var beta = new SemanticVersion("1.0.0-beta");
@@ -176,7 +176,7 @@ public class SemanticVersionTests
         }
 
         [Fact]
-        public void When_PreRelease_Has_More_Identifiers_Returns_Positive()
+        public void With_PreRelease_Has_More_Identifiers_Returns_Positive()
         {
             var v1 = new SemanticVersion("1.0.0-alpha.1");
             var v2 = new SemanticVersion("1.0.0-alpha");
@@ -187,7 +187,7 @@ public class SemanticVersionTests
         }
 
         [Fact]
-        public void When_PreRelease_Numeric_Identifiers_Compared_Returns_Negative()
+        public void With_PreRelease_Numeric_Identifiers_Compared_Returns_Negative()
         {
             var v1 = new SemanticVersion("1.0.0-alpha.2");
             var v2 = new SemanticVersion("1.0.0-alpha.11");
@@ -198,7 +198,7 @@ public class SemanticVersionTests
         }
 
         [Fact]
-        public void When_Numeric_Identifier_Compared_With_Alphabetic_Returns_Negative()
+        public void With_Numeric_Identifier_Compared_With_Alphabetic_Returns_Negative()
         {
             var numeric = new SemanticVersion("1.0.0-1");
             var alphabetic = new SemanticVersion("1.0.0-alpha");
@@ -233,7 +233,7 @@ public class SemanticVersionTests
     public class GetNewerVersion
     {
         [Fact]
-        public void When_First_Is_Newer_Returns_First()
+        public void With_First_Is_Newer_Returns_First()
         {
             var v1 = new SemanticVersion("2.0.0");
             var v2 = new SemanticVersion("1.0.0");
@@ -244,7 +244,7 @@ public class SemanticVersionTests
         }
 
         [Fact]
-        public void When_Second_Is_Newer_Returns_Second()
+        public void With_Second_Is_Newer_Returns_Second()
         {
             var v1 = new SemanticVersion("1.0.0");
             var v2 = new SemanticVersion("1.1.0");
@@ -255,7 +255,7 @@ public class SemanticVersionTests
         }
 
         [Fact]
-        public void When_Both_Equal_Returns_First()
+        public void With_Both_Equal_Returns_First()
         {
             var v1 = new SemanticVersion("1.0.0");
             var v2 = new SemanticVersion("1.0.0");

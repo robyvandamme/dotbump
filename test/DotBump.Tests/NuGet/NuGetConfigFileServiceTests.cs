@@ -33,7 +33,7 @@ public class NuGetConfigFileServiceTests
         }
 
         [Fact]
-        public void When_Package_Sources_Only_Returns_Package_Sources_And_No_Credentials()
+        public void With_Package_Sources_Only_Returns_Package_Sources_And_No_Credentials()
         {
             // Arrange
             var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -72,7 +72,7 @@ public class NuGetConfigFileServiceTests
         }
 
         [Fact]
-        public void When_Credentials_Only_Throws_DotBumpException()
+        public void With_Credentials_Only_Throws_DotBumpException()
         {
             var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
                 <configuration>
@@ -101,7 +101,7 @@ public class NuGetConfigFileServiceTests
         }
 
         [Fact]
-        public void When_Both_Sources_And_Credentials_Present_Returns_Both()
+        public void With_Both_Sources_And_Credentials_Present_Returns_Both()
         {
             // Arrange
             var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -157,7 +157,7 @@ public class NuGetConfigFileServiceTests
         }
 
         [Fact]
-        public void When_No_Sources_Or_Credentials_Throws_DotBumpException()
+        public void With_No_Sources_Or_Credentials_Throws_DotBumpException()
         {
             // Arrange
             var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -178,7 +178,7 @@ public class NuGetConfigFileServiceTests
         }
 
         [Fact]
-        public void When_Invalid_Xml_Content_Throws_XmlException()
+        public void With_Invalid_Xml_Content_Throws_XmlException()
         {
             // Arrange
             var xmlContent = "Just some text";
