@@ -27,7 +27,7 @@ public class BumpToolsCommandTests
         };
 
         [Fact]
-        public async Task No_Tools_Manifest_Returns_1_And_FileNotFoundException()
+        public async Task With_Missing_Tools_Manifest_Returns_1_And_FileNotFoundException()
         {
             var directory = new LocalDirectory("./.config");
             directory.EnsureFileDeleted("dotnet-tools.json");
