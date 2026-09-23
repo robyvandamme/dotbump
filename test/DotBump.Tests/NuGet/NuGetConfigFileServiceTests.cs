@@ -16,34 +16,27 @@ public class NuGetConfigFileServiceTests
     {
         private static readonly string s_defaultNugetConfig = "nuget.config";
 
-        public class NoConfigFile
+        [Fact]
+        public void With_No_Config_File_Returns_Default_Configuration()
         {
-            [Fact]
-            public void With_No_Config_File_Returns_Default_Configuration()
-            {
-                var directory = new LocalDirectory(Environment.CurrentDirectory);
-                directory.EnsureFileDeleted("nuget.config");
-                var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
-                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+            var directory = new LocalDirectory(Environment.CurrentDirectory);
+            directory.EnsureFileDeleted("nuget.config");
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+            var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
 
-                result.ShouldSatisfyAllConditions(
-                    () => result.Credentials.ShouldBeEmpty(),
-                    () => result.PackageSources.ShouldHaveSingleItem(),
-                    () => result.PackageSources.First().Key.ShouldBe("nuget.org"),
-                    () => result.PackageSources.First().Value.ShouldBe("https://api.nuget.org/v3/index.json"),
-                    () => result.PackageSources.First().ProtocolVersion.ShouldBe("3"));
-            }
+            result.ShouldSatisfyAllConditions(
+                () => result.Credentials.ShouldBeEmpty(),
+                () => result.PackageSources.ShouldHaveSingleItem(),
+                () => result.PackageSources.First().Key.ShouldBe("nuget.org"),
+                () => result.PackageSources.First().Value.ShouldBe("https://api.nuget.org/v3/index.json"),
+                () => result.PackageSources.First().ProtocolVersion.ShouldBe("3"));
         }
 
-        public class WithConfigFile
+        [Fact]
+        public void When_Package_Sources_Only_Returns_Package_Sources_And_No_Credentials()
         {
-            public class WhenConfigFileContainsPackageSourcesOnly
-            {
-                [Fact]
-                public void When_Package_Sources_Only_Returns_Package_Sources_And_No_Credentials()
-                {
-                    // Arrange
-                    var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
                 <configuration>
                     <packageSources>
                         <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" protocolVersion=""3"" />
@@ -51,40 +44,37 @@ public class NuGetConfigFileServiceTests
                     </packageSources>
                 </configuration>";
 
-                    var tempFile = CreateTempConfigFile(xmlContent);
-                    var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
 
-                    try
-                    {
-                        // Act
-                        var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
-
-                        // Assert
-                        result.ShouldSatisfyAllConditions(
-                            () => result.ShouldNotBeNull(),
-                            () => result.PackageSources.Count.ShouldBe(2),
-                            () => result.PackageSources.First().Key.ShouldBe("nuget.org"),
-                            () => result.PackageSources.First().Value.ShouldBe("https://api.nuget.org/v3/index.json"),
-                            () => result.PackageSources.First().ProtocolVersion.ShouldBe("3"),
-                            () => result.PackageSources.Last().Key.ShouldBe("myorg"),
-                            () => result.PackageSources.Last().Value.ShouldBe(
-                                "https://myorg.pkgs.visualstudio.com/_packaging/myorg/nuget/v3/index.json"),
-                            () => result.PackageSources.Last().ProtocolVersion.ShouldBe("3"),
-                            () => result.Credentials.ShouldBeEmpty());
-                    }
-                    finally
-                    {
-                        File.Delete(tempFile);
-                    }
-                }
-            }
-
-            public class WhenConfigFileContainsCredentialsOnly
+            try
             {
-                [Fact]
-                public void When_Credentials_Only_Throws_DotBumpException()
-                {
-                    var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.ShouldSatisfyAllConditions(
+                    () => result.ShouldNotBeNull(),
+                    () => result.PackageSources.Count.ShouldBe(2),
+                    () => result.PackageSources.First().Key.ShouldBe("nuget.org"),
+                    () => result.PackageSources.First().Value.ShouldBe("https://api.nuget.org/v3/index.json"),
+                    () => result.PackageSources.First().ProtocolVersion.ShouldBe("3"),
+                    () => result.PackageSources.Last().Key.ShouldBe("myorg"),
+                    () => result.PackageSources.Last().Value.ShouldBe(
+                        "https://myorg.pkgs.visualstudio.com/_packaging/myorg/nuget/v3/index.json"),
+                    () => result.PackageSources.Last().ProtocolVersion.ShouldBe("3"),
+                    () => result.Credentials.ShouldBeEmpty());
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void When_Credentials_Only_Throws_DotBumpException()
+        {
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
                 <configuration>
                     <packageSourceCredentials>
                         <myorg>
@@ -97,27 +87,24 @@ public class NuGetConfigFileServiceTests
                     </packageSourceCredentials>
                 </configuration>";
 
-                    var tempFile = CreateTempConfigFile(xmlContent);
-                    var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
 
-                    try
-                    {
-                        Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
-                    }
-                    finally
-                    {
-                        File.Delete(tempFile);
-                    }
-                }
-            }
-
-            public class WhenConfigFileContainsBothPackageSourcesAndCredentials
+            try
             {
-                [Fact]
-                public void When_Both_Sources_And_Credentials_Present_Returns_Both()
-                {
-                    // Arrange
-                    var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void When_Both_Sources_And_Credentials_Present_Returns_Both()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
                 <configuration>
                     <packageSources>
                         <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" protocolVersion=""3"" />
@@ -131,100 +118,92 @@ public class NuGetConfigFileServiceTests
                     </packageSourceCredentials>
                 </configuration>";
 
-                    var tempFile = CreateTempConfigFile(xmlContent);
-                    var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
 
-                    try
-                    {
-                        // Act
-                        var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
-
-                        // Assert
-                        result.ShouldSatisfyAllConditions(
-                            () => result.ShouldNotBeNull(),
-                            () => result.PackageSources.Count.ShouldBe(2),
-                            () => result.Credentials.Count.ShouldBe(1),
-                            () => result.PackageSources.First().Key.ShouldBe("nuget.org"),
-                            () => result.PackageSources.ShouldContain(o => o.Key.Equals("myorg")),
-                            () => result.Credentials.ShouldContainKey("myorg"),
-                            () => result.Credentials.Values.ShouldContain(o => o.SourceName.Equals("myorg")),
-                            () => result.Credentials.Values.First().Credentials.Count.ShouldBe(2),
-                            () => result.Credentials.Values.First().Credentials
-                                .FirstOrDefault(o => o.Key.Equals("username", StringComparison.OrdinalIgnoreCase))
-                                .ShouldNotBeNull(),
-                            () => result.Credentials.Values.First().Credentials
-                                .FirstOrDefault(o => o.Key.Equals("username", StringComparison.OrdinalIgnoreCase))!.Value
-                                .ShouldBe("myuser"),
-                            () => result.Credentials.Values.First().Credentials
-                                .FirstOrDefault(o => o.Key.Equals("ClearTextPassword", StringComparison.OrdinalIgnoreCase))
-                                .ShouldNotBeNull(),
-                            () => result.Credentials.Values.First().Credentials
-                                .FirstOrDefault(o => o.Key.Equals("ClearTextPassword", StringComparison.OrdinalIgnoreCase))!
-                                .Value
-                                .ShouldBe("mypassword"));
-                    }
-                    finally
-                    {
-                        File.Delete(tempFile);
-                    }
-                }
-            }
-
-            public class WhenConfigFileHasNoPackageSourcesOrCredentials
+            try
             {
-                [Fact]
-                public void When_No_Sources_Or_Credentials_Throws_DotBumpException()
-                {
-                    // Arrange
-                    var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.ShouldSatisfyAllConditions(
+                    () => result.ShouldNotBeNull(),
+                    () => result.PackageSources.Count.ShouldBe(2),
+                    () => result.Credentials.Count.ShouldBe(1),
+                    () => result.PackageSources.First().Key.ShouldBe("nuget.org"),
+                    () => result.PackageSources.ShouldContain(o => o.Key.Equals("myorg")),
+                    () => result.Credentials.ShouldContainKey("myorg"),
+                    () => result.Credentials.Values.ShouldContain(o => o.SourceName.Equals("myorg")),
+                    () => result.Credentials.Values.First().Credentials.Count.ShouldBe(2),
+                    () => result.Credentials.Values.First().Credentials
+                        .FirstOrDefault(o => o.Key.Equals("username", StringComparison.OrdinalIgnoreCase))
+                        .ShouldNotBeNull(),
+                    () => result.Credentials.Values.First().Credentials
+                        .FirstOrDefault(o => o.Key.Equals("username", StringComparison.OrdinalIgnoreCase))!.Value
+                        .ShouldBe("myuser"),
+                    () => result.Credentials.Values.First().Credentials
+                        .FirstOrDefault(o => o.Key.Equals("ClearTextPassword", StringComparison.OrdinalIgnoreCase))
+                        .ShouldNotBeNull(),
+                    () => result.Credentials.Values.First().Credentials
+                        .FirstOrDefault(o => o.Key.Equals("ClearTextPassword", StringComparison.OrdinalIgnoreCase))!
+                        .Value
+                        .ShouldBe("mypassword"));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void When_No_Sources_Or_Credentials_Throws_DotBumpException()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
                 <configuration>
                 </configuration>";
 
-                    var tempFile = CreateTempConfigFile(xmlContent);
-                    var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
 
-                    try
-                    {
-                        Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
-                    }
-                    finally
-                    {
-                        File.Delete(tempFile);
-                    }
-                }
-            }
-
-            public class WhenNotAValidConfigFile
+            try
             {
-                [Fact]
-                public void When_Invalid_Xml_Content_Throws_XmlException()
-                {
-                    // Arrange
-                    var xmlContent = "Just some text";
-
-                    var tempFile = CreateTempConfigFile(xmlContent);
-                    var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
-
-                    try
-                    {
-                        // Act
-                        Should.Throw<XmlException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
-                    }
-                    finally
-                    {
-                        File.Delete(tempFile);
-                    }
-                }
+                Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
             }
-
-            private static string CreateTempConfigFile(string content)
+            finally
             {
-                var localDirectory = new LocalDirectory(Environment.CurrentDirectory);
-                var filename = s_defaultNugetConfig;
-                localDirectory.EnsureFileDeleted(filename);
-                localDirectory.EnsureFileCreated(filename, content);
-                return "nuget.config";
+                File.Delete(tempFile);
             }
+        }
+
+        [Fact]
+        public void When_Invalid_Xml_Content_Throws_XmlException()
+        {
+            // Arrange
+            var xmlContent = "Just some text";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                Should.Throw<XmlException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        private static string CreateTempConfigFile(string content)
+        {
+            var localDirectory = new LocalDirectory(Environment.CurrentDirectory);
+            var filename = s_defaultNugetConfig;
+            localDirectory.EnsureFileDeleted(filename);
+            localDirectory.EnsureFileCreated(filename, content);
+            return "nuget.config";
         }
     }
 }
