@@ -28,7 +28,6 @@ public class NuGetReleaseFinderTests
             private RegistrationIndex? RegistrationIndex => s_lazyRegistrationIndex.Value;
 
             [Fact]
-
             public void No_New_Version_Found_Returns_Null()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
@@ -40,7 +39,6 @@ public class NuGetReleaseFinderTests
             }
 
             [Fact]
-
             public void Finds_New_Patch_For_Minor_Type()
             {
                 var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
@@ -200,6 +198,70 @@ public class NuGetReleaseFinderTests
                         BumpType.Patch);
                     result.ShouldBe(new SemanticVersion("0.1.1-beta.8"));
                 }
+            }
+
+            [Fact]
+            public void Finds_PreRelease_When_CurrentVersion_Is_Stable_If_AllowPreRelease_Is_True()
+            {
+                var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+                var catalogPages = RegistrationIndex!.CatalogPages;
+                if (catalogPages != null)
+                {
+                    var result = service.TryFindNewVersionInCatalogPages(
+                        catalogPages,
+                        new SemanticVersion("0.1.0"),
+                        BumpType.Minor,
+                        allowPreRelease: true);
+                    result.ShouldBe(new SemanticVersion("0.1.1-beta.8"));
+                }
+            }
+
+            [Fact]
+            public void Excludes_PreRelease_When_AllowPreRelease_Is_False()
+            {
+                var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+                var catalogPages = RegistrationIndex!.CatalogPages;
+                if (catalogPages != null)
+                {
+                    var result = service.TryFindNewVersionInCatalogPages(
+                        catalogPages,
+                        new SemanticVersion("0.1.0"),
+                        BumpType.Minor,
+                        allowPreRelease: false);
+                    result.ShouldBeNull();
+                }
+            }
+
+            [Fact]
+            public void Prefers_Stable_Version_Over_Higher_PreRelease_When_Both_Are_Eligible()
+            {
+                var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+                var versions = new[] { "1.0.0", "1.1.0-preview.1" };
+                var packages = versions.Select(v => new Package
+                {
+                    Id = $"https://example.com/{v}",
+                    CatalogEntry = new PackageDetails { Version = v, Listed = true },
+                }).ToList();
+
+                var catalogPages = new List<CatalogPage>
+                {
+                    new()
+                    {
+                        Id = "https://example.com/page1",
+                        Lower = "1.0.0",
+                        Upper = "1.1.0-preview.1",
+                        Count = versions.Length,
+                        Items = packages,
+                    },
+                };
+
+                var result = service.TryFindNewVersionInCatalogPages(
+                    catalogPages,
+                    new SemanticVersion("1.0.0-preview.1"),
+                    BumpType.Minor,
+                    allowPreRelease: true);
+
+                result.ShouldBe(new SemanticVersion("1.0.0"));
             }
         }
     }

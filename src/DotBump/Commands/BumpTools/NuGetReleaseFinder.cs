@@ -85,6 +85,25 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
         SemanticVersion currentVersion,
         BumpType bumpType)
     {
+        ArgumentNullException.ThrowIfNull(currentVersion);
+
+        return TryFindNewVersionInCatalogPages(catalogPages, currentVersion, bumpType, currentVersion.IsPreRelease);
+    }
+
+    /// <summary>
+    /// Tries to find a new version in the provided catalog pages using the provided bump type and pre-release allowance.
+    /// </summary>
+    /// <param name="catalogPages">The list of catalog pages.</param>
+    /// <param name="currentVersion">The current version.</param>
+    /// <param name="bumpType">The bump type.</param>
+    /// <param name="allowPreRelease">Whether to include pre-release versions.</param>
+    /// <returns>A new version if one is found.</returns>
+    public SemanticVersion? TryFindNewVersionInCatalogPages(
+        ICollection<CatalogPage> catalogPages,
+        SemanticVersion currentVersion,
+        BumpType bumpType,
+        bool allowPreRelease)
+    {
         ArgumentNullException.ThrowIfNull(catalogPages);
         ArgumentNullException.ThrowIfNull(currentVersion);
         if (bumpType != BumpType.Patch && bumpType != BumpType.Minor)
@@ -123,53 +142,57 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
 
         if (bumpType == BumpType.Minor)
         {
-            return TryFindNewMinorOrPatchVersion(currentVersion, versions);
+            return TryFindNewMinorOrPatchVersion(currentVersion, versions, allowPreRelease);
         }
 
-        return TryFindNewPatchVersion(currentVersion, versions);
+        return TryFindNewPatchVersion(currentVersion, versions, allowPreRelease);
     }
 
     private static SemanticVersion? TryFindNewMinorOrPatchVersion(
         SemanticVersion currentVersion,
-        List<SemanticVersion> versions)
+        List<SemanticVersion> versions,
+        bool allowPreRelease)
     {
-        if (currentVersion.IsPreRelease)
+        var availableNewVersions =
+            versions.Where(o => o.Major == currentVersion.Major && o > currentVersion).ToList();
+
+        var stableVersions = availableNewVersions.Where(o => !o.IsPreRelease);
+        var newestStable = stableVersions.OrderByDescending(o => o).FirstOrDefault();
+        if (newestStable != null)
         {
-            var availableNewVersions =
-                versions.Where(o => o.Major == currentVersion.Major && o > currentVersion);
-            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
-            return newestVersion;
+            return newestStable;
         }
-        else
+
+        if (allowPreRelease)
         {
-            var availableNewVersions =
-                versions.Where(o => o.Major == currentVersion.Major && o > currentVersion && o.IsPreRelease == false);
-            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
-            return newestVersion;
+            return availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
         }
+
+        return null;
     }
 
     private static SemanticVersion? TryFindNewPatchVersion(
         SemanticVersion currentVersion,
-        List<SemanticVersion> versions)
+        List<SemanticVersion> versions,
+        bool allowPreRelease)
     {
-        if (currentVersion.IsPreRelease)
+        var availableNewVersions =
+            versions.Where(o => o.Major == currentVersion.Major
+                                && o.Minor == currentVersion.Minor
+                                && o > currentVersion).ToList();
+
+        var stableVersions = availableNewVersions.Where(o => !o.IsPreRelease);
+        var newestStable = stableVersions.OrderByDescending(o => o).FirstOrDefault();
+        if (newestStable != null)
         {
-            var availableNewVersions =
-                versions.Where(o => o.Major == currentVersion.Major
-                                    && o.Minor == currentVersion.Minor
-                                    && o > currentVersion);
-            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
-            return newestVersion;
+            return newestStable;
         }
-        else
+
+        if (allowPreRelease)
         {
-            var availableNewVersions =
-                versions.Where(o => o.Major == currentVersion.Major
-                                    && o.Minor == currentVersion.Minor
-                                    && o > currentVersion && o.IsPreRelease == false);
-            var newestVersion = availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
-            return newestVersion;
+            return availableNewVersions.OrderByDescending(o => o).FirstOrDefault();
         }
+
+        return null;
     }
 }

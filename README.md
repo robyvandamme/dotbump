@@ -84,7 +84,28 @@ OPTIONS:
 #### Pre-releases
 
 If the current .NET tool version is a pre-release version, pre-release versions will be taken into account for new 
-versions.
+versions, but stable versions will be preferred. If the current .NET tool version is a stable version, only stable 
+versions will be taken into account for new versions.
+
+Examples:
+
+```text
+Current version: 1.0.0-beta.1
+Available versions: 1.0.0-beta.2, 1.0.0
+Bump to: 1.0.0
+```
+
+```text
+Current version: 1.0.0-beta.1
+Available versions: 1.0.1-beta.1, 1.0.0
+Bump to: 1.0.0
+```
+
+```text
+Current version: 1.0.1-beta.1
+Available versions: 1.0.1-beta.2, 1.0.0
+Bump to: 1.0.1-beta.2
+```
 
 #### Private Feeds
 
@@ -116,4 +137,3 @@ Example:
 </configuration>
 
 ```
-
