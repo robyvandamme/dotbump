@@ -1,10 +1,10 @@
 // Copyright © Roby Van Damme.
 
-using System.Diagnostics;
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Commands.BumpTools;
 using DotBump.Commands.BumpTools.Interfaces;
+using DotBump.Common;
 using Serilog;
 using Spectre.Console.Cli;
 
@@ -12,12 +12,12 @@ namespace DotBump;
 
 internal static class CommandConfiguration
 {
-    internal static void Configure(this CommandApp commandApp, ILogger logger)
+    internal static void Configure(this CommandApp commandApp, ILogger logger, VersionInfo versionInfo)
     {
-        ArgumentNullException.ThrowIfNull(nameof(commandApp));
-        ArgumentNullException.ThrowIfNull(nameof(logger));
+        ArgumentNullException.ThrowIfNull(commandApp);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(versionInfo);
 
-        Debug.Assert(commandApp != null, nameof(commandApp) + " != null");
         commandApp.Configure(config =>
         {
 #if DEBUG
@@ -25,6 +25,7 @@ internal static class CommandConfiguration
             config.ValidateExamples();
 #endif
             config.SetApplicationName("dotbump");
+            config.SetApplicationVersion(versionInfo.Version ?? "not available");
             config.Settings.Registrar.RegisterInstance(logger);
 
             config.Settings.Registrar.Register<ISdkFileService, SdkFileService>();
