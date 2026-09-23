@@ -36,6 +36,7 @@ Key capabilities include:
   - `NuGet/`: Tests for NuGet clients, release finder, configuration validator, and configuration file services.
   - `Common/`: Tests for semantic versioning and argument handling.
   - `Data/`: Static test data (mock NuGet registrations, catalog pages, and `global.json` files).
+  - `AGENTS.md`: Detailed test structure, hierarchy, naming conventions, and canonical examples.
   - `TESTS.md`: Guide to existing test cases and conventions for NuGet release testing.
 - `build/`: NUKE build project (`Build.cs`, `Configuration.cs`).
 - `artifacts/`: Output directory for packages, coverage reports, and test results (ignored in VCS).
@@ -112,10 +113,16 @@ Every `.cs` file must begin with the copyright header without a year:
 
 ## 5. Testing Guidelines
 
-- **Frameworks**: Use xUnit for test execution, Shouldly (`.ShouldBe(...)`) for assertions, and Moq for interface mocking.
-- **CLI & Output Testing**: Use `Spectre.Console.Testing.TestConsole` to capture and verify ANSI console output.
-- **Test Data**: Add mock JSON payloads to `test/DotBump.Tests/Data/` and ensure `<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>` is set in `test/DotBump.Tests/DotBump.Tests.csproj`.
-- Consult `test/DotBump.Tests/TESTS.md` for existing test scenarios, edge cases, and patterns (such as single vs. multi-page NuGet package registrations).
+- **Frameworks**: Use xUnit v2 for test execution, Shouldly (`.ShouldBe(...)`) for assertions, Moq (loose) for interface mocking, and `Spectre.Console.Testing` (`TestConsole`) for CLI command tests.
+- **Structure & Layout**: Mirror production structure (`src/DotBump/Path/To/Class.cs` -> `test/DotBump.Tests/Path/To/ClassTests.cs`). Use one top-level `{ClassName}Tests` class with nested `public class` groups per method (`Constructor`, `Equals_`, etc.).
+- **Method Naming**: Pascal_Snake_Case convention: `With_{Condition}_Returns_{Outcome}`, `{Condition}_Returns_{Outcome}`, or `With_{Condition}_Throws_{Exception}`.
+- **Patterns**:
+  - Follow Arrange-Act-Assert (AAA) with one logical outcome per test.
+  - Do not use `SUT` or `ACT` variable names; use descriptive names.
+  - Use Shouldly for all assertions (`ShouldSatisfyAllConditions`, `Should.Throw` / `Should.ThrowAsync`). Use Moq `Verify` for interactions.
+  - Keep disk operations isolated using `LocalDirectory("./temp")` or cleanup helpers; never mutate repo files in place.
+- **Test Data**: Add mock JSON payloads to `test/DotBump.Tests/Data/` (configured with `CopyToOutputDirectory`) rather than making network calls.
+- See `test/DotBump.Tests/AGENTS.md` for complete patterns and canonical examples, and `test/DotBump.Tests/TESTS.md` for documented test cases and pinned tool versions.
 
 ---
 
