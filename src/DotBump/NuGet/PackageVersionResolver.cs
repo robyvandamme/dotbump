@@ -47,48 +47,8 @@ internal class PackageVersionResolver(
             {
                 bestVersions.TryGetValue(package.PackageId, out var currentBest);
 
-                var releaseIndex = await nuGetClient
-                    .GetPackageInformationAsync(baseUrl, package.PackageId)
+                var candidateVersion = await ResolvePackageVersionAsync(nuGetClient, baseUrl, package, bumpType)
                     .ConfigureAwait(false);
-
-                if (releaseIndex == null)
-                {
-                    continue;
-                }
-
-                var pages = nuGetReleaseFinder.TryFindNewReleaseCatalogPages(
-                    releaseIndex,
-                    package.CurrentVersion);
-
-                if (pages.Count == 0)
-                {
-                    logger.Debug("No new versions found in catalog for {Package}", package.PackageId);
-                    continue;
-                }
-
-                // Then there are 2 options at the moment:
-                // either the release info is in the release index itself
-                // or the release info is in a page linked from the release index.
-                SemanticVersion? candidateVersion;
-                if (pages[0].HasPackageDetails)
-                {
-                    candidateVersion = nuGetReleaseFinder.TryFindNewVersionInCatalogPages(
-                        pages,
-                        package.CurrentVersion,
-                        bumpType,
-                        package.CurrentVersion.IsPreRelease);
-                }
-                else
-                {
-                    var detailPages = await nuGetClient
-                        .GetRelevantCatalogPagesAsync(pages)
-                        .ConfigureAwait(false);
-                    candidateVersion = nuGetReleaseFinder.TryFindNewVersionInCatalogPages(
-                        detailPages.ToList(),
-                        package.CurrentVersion,
-                        bumpType,
-                        package.CurrentVersion.IsPreRelease);
-                }
 
                 if (candidateVersion != null && IsBetterCandidate(candidateVersion, currentBest))
                 {
@@ -120,5 +80,56 @@ internal class PackageVersionResolver(
         }
 
         return candidate > currentBest;
+    }
+
+    /// <summary>
+    /// Resolves the best newer version for a single package from a single package source.
+    /// </summary>
+    private async Task<SemanticVersion?> ResolvePackageVersionAsync(
+        INuGetClient nuGetClient,
+        string baseUrl,
+        PackageToBump package,
+        BumpType bumpType)
+    {
+        var releaseIndex = await nuGetClient
+            .GetPackageInformationAsync(baseUrl, package.PackageId)
+            .ConfigureAwait(false);
+
+        if (releaseIndex == null)
+        {
+            return null;
+        }
+
+        var pages = nuGetReleaseFinder.TryFindNewReleaseCatalogPages(
+            releaseIndex,
+            package.CurrentVersion);
+
+        if (pages.Count == 0)
+        {
+            logger.Debug("No new versions found in catalog for {Package}", package.PackageId);
+            return null;
+        }
+
+        // Then there are 2 options at the moment:
+        // either the release info is in the release index itself
+        // or the release info is in a page linked from the release index.
+        if (pages[0].HasPackageDetails)
+        {
+            return nuGetReleaseFinder.TryFindNewVersionInCatalogPages(
+                pages,
+                package.CurrentVersion,
+                bumpType,
+                package.CurrentVersion.IsPreRelease);
+        }
+
+        var detailPages = await nuGetClient
+            .GetRelevantCatalogPagesAsync(pages)
+            .ConfigureAwait(false);
+
+        return nuGetReleaseFinder.TryFindNewVersionInCatalogPages(
+            detailPages.ToList(),
+            package.CurrentVersion,
+            bumpType,
+            package.CurrentVersion.IsPreRelease);
     }
 }
