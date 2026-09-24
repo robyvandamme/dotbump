@@ -15,6 +15,10 @@ namespace DotBump;
 
 internal static class CommandConfiguration
 {
+    private const string SdkCommandName = "sdk";
+    private const string ToolsCommandName = "tools";
+    private const string PackagesCommandName = "packages";
+
     internal static void Configure(this CommandApp commandApp, ILogger logger, VersionInfo versionInfo)
     {
         ArgumentNullException.ThrowIfNull(commandApp);
@@ -36,15 +40,15 @@ internal static class CommandConfiguration
             config.Settings.Registrar.Register<IReleaseFinder, ReleaseFinder>();
             config.Settings.Registrar.Register<IBumpSdkHandler, BumpSdkHandler>();
 
-            config.AddCommand<BumpSdkCommand>(name: "sdk")
+            config.AddCommand<BumpSdkCommand>(name: SdkCommandName)
                 .WithDescription(
                     "Bump the global.json SDK version. " +
                     "Use the 'minor' type option to bump the SDK to the latest minor or patch version for the current major version. " +
                     "Use the 'patch' type option to bump the SDK to the latest patch version for the current minor version. ")
-                .WithExample("sdk")
-                .WithExample("sdk", "--type", "patch")
-                .WithExample("sdk", "--file", "./other/global.json", "--output", "bump-sdk-report.json")
-                .WithExample("sdk", "--security-only", "true", "--debug", "true", "--logfile", "bump-sdk-log.txt");
+                .WithExample(SdkCommandName)
+                .WithExample(SdkCommandName, "--type", "patch")
+                .WithExample(SdkCommandName, "--file", "./other/global.json", "--output", "bump-sdk-report.json")
+                .WithExample(SdkCommandName, "--security-only", "true", "--debug", "true", "--logfile", "bump-sdk-log.txt");
 
             config.Settings.Registrar.Register<IToolFileService, ToolFileService>();
             config.Settings.Registrar.Register<INuGetConfigFileService, NuGetConfigFileService>();
@@ -53,25 +57,25 @@ internal static class CommandConfiguration
             config.Settings.Registrar.Register<INuGetClientFactory, NuGetClientFactory>();
             config.Settings.Registrar.Register<INuGetConfigValidator, NuGetConfigValidator>();
 
-            config.AddCommand<BumpToolsCommand>(name: "tools")
+            config.AddCommand<BumpToolsCommand>(name: ToolsCommandName)
                 .WithDescription(
                     "Bump the local .NET tools versions. " +
                     "Use the 'minor' type option to bump the tools to the latest minor or patch versions for the current major version. " +
                     "Use the 'patch' type option to bump the tools to the latest patch version for the current minor version. ")
-                .WithExample("tools")
-                .WithExample("tools", "--type", "patch")
-                .WithExample("tools", "--config", "./custom-nuget.config", "--output", "bump-tools-report.json")
-                .WithExample("tools", "--debug", "true", "--logfile", "bump-tools-log.txt");
+                .WithExample(ToolsCommandName)
+                .WithExample(ToolsCommandName, "--type", "patch")
+                .WithExample(ToolsCommandName, "--config", "./custom-nuget.config", "--output", "bump-tools-report.json")
+                .WithExample(ToolsCommandName, "--debug", "true", "--logfile", "bump-tools-log.txt");
 
-            config.AddCommand<BumpPackagesCommand>(name: "packages")
+            config.AddCommand<BumpPackagesCommand>(name: PackagesCommandName)
                 .WithDescription(
                     "Bump the NuGet package versions. " +
                     "Use the 'minor' type option to bump the packages to the latest minor or patch versions for the current major version. " +
                     "Use the 'patch' type option to bump the packages to the latest patch version for the current minor version. ")
-                .WithExample("packages")
-                .WithExample("packages", "--type", "patch")
-                .WithExample("packages", "--config", "./custom-nuget.config", "--output", "bump-packages-report.json")
-                .WithExample("packages", "--debug", "true", "--logfile", "bump-packages-log.txt");
+                .WithExample(PackagesCommandName)
+                .WithExample(PackagesCommandName, "--type", "patch")
+                .WithExample(PackagesCommandName, "--config", "./custom-nuget.config", "--output", "bump-packages-report.json")
+                .WithExample(PackagesCommandName, "--debug", "true", "--logfile", "bump-packages-log.txt");
         });
     }
 }
