@@ -23,6 +23,10 @@ internal class BumpPackagesSettings : BumpSettings
     [CommandOption("-c|--config")]
     public string? NuGetConfigPath { get; init; }
 
+    [Description("The root directory to scan. Defaults to the current directory.")]
+    [CommandOption("-p|--path")]
+    public string? RepositoryPath { get; init; }
+
     public override ValidationResult Validate()
     {
         // If a config file is passed, verify it exists before passing it on.
@@ -32,6 +36,16 @@ internal class BumpPackagesSettings : BumpSettings
             if (!File.Exists(normalizedPath))
             {
                 return ValidationResult.Error($"The file {NuGetConfigPath} does not exist.");
+            }
+        }
+
+        // If a root path is passed, verify the directory exists before passing it on.
+        if (!string.IsNullOrWhiteSpace(RepositoryPath))
+        {
+            var normalizedPath = Path.GetFullPath(RepositoryPath);
+            if (!Directory.Exists(normalizedPath))
+            {
+                return ValidationResult.Error($"The directory {RepositoryPath} does not exist.");
             }
         }
 
