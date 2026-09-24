@@ -206,6 +206,20 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Whitespace_Formatted_Child_Version_Returns_Trimmed_Version()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\">\n      <Version>\n        3.0.0\n      </Version>\n    </PackageReference>\n  </ItemGroup>\n</Project>\n";
+            File.WriteAllText(TempPath("WhitespaceVersion.csproj"), content);
+
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldContain(package =>
+                package.PackageId == "Newtonsoft.Json" && package.Version == "3.0.0");
+        }
+
+        [Fact]
         public void With_Missing_Directory_Throws_DotBumpException()
         {
             ResetTempDirectory();
@@ -457,6 +471,38 @@ public class PackageFileServiceTests
 
             var expected = content.Replace("Version=\"13.0.1\"", "Version=\"13.0.2\"", StringComparison.Ordinal);
             File.ReadAllText(path).ShouldBe(expected);
+        }
+
+        [Fact]
+        public void With_Whitespace_Formatted_Child_Version_Preserves_Whitespace()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\">\n      <Version>\n        3.0.0\n      </Version>\n    </PackageReference>\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("WhitespaceVersion.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Newtonsoft.Json", "3.0.1");
+            s_service.SavePackageManifest(manifest);
+
+            File.ReadAllText(path).ShouldBe(content.Replace("3.0.0", "3.0.1", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void With_Whitespace_Padded_Attribute_Version_Preserves_Whitespace()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\" 3.0.0 \" />\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("WhitespaceAttribute.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Newtonsoft.Json", "3.0.1");
+            s_service.SavePackageManifest(manifest);
+
+            File.ReadAllText(path).ShouldBe(content.Replace(" 3.0.0 ", " 3.0.1 ", StringComparison.Ordinal));
         }
     }
 

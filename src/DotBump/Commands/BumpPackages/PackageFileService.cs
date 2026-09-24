@@ -119,14 +119,14 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
         if (attribute != null)
         {
-            return (attribute.Value, attribute);
+            return (attribute.Value.Trim(), attribute);
         }
 
         var childElement = element.Elements()
             .FirstOrDefault(child => child.Name.LocalName.Equals("Version", StringComparison.Ordinal));
 
         return childElement != null
-            ? (childElement.Value, childElement)
+            ? (childElement.Value.Trim(), childElement)
             : (null, null);
     }
 
@@ -255,7 +255,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         var valueStart = quoteIndex + 1;
         var valueEnd = text.IndexOf(quote, valueStart);
 
-        return valueEnd < 0 ? (-1, 0) : (valueStart, valueEnd - valueStart);
+        return valueEnd < 0 ? (-1, 0) : TrimSpan(text, valueStart, valueEnd);
     }
 
     private static (int Start, int Length) GetElementVersionSpan(
@@ -274,7 +274,22 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         var valueStart = GetOffset(lineStartOffsets, textLineInfo.LineNumber, textLineInfo.LinePosition);
         var valueEnd = text.IndexOf('<', valueStart);
 
-        return valueEnd > valueStart ? (valueStart, valueEnd - valueStart) : (-1, 0);
+        return valueEnd > valueStart ? TrimSpan(text, valueStart, valueEnd) : (-1, 0);
+    }
+
+    private static (int Start, int Length) TrimSpan(string text, int start, int end)
+    {
+        while (start < end && char.IsWhiteSpace(text[start]))
+        {
+            start++;
+        }
+
+        while (end > start && char.IsWhiteSpace(text[end - 1]))
+        {
+            end--;
+        }
+
+        return end > start ? (start, end - start) : (-1, 0);
     }
 
     private IEnumerable<string> EnumerateCandidateFiles(string rootPath)
