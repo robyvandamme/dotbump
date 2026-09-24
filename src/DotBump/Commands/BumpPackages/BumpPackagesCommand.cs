@@ -74,7 +74,7 @@ internal class BumpPackagesCommand(
         catch (Exception e)
 #pragma warning restore CA1031
         {
-            logger.Error(e, "An error occured while trying to bump the packages");
+            logger.Error(e, "An error occurred while trying to bump the packages");
             console.WriteException(e, ExceptionFormats.ShortenEverything);
             logger.MethodReturn(nameof(BumpPackagesCommand), nameof(ExecuteAsync));
             return 1;
@@ -88,7 +88,7 @@ internal class BumpPackagesCommand(
     {
         if (bumpReport.Errors.Any())
         {
-            console.MarkupLine("An error occured bumping package versions.");
+            console.MarkupLine("An error occurred bumping package versions.");
             foreach (var bumpReportError in bumpReport.Errors)
             {
                 console.MarkupLine(bumpReportError);

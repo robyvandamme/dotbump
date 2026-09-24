@@ -66,7 +66,7 @@ internal class BumpToolsCommand(
         catch (Exception e)
 #pragma warning restore CA1031
         {
-            logger.Error(e, "An error occured while trying to bump the tools");
+            logger.Error(e, "An error occurred while trying to bump the tools");
             console.WriteException(e, ExceptionFormats.ShortenEverything);
             logger.MethodReturn(nameof(BumpToolsCommand), nameof(ExecuteAsync));
             return 1;
@@ -80,7 +80,7 @@ internal class BumpToolsCommand(
     {
         if (bumpReport.Errors.Any())
         {
-            console.MarkupLine("An error occured bumping tool versions.");
+            console.MarkupLine("An error occurred bumping tool versions.");
             foreach (var bumpReportError in bumpReport.Errors)
             {
                 console.MarkupLine(bumpReportError);

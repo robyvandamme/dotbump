@@ -69,7 +69,7 @@ public class BumpPackagesCommandTests
 
             result.ShouldSatisfyAllConditions(
                 () => result.ShouldBe(1),
-                () => testConsole.Output.ShouldContain("An error occured bumping package versions."));
+                () => testConsole.Output.ShouldContain("An error occurred bumping package versions."));
         }
 
         [Fact]

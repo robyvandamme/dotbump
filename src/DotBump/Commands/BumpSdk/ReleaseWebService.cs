@@ -29,7 +29,7 @@ internal class ReleaseWebService(ILogger logger) : IReleaseService
         }
         catch (Exception exception)
         {
-            logger.Error(exception, "An error occured fetching releases from {Uri}", _releaseUri.ToString());
+            logger.Error(exception, "An error occurred fetching releases from {Uri}", _releaseUri.ToString());
             throw;
         }
 
