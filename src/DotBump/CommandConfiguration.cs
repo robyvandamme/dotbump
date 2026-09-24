@@ -1,5 +1,6 @@
 // Copyright © Roby Van Damme.
 
+using DotBump.Commands.BumpPackages;
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Commands.BumpTools;
@@ -61,6 +62,16 @@ internal static class CommandConfiguration
                 .WithExample("tools", "--type", "patch")
                 .WithExample("tools", "--config", "./custom-nuget.config", "--output", "bump-tools-report.json")
                 .WithExample("tools", "--debug", "true", "--logfile", "bump-tools-log.txt");
+
+            config.AddCommand<BumpPackagesCommand>(name: "packages")
+                .WithDescription(
+                    "Bump the NuGet package versions. " +
+                    "Use the 'minor' type option to bump the packages to the latest minor or patch versions for the current major version. " +
+                    "Use the 'patch' type option to bump the packages to the latest patch version for the current minor version. ")
+                .WithExample("packages")
+                .WithExample("packages", "--type", "patch")
+                .WithExample("packages", "--config", "./custom-nuget.config", "--output", "bump-packages-report.json")
+                .WithExample("packages", "--debug", "true", "--logfile", "bump-packages-log.txt");
         });
     }
 }
