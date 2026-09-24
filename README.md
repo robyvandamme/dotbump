@@ -7,6 +7,10 @@
 [![Pre Release](https://github.com/robyvandamme/dotbump/actions/workflows/pre-release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/pre-release.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=robyvandamme_dotbump&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=robyvandamme_dotbump)
 
+## Requirements
+
+DotBump targets .NET 8 and requires .NET 8 or later.
+
 ## Installation
 
 ```shell
