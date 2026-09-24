@@ -189,11 +189,10 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         for (var i = 0; i < text.Length; i++)
         {
             var character = text[i];
-            if (character == '\n')
-            {
-                offsets.Add(i + 1);
-            }
-            else if (character == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n'))
+            var isLineBreak = character == '\n'
+                              || (character == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n'));
+
+            if (isLineBreak)
             {
                 offsets.Add(i + 1);
             }
