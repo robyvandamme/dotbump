@@ -11,8 +11,8 @@ internal sealed class PackageManifest
 {
     private readonly List<PackageVersionEntry> _packages = [];
     private readonly List<string> _warnings = [];
-    private readonly Dictionary<string, XDocument> _documents = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _changedFiles = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, XDocument> _documents = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _changedFiles = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Gets all package version occurrences.
