@@ -54,13 +54,14 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
         foreach (var filePath in manifest.ChangedFiles)
         {
-            var document = manifest.GetDocument(filePath);
-            if (document == null)
+            var text = manifest.GetFileText(filePath);
+            if (text == null)
             {
                 continue;
             }
 
-            WriteDocument(filePath, document);
+            var updatedText = ApplyChanges(filePath, text, manifest.Packages);
+            WriteText(filePath, updatedText);
             logger.Debug("Updated package versions in {File}", filePath);
         }
 
@@ -106,7 +107,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             ?.Value;
     }
 
-    private static (string? Version, XAttribute? Attribute, XElement? Element) ReadVersion(XElement element)
+    private static (string? Version, XObject? Source) ReadVersion(XElement element)
     {
         var attribute = element.Attributes()
                             .FirstOrDefault(attribute =>
@@ -118,15 +119,15 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
         if (attribute != null)
         {
-            return (attribute.Value, attribute, null);
+            return (attribute.Value, attribute);
         }
 
         var childElement = element.Elements()
             .FirstOrDefault(child => child.Name.LocalName.Equals("Version", StringComparison.Ordinal));
 
         return childElement != null
-            ? (childElement.Value, null, childElement)
-            : (null, null, null);
+            ? (childElement.Value, childElement)
+            : (null, null);
     }
 
     private static bool IsSupportedVersion(string version)
@@ -144,24 +145,25 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         return version.IndexOfAny(['[', ']', '(', ')', ',']) < 0;
     }
 
-    private static void WriteDocument(string filePath, XDocument document)
-    {
-        var settings = new XmlWriterSettings
-        {
-            Encoding = DetectEncoding(filePath),
-            Indent = false,
-            NewLineHandling = NewLineHandling.None,
-            OmitXmlDeclaration = document.Declaration == null,
-        };
-
-        using var writer = XmlWriter.Create(filePath, settings);
-        document.Save(writer);
-    }
-
-    private static Encoding DetectEncoding(string filePath)
+    private static string ReadText(string filePath)
     {
         var bytes = File.ReadAllBytes(filePath);
+        var encoding = DetectEncoding(bytes);
+        var preambleLength = encoding.GetPreamble().Length;
 
+        return encoding.GetString(bytes, preambleLength, bytes.Length - preambleLength);
+    }
+
+    private static void WriteText(string filePath, string text)
+    {
+        // The encoding is detected from the original bytes and carries the BOM, so the file is
+        // written back with the same encoding and byte order mark it had before.
+        var encoding = DetectEncoding(File.ReadAllBytes(filePath));
+        File.WriteAllText(filePath, text, encoding);
+    }
+
+    private static Encoding DetectEncoding(byte[] bytes)
+    {
         if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
         {
             return new UTF8Encoding(true);
@@ -178,6 +180,42 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         }
 
         return new UTF8Encoding(false);
+    }
+
+    private static int[] GetLineStartOffsets(string text)
+    {
+        var offsets = new List<int> { 0 };
+
+        for (var i = 0; i < text.Length; i++)
+        {
+            var character = text[i];
+            if (character == '\r')
+            {
+                if (i + 1 < text.Length && text[i + 1] == '\n')
+                {
+                    i++;
+                }
+
+                offsets.Add(i + 1);
+            }
+            else if (character == '\n')
+            {
+                offsets.Add(i + 1);
+            }
+        }
+
+        return offsets.ToArray();
+    }
+
+    private static int GetOffset(int[] lineStartOffsets, int lineNumber, int linePosition)
+    {
+        var lineIndex = lineNumber - 1;
+        if (lineIndex < 0 || lineIndex >= lineStartOffsets.Length)
+        {
+            return 0;
+        }
+
+        return lineStartOffsets[lineIndex] + (linePosition - 1);
     }
 
     private IEnumerable<string> EnumerateCandidateFiles(string rootPath)
@@ -225,10 +263,14 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
     private void ReadPackageVersions(string filePath, PackageManifest manifest)
     {
+        var text = ReadText(filePath);
+
         XDocument document;
         try
         {
-            document = XDocument.Load(filePath, LoadOptions.PreserveWhitespace);
+            document = XDocument.Load(
+                new StringReader(text),
+                LoadOptions.PreserveWhitespace | LoadOptions.SetLineInfo);
         }
         catch (XmlException e)
         {
@@ -242,6 +284,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         }
 
         var sourceKind = GetSourceKind(filePath);
+        var lineStartOffsets = GetLineStartOffsets(text);
         var packageFound = false;
 
         foreach (var element in root.Descendants())
@@ -258,9 +301,9 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
-            var (version, versionAttribute, versionElement) = ReadVersion(element);
+            var (version, versionSource) = ReadVersion(element);
 
-            if (version == null)
+            if (version == null || versionSource == null)
             {
                 logger.Debug(
                     "Skipping {Element} {PackageId} in {File} because it has no version",
@@ -279,6 +322,11 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
+            var lineInfo = (IXmlLineInfo)versionSource;
+            var versionAnchor = lineInfo.HasLineInfo()
+                ? GetOffset(lineStartOffsets, lineInfo.LineNumber, lineInfo.LinePosition)
+                : 0;
+
             manifest.Add(
                 new PackageVersionEntry
                 {
@@ -288,9 +336,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                     FilePath = filePath,
                     SourceKind = sourceKind,
                     ElementName = elementName,
-                    Element = element,
-                    VersionAttribute = versionAttribute,
-                    VersionElement = versionElement,
+                    VersionAnchor = versionAnchor,
                 });
 
             packageFound = true;
@@ -298,7 +344,42 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
         if (packageFound)
         {
-            manifest.RegisterDocument(filePath, document);
+            manifest.RegisterFileText(filePath, text);
         }
+    }
+
+    private string ApplyChanges(string filePath, string text, IReadOnlyList<PackageVersionEntry> packages)
+    {
+        var edits = new List<(int Index, string OldVersion, string NewVersion)>();
+
+        foreach (var package in packages)
+        {
+            if (!string.Equals(package.FilePath, filePath, StringComparison.Ordinal)
+                || string.Equals(package.Version, package.OriginalVersion, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var index = text.IndexOf(package.OriginalVersion, package.VersionAnchor, StringComparison.Ordinal);
+            if (index < 0)
+            {
+                logger.Warning(
+                    "Could not locate version '{Version}' for {PackageId} in {File}; skipping.",
+                    package.OriginalVersion,
+                    package.PackageId,
+                    filePath);
+                continue;
+            }
+
+            edits.Add((index, package.OriginalVersion, package.Version));
+        }
+
+        // Apply from the end of the file backwards so earlier offsets remain valid.
+        foreach (var edit in edits.OrderByDescending(edit => edit.Index))
+        {
+            text = text.Remove(edit.Index, edit.OldVersion.Length).Insert(edit.Index, edit.NewVersion);
+        }
+
+        return text;
     }
 }

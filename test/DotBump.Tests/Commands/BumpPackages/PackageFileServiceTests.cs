@@ -324,6 +324,90 @@ public class PackageFileServiceTests
 
             manifest.HasChanges.ShouldBeTrue();
         }
+
+        [Fact]
+        public void With_Multiline_Attributes_Preserves_Formatting()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference\n        Include=\"Newtonsoft.Json\"\n        Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("Multi.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+            s_service.SavePackageManifest(manifest);
+
+            File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void With_Single_Quoted_Attributes_Preserves_Quotes()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include='Newtonsoft.Json' Version='13.0.1' />\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("Single.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+            s_service.SavePackageManifest(manifest);
+
+            File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void With_Entities_And_Empty_Elements_Preserves_Them()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <PropertyGroup></PropertyGroup>\n  <ItemGroup Condition=\"'$(X)' &gt;= '1.0'\">\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("Entities.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+            s_service.SavePackageManifest(manifest);
+
+            File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void With_Crlf_Preserves_Line_Endings()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\r\n  <ItemGroup>\r\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\r\n  </ItemGroup>\r\n</Project>\r\n";
+            var path = TempPath("CrLf.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+            s_service.SavePackageManifest(manifest);
+
+            File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void With_Repeated_Versions_Updates_Only_Targeted_Occurrence()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"PackageA\" Version=\"1.0.0\" />\n    <PackageReference Include=\"PackageB\" Version=\"1.0.0\" />\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("Repeated.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("PackageB", "2.0.0");
+            s_service.SavePackageManifest(manifest);
+
+            var expected = content.Replace(
+                "Include=\"PackageB\" Version=\"1.0.0\"",
+                "Include=\"PackageB\" Version=\"2.0.0\"",
+                StringComparison.Ordinal);
+            File.ReadAllText(path).ShouldBe(expected);
+        }
     }
 
     private static LocalDirectory TempDirectory => new("./temp/packages");

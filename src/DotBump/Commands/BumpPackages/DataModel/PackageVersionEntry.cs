@@ -1,6 +1,5 @@
 // Copyright © Roby Van Damme.
 
-using System.Xml.Linq;
 using DotBump.Common;
 
 namespace DotBump.Commands.BumpPackages.DataModel;
@@ -45,11 +44,11 @@ internal sealed class PackageVersionEntry
     /// </summary>
     public SemanticVersion SemanticVersion => new(Version);
 
-    internal required XElement Element { get; init; }
-
-    internal XAttribute? VersionAttribute { get; init; }
-
-    internal XElement? VersionElement { get; init; }
+    /// <summary>
+    /// Gets the character offset in the file text at which the original version can be located.
+    /// Used to change only the version value and leave the rest of the file untouched.
+    /// </summary>
+    internal required int VersionAnchor { get; init; }
 
     /// <inheritdoc />
     public override string ToString()

@@ -214,8 +214,8 @@ returns exit code `1` when an error occurs (for example an invalid NuGet configu
 * If no newer version is found, the package is left unchanged.
 * Pre-release handling matches the local tools: if the current version is a pre-release, pre-release versions are
   considered but stable versions are preferred; otherwise only stable versions are considered.
-* Only files that actually change are written back, and their formatting, XML declaration, encoding and line endings
-  are preserved.
+* Only files that actually change are written back, and only the version value is changed; everything else (attribute
+  quoting, entities, attribute layout, XML declaration, encoding, byte order mark and line endings) is preserved.
 
 #### Private feeds
 

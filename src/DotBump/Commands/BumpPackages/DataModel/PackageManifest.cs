@@ -1,7 +1,5 @@
 // Copyright © Roby Van Damme.
 
-using System.Xml.Linq;
-
 namespace DotBump.Commands.BumpPackages.DataModel;
 
 /// <summary>
@@ -11,7 +9,7 @@ internal sealed class PackageManifest
 {
     private readonly List<PackageVersionEntry> _packages = [];
     private readonly List<string> _warnings = [];
-    private readonly Dictionary<string, XDocument> _documents = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _fileTexts = new(StringComparer.Ordinal);
     private readonly HashSet<string> _changedFiles = new(StringComparer.Ordinal);
 
     /// <summary>
@@ -55,19 +53,9 @@ internal sealed class PackageManifest
         ArgumentException.ThrowIfNullOrWhiteSpace(newVersion);
 
         foreach (var package in _packages.Where(package =>
-            string.Equals(package.PackageId, packageId, StringComparison.OrdinalIgnoreCase)))
+                     string.Equals(package.PackageId, packageId, StringComparison.OrdinalIgnoreCase)))
         {
             package.Version = newVersion;
-
-            if (package.VersionAttribute != null)
-            {
-                package.VersionAttribute.Value = newVersion;
-            }
-            else if (package.VersionElement != null)
-            {
-                package.VersionElement.Value = newVersion;
-            }
-
             _changedFiles.Add(package.FilePath);
         }
     }
@@ -82,13 +70,13 @@ internal sealed class PackageManifest
         _warnings.Add(warning);
     }
 
-    internal void RegisterDocument(string filePath, XDocument document)
+    internal void RegisterFileText(string filePath, string text)
     {
-        _documents[filePath] = document;
+        _fileTexts[filePath] = text;
     }
 
-    internal XDocument? GetDocument(string filePath)
+    internal string? GetFileText(string filePath)
     {
-        return _documents.GetValueOrDefault(filePath);
+        return _fileTexts.GetValueOrDefault(filePath);
     }
 }

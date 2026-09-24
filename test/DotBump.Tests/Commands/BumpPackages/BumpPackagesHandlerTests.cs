@@ -1,7 +1,6 @@
 // Copyright © Roby Van Damme.
 
 using System.ComponentModel.DataAnnotations;
-using System.Xml.Linq;
 using DotBump.Commands;
 using DotBump.Commands.BumpPackages;
 using DotBump.Commands.BumpPackages.DataModel;
@@ -131,18 +130,17 @@ public class BumpPackagesHandlerTests
 
             foreach (var (id, version) in packages)
             {
-                var element = XElement.Parse($"<PackageReference Include=\"{id}\" Version=\"{version}\" />");
-                manifest.Add(new PackageVersionEntry
-                {
-                    PackageId = id,
-                    OriginalVersion = version,
-                    Version = version,
-                    FilePath = $"{id}.csproj",
-                    SourceKind = PackageSourceKind.Project,
-                    ElementName = "PackageReference",
-                    Element = element,
-                    VersionAttribute = element.Attribute("Version"),
-                });
+                manifest.Add(
+                    new PackageVersionEntry
+                    {
+                        PackageId = id,
+                        OriginalVersion = version,
+                        Version = version,
+                        FilePath = $"{id}.csproj",
+                        SourceKind = PackageSourceKind.Project,
+                        ElementName = "PackageReference",
+                        VersionAnchor = 0,
+                    });
             }
 
             return manifest;

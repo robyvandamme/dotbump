@@ -1,6 +1,5 @@
 // Copyright © Roby Van Damme.
 
-using System.Xml.Linq;
 using DotBump.Commands.BumpPackages.DataModel;
 using Shouldly;
 
@@ -8,20 +7,18 @@ namespace DotBump.Tests.Commands.BumpPackages;
 
 public class PackageManifestTests
 {
-    public class RegisterDocument
+    public class RegisterFileText
     {
         [Fact]
-        public void With_Paths_Differing_Only_By_Case_Keeps_Both_Documents()
+        public void With_Paths_Differing_Only_By_Case_Keeps_Both_Texts()
         {
             var manifest = new PackageManifest();
-            var upperDocument = new XDocument(new XElement("Project", new XAttribute("name", "upper")));
-            var lowerDocument = new XDocument(new XElement("Project", new XAttribute("name", "lower")));
 
-            manifest.RegisterDocument("/repo/A.csproj", upperDocument);
-            manifest.RegisterDocument("/repo/a.csproj", lowerDocument);
+            manifest.RegisterFileText("/repo/A.csproj", "upper");
+            manifest.RegisterFileText("/repo/a.csproj", "lower");
 
-            manifest.GetDocument("/repo/A.csproj").ShouldBeSameAs(upperDocument);
-            manifest.GetDocument("/repo/a.csproj").ShouldBeSameAs(lowerDocument);
+            manifest.GetFileText("/repo/A.csproj").ShouldBe("upper");
+            manifest.GetFileText("/repo/a.csproj").ShouldBe("lower");
         }
     }
 
@@ -55,7 +52,6 @@ public class PackageManifestTests
 
     private static PackageVersionEntry CreateEntry(string filePath, string packageId, string version)
     {
-        var element = XElement.Parse($"<PackageReference Include=\"{packageId}\" Version=\"{version}\" />");
         return new PackageVersionEntry
         {
             PackageId = packageId,
@@ -64,8 +60,7 @@ public class PackageManifestTests
             FilePath = filePath,
             SourceKind = PackageSourceKind.Project,
             ElementName = "PackageReference",
-            Element = element,
-            VersionAttribute = element.Attribute("Version"),
+            VersionAnchor = 0,
         };
     }
 }
