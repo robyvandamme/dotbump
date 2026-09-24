@@ -1,6 +1,7 @@
 // Copyright © Roby Van Damme.
 
 using DotBump.Commands.BumpPackages;
+using DotBump.Commands.BumpPackages.Interfaces;
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Commands.BumpTools;
@@ -56,6 +57,7 @@ internal static class CommandConfiguration
             config.Settings.Registrar.Register<IBumpToolsHandler, BumpToolsHandler>();
             config.Settings.Registrar.Register<INuGetClientFactory, NuGetClientFactory>();
             config.Settings.Registrar.Register<INuGetConfigValidator, NuGetConfigValidator>();
+            config.Settings.Registrar.Register<IPackageVersionResolver, PackageVersionResolver>();
 
             config.AddCommand<BumpToolsCommand>(name: ToolsCommandName)
                 .WithDescription(
@@ -66,6 +68,9 @@ internal static class CommandConfiguration
                 .WithExample(ToolsCommandName, "--type", "patch")
                 .WithExample(ToolsCommandName, "--config", "./custom-nuget.config", "--output", "bump-tools-report.json")
                 .WithExample(ToolsCommandName, "--debug", "true", "--logfile", "bump-tools-log.txt");
+
+            config.Settings.Registrar.Register<IPackageFileService, PackageFileService>();
+            config.Settings.Registrar.Register<IBumpPackagesHandler, BumpPackagesHandler>();
 
             config.AddCommand<BumpPackagesCommand>(name: PackagesCommandName)
                 .WithDescription(

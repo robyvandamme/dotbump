@@ -6,11 +6,8 @@ using DotBump.Commands.BumpTools;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
 using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.Common;
-using DotBump.NuGet;
-using DotBump.NuGet.DataModel.NuGetClientConfiguration;
 using DotBump.NuGet.DataModel.NuGetConfiguration;
-using DotBump.NuGet.DataModel.NuGetService;
-using DotBump.NuGet.DataModel.Registrations;
+using DotBump.NuGet.DataModel.PackageResolution;
 using DotBump.NuGet.Interfaces;
 using Moq;
 using Serilog;
@@ -23,153 +20,91 @@ public class BumpToolsHandlerTests
     public class HandleAsync
     {
         [Fact]
-        public async Task
-            With_Tool_Is_PreRelease_And_Stable_Available_Returns_Stable_Version()
+        public async Task With_Resolved_Version_Updates_Manifest_And_Saves()
         {
-            // Feed 1 (e.g. nuget.org) has stable 1.0.0 (higher than tool's 1.0.0-preview.1)
-            // Feed 2 (preview feed) has 1.1.0-preview.1 (higher SemVer than 1.0.0, but pre-release)
-            // The tool should exit pre-release and bump to the stable 1.0.0 release.
-            var manifest = CreateManifest("mytool", "1.0.0-preview.1");
-            var nugetConfig = new NuGetConfig
-            {
-                PackageSources =
-                [
-                    new PackageSource
-                    {
-                        Key = "stable-feed", Value = "https://feeds.example.com/stable", ProtocolVersion = "3",
-                    },
-                    new PackageSource
-                    {
-                        Key = "preview-feed", Value = "https://feeds.example.com/preview", ProtocolVersion = "3",
-                    },
-                ],
-            };
-
-            var handler = CreateHandler(
-                manifest,
-                nugetConfig,
-                feedPackages: new Dictionary<string, (string Url, string[] Versions)>
-                {
-                    ["stable-feed"] = ("https://feeds.example.com/stable", ["1.0.0"]),
-                    ["preview-feed"] = ("https://feeds.example.com/preview", ["1.1.0-preview.1"]),
-                });
-
-            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
-
-            report.ShouldSatisfyAllConditions(
-                () => report.HasChanges.ShouldBeTrue(),
-                () => manifest.Tools["mytool"].Version.ShouldBe("1.0.0"));
-        }
-
-        [Fact]
-        public async Task With_Feed_Order_Reversed_Returns_Stable_Version()
-        {
-            // When the feed order is reversed (preview feed first, stable feed second),
-            // the stable 1.0.0 release must still be preferred over 1.1.0-preview.1.
-            var manifest = CreateManifest("mytool", "1.0.0-preview.1");
-            var nugetConfig = new NuGetConfig
-            {
-                PackageSources =
-                [
-                    new PackageSource
-                    {
-                        Key = "preview-feed", Value = "https://feeds.example.com/preview", ProtocolVersion = "3",
-                    },
-                    new PackageSource
-                    {
-                        Key = "stable-feed", Value = "https://feeds.example.com/stable", ProtocolVersion = "3",
-                    },
-                ],
-            };
-
-            var handler = CreateHandler(
-                manifest,
-                nugetConfig,
-                feedPackages: new Dictionary<string, (string Url, string[] Versions)>
-                {
-                    ["preview-feed"] = ("https://feeds.example.com/preview", ["1.1.0-preview.1"]),
-                    ["stable-feed"] = ("https://feeds.example.com/stable", ["1.0.0"]),
-                });
-
-            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
-
-            report.ShouldSatisfyAllConditions(
-                () => report.HasChanges.ShouldBeTrue(),
-                () => manifest.Tools["mytool"].Version.ShouldBe("1.0.0"));
-        }
-
-        [Fact]
-        public async Task
-            With_Only_PreReleases_Available_Returns_Highest_PreRelease()
-        {
-            // When no stable version is available in any feed, it upgrades to the highest pre-release.
-            var manifest = CreateManifest("mytool", "1.0.0-preview.1");
-            var nugetConfig = new NuGetConfig
-            {
-                PackageSources =
-                [
-                    new PackageSource
-                    {
-                        Key = "feed1", Value = "https://feeds.example.com/feed1", ProtocolVersion = "3",
-                    },
-                    new PackageSource
-                    {
-                        Key = "feed2", Value = "https://feeds.example.com/feed2", ProtocolVersion = "3",
-                    },
-                ],
-            };
-
-            var handler = CreateHandler(
-                manifest,
-                nugetConfig,
-                feedPackages: new Dictionary<string, (string Url, string[] Versions)>
-                {
-                    ["feed1"] = ("https://feeds.example.com/feed1", ["1.0.0-preview.2"]),
-                    ["feed2"] = ("https://feeds.example.com/feed2", ["1.1.0-preview.1"]),
-                });
-
-            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
-
-            report.ShouldSatisfyAllConditions(
-                () => report.HasChanges.ShouldBeTrue(),
-                () => manifest.Tools["mytool"].Version.ShouldBe("1.1.0-preview.1"));
-        }
-
-        [Fact]
-        public async Task With_Tool_Is_Stable_Returns_Stable_Version()
-        {
-            // When the tool starts on stable 1.0.0, pre-release 1.0.2-preview.1 in the second feed
-            // must be ignored, and stable 1.0.1 in the first feed must be chosen for Patch bump.
             var manifest = CreateManifest("mytool", "1.0.0");
-            var nugetConfig = new NuGetConfig
-            {
-                PackageSources =
-                [
-                    new PackageSource
-                    {
-                        Key = "stable-feed", Value = "https://feeds.example.com/stable", ProtocolVersion = "3",
-                    },
-                    new PackageSource
-                    {
-                        Key = "preview-feed", Value = "https://feeds.example.com/preview", ProtocolVersion = "3",
-                    },
-                ],
-            };
+            var fileService = CreateFileService(manifest);
+            var resolver = new Mock<IPackageVersionResolver>();
+            resolver
+                .Setup(r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>()))
+                .ReturnsAsync(new Dictionary<string, SemanticVersion> { ["mytool"] = new("1.1.0") });
+            var handler = CreateHandler(fileService, resolver);
 
-            var handler = CreateHandler(
-                manifest,
-                nugetConfig,
-                feedPackages: new Dictionary<string, (string Url, string[] Versions)>
-                {
-                    ["stable-feed"] = ("https://feeds.example.com/stable", ["1.0.1"]),
-                    ["preview-feed"] = ("https://feeds.example.com/preview", ["1.0.2-preview.1"]),
-                });
+            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
 
-            var report = await handler.HandleAsync(BumpType.Patch, "nuget.config");
+            report.HasChanges.ShouldBeTrue();
+            manifest.Tools["mytool"].Version.ShouldBe("1.1.0");
+            fileService.Verify(s => s.SaveToolsManifest(manifest), Times.Once);
+        }
 
-            report.ShouldSatisfyAllConditions(
-                () => report.HasChanges.ShouldBeTrue(),
-                () => manifest.Tools["mytool"].Version.ShouldBe("1.0.1"));
+        [Fact]
+        public async Task With_No_Resolved_Version_Does_Not_Save()
+        {
+            var manifest = CreateManifest("mytool", "1.0.0");
+            var fileService = CreateFileService(manifest);
+            var resolver = new Mock<IPackageVersionResolver>();
+            resolver
+                .Setup(r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>()))
+                .ReturnsAsync(new Dictionary<string, SemanticVersion>());
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
+
+            report.HasChanges.ShouldBeFalse();
+            fileService.Verify(s => s.SaveToolsManifest(It.IsAny<ToolsManifest>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task With_Validation_Errors_Reports_Errors_And_Does_Not_Resolve_Or_Save()
+        {
+            var manifest = CreateManifest("mytool", "1.0.0");
+            var fileService = CreateFileService(manifest);
+            var resolver = new Mock<IPackageVersionResolver>();
+            var handler = CreateHandler(fileService, resolver, [new ValidationResult("bad config")]);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
+
+            report.Errors.ShouldContain("bad config");
+            fileService.Verify(s => s.SaveToolsManifest(It.IsAny<ToolsManifest>()), Times.Never);
+            resolver.Verify(
+                r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task With_Manifest_Resolves_Each_Tool_Using_Its_Current_Version()
+        {
+            var manifest = CreateManifest("mytool", "1.0.0");
+            var fileService = CreateFileService(manifest);
+            var resolver = new Mock<IPackageVersionResolver>();
+            resolver
+                .Setup(r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>()))
+                .ReturnsAsync(new Dictionary<string, SemanticVersion>());
+            var handler = CreateHandler(fileService, resolver);
+
+            await handler.HandleAsync(BumpType.Minor, "nuget.config");
+
+            resolver.Verify(
+                r => r.ResolveAsync(
+                    It.Is<IReadOnlyCollection<PackageToBump>>(packages =>
+                        packages.Count == 1
+                        && packages.Single().PackageId == "mytool"
+                        && packages.Single().CurrentVersion.Version == "1.0.0"),
+                    BumpType.Minor,
+                    It.IsAny<NuGetConfig>()),
+                Times.Once);
         }
 
         private static ToolsManifest CreateManifest(string toolKey, string version)
@@ -185,85 +120,36 @@ public class BumpToolsHandlerTests
             };
         }
 
+        private static Mock<IToolFileService> CreateFileService(ToolsManifest manifest)
+        {
+            var fileService = new Mock<IToolFileService>();
+            fileService.Setup(s => s.GetToolsManifest()).Returns(manifest);
+            return fileService;
+        }
+
         private static IBumpToolsHandler CreateHandler(
-            ToolsManifest manifest,
-            NuGetConfig nugetConfig,
-            Dictionary<string, (string Url, string[] Versions)> feedPackages)
+            Mock<IToolFileService> fileService,
+            Mock<IPackageVersionResolver> resolver,
+            List<ValidationResult>? validationErrors = null)
         {
             var loggerMock = new Mock<ILogger>().Object;
 
-            var toolFileServiceMock = new Mock<IToolFileService>();
-            toolFileServiceMock.Setup(s => s.GetToolsManifest()).Returns(manifest);
-
             var nugetConfigFileServiceMock = new Mock<INuGetConfigFileService>();
-            nugetConfigFileServiceMock.Setup(s => s.GetNuGetConfiguration(It.IsAny<string>())).Returns(nugetConfig);
+            nugetConfigFileServiceMock
+                .Setup(s => s.GetNuGetConfiguration(It.IsAny<string>()))
+                .Returns(new NuGetConfig());
 
             var validatorMock = new Mock<INuGetConfigValidator>();
-            validatorMock.Setup(v => v.Validate(It.IsAny<NuGetConfig>())).Returns(new List<ValidationResult>());
-
-            var releaseFinder = new NuGetReleaseFinder(loggerMock);
-
-            var clientFactoryMock = new Mock<INuGetClientFactory>();
-            foreach (var (feedName, (feedUrl, versions)) in feedPackages)
-            {
-                var clientMock = new Mock<INuGetClient>();
-                clientMock
-                    .Setup(c => c.GetServiceIndexAsync(It.IsAny<string>()))
-                    .ReturnsAsync(
-                        new ServiceIndex
-                        {
-                            Version = "3.0.0",
-                            Resources =
-                            [
-                                new Resource { Id = "https://example.com/reg", Type = "RegistrationsBaseUrl" }
-                            ],
-                        });
-
-                var regIndex = CreateRegistrationIndex(versions);
-                clientMock
-                    .Setup(c => c.GetPackageInformationAsync(It.IsAny<string>(), It.IsAny<string>()))
-                    .ReturnsAsync(regIndex);
-
-                clientFactoryMock
-                    .Setup(f => f.CreateNuGetClient(It.Is<NuGetClientConfig>(cfg => cfg.Url == feedUrl)))
-                    .Returns(clientMock.Object);
-            }
+            validatorMock
+                .Setup(v => v.Validate(It.IsAny<NuGetConfig>()))
+                .Returns(validationErrors ?? []);
 
             return new BumpToolsHandler(
-                toolFileServiceMock.Object,
+                fileService.Object,
                 nugetConfigFileServiceMock.Object,
-                clientFactoryMock.Object,
-                releaseFinder,
+                resolver.Object,
                 validatorMock.Object,
                 loggerMock);
-        }
-
-        private static RegistrationIndex CreateRegistrationIndex(params string[] versions)
-        {
-            var packages = versions.Select(v => new Package
-            {
-                Id = $"https://example.com/{v}",
-                CatalogEntry = new PackageDetails { Version = v, Listed = true, },
-            }).ToList();
-
-            var lowest = versions.OrderBy(v => new SemanticVersion(v)).First();
-            var highest = versions.OrderBy(v => new SemanticVersion(v)).Last();
-
-            return new RegistrationIndex
-            {
-                Count = 1,
-                CatalogPages =
-                [
-                    new CatalogPage
-                    {
-                        Id = "https://example.com/page1",
-                        Lower = lowest,
-                        Upper = highest,
-                        Count = versions.Length,
-                        Items = packages,
-                    },
-                ],
-            };
         }
     }
 }
