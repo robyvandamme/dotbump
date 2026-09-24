@@ -443,11 +443,10 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
             if (package.VersionStart < 0
                 || package.VersionLength <= 0
-                || package.VersionStart + package.VersionLength > text.Length
-                || !text.AsSpan(package.VersionStart, package.VersionLength).SequenceEqual(package.OriginalVersion.AsSpan()))
+                || package.VersionStart + package.VersionLength > text.Length)
             {
                 logger.Warning(
-                    "Could not locate version '{Version}' for {PackageId} in {File}; skipping",
+                    "Skipping version '{Version}' for {PackageId} in {File} because its recorded span is invalid",
                     package.OriginalVersion,
                     package.PackageId,
                     filePath);
