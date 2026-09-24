@@ -390,6 +390,22 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Lone_Carriage_Return_Preserves_Line_Endings()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\r  <ItemGroup>\r    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\r  </ItemGroup>\r</Project>\r";
+            var path = TempPath("CarriageReturn.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+            s_service.SavePackageManifest(manifest);
+
+            File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
+        }
+
+        [Fact]
         public void With_Repeated_Versions_Updates_Only_Targeted_Occurrence()
         {
             ResetTempDirectory();
