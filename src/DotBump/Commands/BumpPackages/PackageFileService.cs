@@ -421,7 +421,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 || !text.AsSpan(package.VersionStart, package.VersionLength).SequenceEqual(package.OriginalVersion.AsSpan()))
             {
                 logger.Warning(
-                    "Could not locate version '{Version}' for {PackageId} in {File}; skipping.",
+                    "Could not locate version '{Version}' for {PackageId} in {File}; skipping",
                     package.OriginalVersion,
                     package.PackageId,
                     filePath);
