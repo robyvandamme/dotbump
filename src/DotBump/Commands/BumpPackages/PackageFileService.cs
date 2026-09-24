@@ -214,56 +214,67 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
     private static (int Start, int Length) GetVersionSpan(string text, int[] lineStartOffsets, XObject source)
     {
-        if (source is XAttribute attribute)
+        return source switch
         {
-            var lineInfo = (IXmlLineInfo)attribute;
-            if (!lineInfo.HasLineInfo())
-            {
-                return (-1, 0);
-            }
+            XAttribute attribute => GetAttributeVersionSpan(text, lineStartOffsets, attribute),
+            XElement element => GetElementVersionSpan(text, lineStartOffsets, element),
+            _ => (-1, 0),
+        };
+    }
 
-            var attributeStart = GetOffset(lineStartOffsets, lineInfo.LineNumber, lineInfo.LinePosition);
-            var equalsIndex = text.IndexOf('=', attributeStart);
-            if (equalsIndex < 0)
-            {
-                return (-1, 0);
-            }
-
-            var quoteIndex = equalsIndex + 1;
-            while (quoteIndex < text.Length && char.IsWhiteSpace(text[quoteIndex]))
-            {
-                quoteIndex++;
-            }
-
-            if (quoteIndex >= text.Length || (text[quoteIndex] != '"' && text[quoteIndex] != '\''))
-            {
-                return (-1, 0);
-            }
-
-            var quote = text[quoteIndex];
-            var valueStart = quoteIndex + 1;
-            var valueEnd = text.IndexOf(quote, valueStart);
-
-            return valueEnd < 0 ? (-1, 0) : (valueStart, valueEnd - valueStart);
+    private static (int Start, int Length) GetAttributeVersionSpan(
+        string text,
+        int[] lineStartOffsets,
+        XAttribute attribute)
+    {
+        var lineInfo = (IXmlLineInfo)attribute;
+        if (!lineInfo.HasLineInfo())
+        {
+            return (-1, 0);
         }
 
-        if (source is XElement versionElement)
+        var attributeStart = GetOffset(lineStartOffsets, lineInfo.LineNumber, lineInfo.LinePosition);
+        var equalsIndex = text.IndexOf('=', attributeStart);
+        if (equalsIndex < 0)
         {
-            // The version is the text node of the <Version> element; its line info points at the text
-            // itself rather than the element's start tag, so attributes or comments cannot be matched.
-            var textNode = versionElement.Nodes().OfType<XText>().FirstOrDefault();
-            if (textNode is IXmlLineInfo textLineInfo && textLineInfo.HasLineInfo())
-            {
-                var valueStart = GetOffset(lineStartOffsets, textLineInfo.LineNumber, textLineInfo.LinePosition);
-                var valueEnd = text.IndexOf('<', valueStart);
-                if (valueEnd > valueStart)
-                {
-                    return (valueStart, valueEnd - valueStart);
-                }
-            }
+            return (-1, 0);
         }
 
-        return (-1, 0);
+        var quoteIndex = equalsIndex + 1;
+        while (quoteIndex < text.Length && char.IsWhiteSpace(text[quoteIndex]))
+        {
+            quoteIndex++;
+        }
+
+        if (quoteIndex >= text.Length || (text[quoteIndex] != '"' && text[quoteIndex] != '\''))
+        {
+            return (-1, 0);
+        }
+
+        var quote = text[quoteIndex];
+        var valueStart = quoteIndex + 1;
+        var valueEnd = text.IndexOf(quote, valueStart);
+
+        return valueEnd < 0 ? (-1, 0) : (valueStart, valueEnd - valueStart);
+    }
+
+    private static (int Start, int Length) GetElementVersionSpan(
+        string text,
+        int[] lineStartOffsets,
+        XElement versionElement)
+    {
+        // The version is the text node of the <Version> element; its line info points at the text
+        // itself rather than the element's start tag, so attributes or comments cannot be matched.
+        var textNode = versionElement.Nodes().OfType<XText>().FirstOrDefault();
+        if (textNode is not IXmlLineInfo textLineInfo || !textLineInfo.HasLineInfo())
+        {
+            return (-1, 0);
+        }
+
+        var valueStart = GetOffset(lineStartOffsets, textLineInfo.LineNumber, textLineInfo.LinePosition);
+        var valueEnd = text.IndexOf('<', valueStart);
+
+        return valueEnd > valueStart ? (valueStart, valueEnd - valueStart) : (-1, 0);
     }
 
     private IEnumerable<string> EnumerateCandidateFiles(string rootPath)
