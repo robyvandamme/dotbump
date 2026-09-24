@@ -38,7 +38,7 @@ public class PackageFileServiceTests
                     package.PackageId == "Serilog" && package.Version == "3.0.0"),
                 () => manifest.Packages.ShouldContain(package =>
                     package.PackageId == "Serilog.Sinks.Console" && package.Version == "5.0.0"),
-                () => manifest.PackageIds.ShouldBe(
+                () => manifest.GetPackageIds().ShouldBe(
                     ["Newtonsoft.Json", "Serilog", "Serilog.Sinks.Console"],
                     ignoreOrder: true));
         }
@@ -98,9 +98,9 @@ public class PackageFileServiceTests
 
             var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
 
-            manifest.PackageIds.ShouldSatisfyAllConditions(
-                () => manifest.PackageIds.ShouldContain("Roslynator.Analyzers"),
-                () => manifest.PackageIds.ShouldContain("Newtonsoft.Json"));
+            manifest.GetPackageIds().ShouldSatisfyAllConditions(
+                () => manifest.GetPackageIds().ShouldContain("Roslynator.Analyzers"),
+                () => manifest.GetPackageIds().ShouldContain("Newtonsoft.Json"));
         }
 
         [Fact]
@@ -111,10 +111,10 @@ public class PackageFileServiceTests
 
             var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
 
-            manifest.PackageIds.ShouldSatisfyAllConditions(
-                () => manifest.PackageIds.ShouldNotContain("GitVersion.MsBuild"),
-                () => manifest.PackageIds.ShouldNotContain("Shouldly"),
-                () => manifest.PackageIds.ShouldNotContain("xunit"),
+            manifest.GetPackageIds().ShouldSatisfyAllConditions(
+                () => manifest.GetPackageIds().ShouldNotContain("GitVersion.MsBuild"),
+                () => manifest.GetPackageIds().ShouldNotContain("Shouldly"),
+                () => manifest.GetPackageIds().ShouldNotContain("xunit"),
                 () => manifest.Warnings.Count.ShouldBe(3));
         }
 
@@ -126,8 +126,8 @@ public class PackageFileServiceTests
 
             var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
 
-            manifest.PackageIds.ShouldSatisfyAllConditions(
-                () => manifest.PackageIds.ShouldNotContain("Moq"),
+            manifest.GetPackageIds().ShouldSatisfyAllConditions(
+                () => manifest.GetPackageIds().ShouldNotContain("Moq"),
                 () => manifest.Warnings.ShouldNotContain(warning => warning.Contains("Moq", StringComparison.Ordinal)));
         }
 

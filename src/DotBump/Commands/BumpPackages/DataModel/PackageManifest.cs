@@ -20,14 +20,6 @@ internal sealed class PackageManifest
     public IReadOnlyList<PackageVersionEntry> Packages => _packages;
 
     /// <summary>
-    /// Gets the distinct package identifiers.
-    /// </summary>
-    public IReadOnlyList<string> PackageIds => _packages
-        .Select(package => package.PackageId)
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .ToList();
-
-    /// <summary>
     /// Gets the warnings raised while reading the repository.
     /// </summary>
     public IReadOnlyList<string> Warnings => _warnings;
@@ -39,6 +31,18 @@ internal sealed class PackageManifest
         !string.Equals(package.Version, package.OriginalVersion, StringComparison.OrdinalIgnoreCase));
 
     internal IReadOnlyCollection<string> ChangedFiles => _changedFiles;
+
+    /// <summary>
+    /// Gets the distinct package identifiers.
+    /// </summary>
+    /// <returns>The distinct package identifiers in discovery order.</returns>
+    public IReadOnlyList<string> GetPackageIds()
+    {
+        return _packages
+            .Select(package => package.PackageId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
 
     /// <summary>
     /// Sets the version of every occurrence of the specified package.
