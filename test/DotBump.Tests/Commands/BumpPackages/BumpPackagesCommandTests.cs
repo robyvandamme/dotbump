@@ -149,7 +149,8 @@ public class BumpPackagesCommandTests
                         FilePath = $"{id}.csproj",
                         SourceKind = PackageSourceKind.Project,
                         ElementName = "PackageReference",
-                        VersionAnchor = 0,
+                        VersionStart = 0,
+                        VersionLength = version.Length,
                     });
             }
 

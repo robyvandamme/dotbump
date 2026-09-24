@@ -212,6 +212,60 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         return lineStartOffsets[lineIndex] + (linePosition - 1);
     }
 
+    private static (int Start, int Length) GetVersionSpan(string text, int[] lineStartOffsets, XObject source)
+    {
+        if (source is XAttribute attribute)
+        {
+            var lineInfo = (IXmlLineInfo)attribute;
+            if (!lineInfo.HasLineInfo())
+            {
+                return (-1, 0);
+            }
+
+            var attributeStart = GetOffset(lineStartOffsets, lineInfo.LineNumber, lineInfo.LinePosition);
+            var equalsIndex = text.IndexOf('=', attributeStart);
+            if (equalsIndex < 0)
+            {
+                return (-1, 0);
+            }
+
+            var quoteIndex = equalsIndex + 1;
+            while (quoteIndex < text.Length && char.IsWhiteSpace(text[quoteIndex]))
+            {
+                quoteIndex++;
+            }
+
+            if (quoteIndex >= text.Length || (text[quoteIndex] != '"' && text[quoteIndex] != '\''))
+            {
+                return (-1, 0);
+            }
+
+            var quote = text[quoteIndex];
+            var valueStart = quoteIndex + 1;
+            var valueEnd = text.IndexOf(quote, valueStart);
+
+            return valueEnd < 0 ? (-1, 0) : (valueStart, valueEnd - valueStart);
+        }
+
+        if (source is XElement versionElement)
+        {
+            // The version is the text node of the <Version> element; its line info points at the text
+            // itself rather than the element's start tag, so attributes or comments cannot be matched.
+            var textNode = versionElement.Nodes().OfType<XText>().FirstOrDefault();
+            if (textNode is IXmlLineInfo textLineInfo && textLineInfo.HasLineInfo())
+            {
+                var valueStart = GetOffset(lineStartOffsets, textLineInfo.LineNumber, textLineInfo.LinePosition);
+                var valueEnd = text.IndexOf('<', valueStart);
+                if (valueEnd > valueStart)
+                {
+                    return (valueStart, valueEnd - valueStart);
+                }
+            }
+        }
+
+        return (-1, 0);
+    }
+
     private IEnumerable<string> EnumerateCandidateFiles(string rootPath)
     {
         var pendingDirectories = new Stack<string>();
@@ -316,10 +370,16 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
-            var lineInfo = (IXmlLineInfo)versionSource;
-            var versionAnchor = lineInfo.HasLineInfo()
-                ? GetOffset(lineStartOffsets, lineInfo.LineNumber, lineInfo.LinePosition)
-                : 0;
+            var (versionStart, versionLength) = GetVersionSpan(text, lineStartOffsets, versionSource);
+            if (versionStart < 0)
+            {
+                logger.Debug(
+                    "Skipping {Element} {PackageId} in {File} because its version value could not be located",
+                    elementName,
+                    packageId,
+                    filePath);
+                continue;
+            }
 
             manifest.Add(
                 new PackageVersionEntry
@@ -330,7 +390,8 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                     FilePath = filePath,
                     SourceKind = sourceKind,
                     ElementName = elementName,
-                    VersionAnchor = versionAnchor,
+                    VersionStart = versionStart,
+                    VersionLength = versionLength,
                 });
 
             packageFound = true;
@@ -344,7 +405,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
     private string ApplyChanges(string filePath, string text, IReadOnlyList<PackageVersionEntry> packages)
     {
-        var edits = new List<(int Index, string OldVersion, string NewVersion)>();
+        var edits = new List<(int Start, int Length, string NewVersion)>();
 
         foreach (var package in packages)
         {
@@ -354,8 +415,10 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
-            var index = text.IndexOf(package.OriginalVersion, package.VersionAnchor, StringComparison.Ordinal);
-            if (index < 0)
+            if (package.VersionStart < 0
+                || package.VersionLength <= 0
+                || package.VersionStart + package.VersionLength > text.Length
+                || !text.AsSpan(package.VersionStart, package.VersionLength).SequenceEqual(package.OriginalVersion.AsSpan()))
             {
                 logger.Warning(
                     "Could not locate version '{Version}' for {PackageId} in {File}; skipping.",
@@ -365,13 +428,13 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
-            edits.Add((index, package.OriginalVersion, package.Version));
+            edits.Add((package.VersionStart, package.VersionLength, package.Version));
         }
 
         // Apply from the end of the file backwards so earlier offsets remain valid.
-        foreach (var edit in edits.OrderByDescending(edit => edit.Index))
+        foreach (var edit in edits.OrderByDescending(edit => edit.Start))
         {
-            text = text.Remove(edit.Index, edit.OldVersion.Length).Insert(edit.Index, edit.NewVersion);
+            text = text.Remove(edit.Start, edit.Length).Insert(edit.Start, edit.NewVersion);
         }
 
         return text;

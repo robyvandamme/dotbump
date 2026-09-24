@@ -424,6 +424,40 @@ public class PackageFileServiceTests
                 StringComparison.Ordinal);
             File.ReadAllText(path).ShouldBe(expected);
         }
+
+        [Fact]
+        public void With_Child_Version_Condition_Containing_Same_Version_Updates_Only_Value()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\">\n      <Version Condition=\"'$(UseV1)' == '13.0.1'\">13.0.1</Version>\n    </PackageReference>\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("ChildCondition.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+            s_service.SavePackageManifest(manifest);
+
+            var expected = content.Replace(">13.0.1<", ">13.0.2<", StringComparison.Ordinal);
+            File.ReadAllText(path).ShouldBe(expected);
+        }
+
+        [Fact]
+        public void With_Attribute_Condition_Containing_Same_Version_Updates_Only_Version()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Condition=\"'$(UseV1)' == '13.0.1'\" Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("AttributeCondition.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+            s_service.SavePackageManifest(manifest);
+
+            var expected = content.Replace("Version=\"13.0.1\"", "Version=\"13.0.2\"", StringComparison.Ordinal);
+            File.ReadAllText(path).ShouldBe(expected);
+        }
     }
 
     private static LocalDirectory TempDirectory => new("./temp/packages");

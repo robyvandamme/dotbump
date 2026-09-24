@@ -45,10 +45,15 @@ internal sealed class PackageVersionEntry
     public SemanticVersion SemanticVersion => new(Version);
 
     /// <summary>
-    /// Gets the character offset in the file text at which the original version can be located.
+    /// Gets the character offset in the file text at which the original version value starts.
     /// Used to change only the version value and leave the rest of the file untouched.
     /// </summary>
-    internal required int VersionAnchor { get; init; }
+    internal required int VersionStart { get; init; }
+
+    /// <summary>
+    /// Gets the length of the original version value in the file text.
+    /// </summary>
+    internal required int VersionLength { get; init; }
 
     /// <inheritdoc />
     public override string ToString()

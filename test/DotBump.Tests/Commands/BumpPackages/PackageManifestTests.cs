@@ -60,7 +60,8 @@ public class PackageManifestTests
             FilePath = filePath,
             SourceKind = PackageSourceKind.Project,
             ElementName = "PackageReference",
-            VersionAnchor = 0,
+            VersionStart = 0,
+            VersionLength = version.Length,
         };
     }
 }
