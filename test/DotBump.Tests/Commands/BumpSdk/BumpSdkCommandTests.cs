@@ -15,7 +15,7 @@ namespace DotBump.Tests.Commands.BumpSdk;
 
 public class BumpSdkCommandTests
 {
-    public class ExecuteAsync
+    public class ExecuteForTestAsync
     {
         [Fact]
         public async Task Sdk_Version_Updated_Returns_0()
@@ -40,12 +40,12 @@ public class BumpSdkCommandTests
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" },
                 CancellationToken.None);
-            result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
-            globalJson.Version.ShouldBe("8.0.406");
-
-            testConsole.Output.ShouldContain("SDK version bumped");
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => globalJson.Version.ShouldBe("8.0.406"),
+                () => testConsole.Output.ShouldContain("SDK version bumped"));
         }
 
         [Fact]
@@ -71,12 +71,12 @@ public class BumpSdkCommandTests
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" },
                 CancellationToken.None);
-            result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
-            globalJson.Version.ShouldBe("8.0.406");
-
-            testConsole.Output.ShouldContain("SDK version not bumped.");
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => globalJson.Version.ShouldBe("8.0.406"),
+                () => testConsole.Output.ShouldContain("SDK version not bumped."));
         }
 
         [Fact]
@@ -100,50 +100,61 @@ public class BumpSdkCommandTests
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json" },
                 CancellationToken.None);
-            result.ShouldBe(1);
 
-            testConsole.Output.ShouldContain("DotBumpException");
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(1),
+                () => testConsole.Output.ShouldContain("DotBumpException"));
         }
 
         [Fact]
-        public async Task With_Output_Parameter_Writes_Result_To_File()
+        public async Task With_Output_Parameter_Returns_0()
         {
             var json = new GlobalJson(new Sdk("8.0.405", "disable"));
             var directory = new LocalDirectory("./temp");
             directory.EnsureFileDeleted("global.json");
             directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
 
-            var resultFile = new FileInfo("bump-sdk.result.json");
+            var resultFile = new FileInfo("./temp/bump-sdk.result.json");
             resultFile.Delete();
 
-            var loggerMock = new Mock<ILogger>().Object;
-            using var testConsole = new TestConsole();
-            var sdkFileService = new SdkFileService(loggerMock);
-            var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
-            var releaseFinder = new ReleaseFinder(loggerMock);
-            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+            try
+            {
+                var loggerMock = new Mock<ILogger>().Object;
+                using var testConsole = new TestConsole();
+                var sdkFileService = new SdkFileService(loggerMock);
+                var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
+                var releaseFinder = new ReleaseFinder(loggerMock);
+                var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
 
-            var command = new BumpSdkCommand(testConsole, loggerMock, handler);
-            var arguments = new[] { "bump", "sdk" };
-            var remainingArguments = new Mock<IRemainingArguments>();
-            var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
-            var result = await command.ExecuteForTestAsync(
-                context,
-                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", Output = "bump-sdk.result.json" },
-                CancellationToken.None);
-            result.ShouldBe(0);
+                var command = new BumpSdkCommand(testConsole, loggerMock, handler);
+                var arguments = new[] { "bump", "sdk" };
+                var remainingArguments = new Mock<IRemainingArguments>();
+                var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
+                var result = await command.ExecuteForTestAsync(
+                    context,
+                    new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", Output = "./temp/bump-sdk.result.json" },
+                    CancellationToken.None);
 
-            var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
-            globalJson.Version.ShouldBe("8.0.406");
+                var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
+                resultFile.Refresh();
 
-            testConsole.Output.ShouldContain("SDK version bumped");
-
-            resultFile.Refresh();
-            resultFile.Exists.ShouldBeTrue();
+                result.ShouldSatisfyAllConditions(
+                    () => result.ShouldBe(0),
+                    () => globalJson.Version.ShouldBe("8.0.406"),
+                    () => testConsole.Output.ShouldContain("SDK version bumped"),
+                    () => resultFile.Exists.ShouldBeTrue());
+            }
+            finally
+            {
+                if (resultFile.Exists)
+                {
+                    resultFile.Delete();
+                }
+            }
         }
 
         [Fact]
-        public async Task Handles_SecurityOnly_True_Correctly_For_Non_Security_Releases()
+        public async Task With_SecurityOnly_True_And_Non_Security_Releases_Returns_0()
         {
             // The SDK version in the release index (8.0.406) is not a security update.
             var json = new GlobalJson(new Sdk("8.0.405", "disable"));
@@ -166,16 +177,16 @@ public class BumpSdkCommandTests
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true },
                 CancellationToken.None);
-            result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
-            globalJson.Version.ShouldBe("8.0.405");
-
-            testConsole.Output.ShouldContain("SDK version not bumped.");
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => globalJson.Version.ShouldBe("8.0.405"),
+                () => testConsole.Output.ShouldContain("SDK version not bumped."));
         }
 
         [Fact]
-        public async Task Handles_SecurityOnly_False_Correctly_For_Non_Security_Releases()
+        public async Task With_SecurityOnly_False_And_Non_Security_Releases_Returns_0()
         {
             // The SDK version in the release index (8.0.406) is not a security update.
             var json = new GlobalJson(new Sdk("8.0.405", "disable"));
@@ -198,17 +209,17 @@ public class BumpSdkCommandTests
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = false },
                 CancellationToken.None);
-            result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
-            globalJson.Version.ShouldBe("8.0.406");
-
-            testConsole.Output.ShouldContain("SDK version bumped");
-            testConsole.Output.ShouldContain("sdk: 8.0.405 > 8.0.406");
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => globalJson.Version.ShouldBe("8.0.406"),
+                () => testConsole.Output.ShouldContain("SDK version bumped"),
+                () => testConsole.Output.ShouldContain("sdk: 8.0.405 > 8.0.406"));
         }
 
         [Fact]
-        public async Task Handles_SecurityOnly_True_Correctly_For_Security_Releases()
+        public async Task With_SecurityOnly_True_And_Security_Releases_Returns_0()
         {
             // The SDK version in the release index (7.0.410) is a security update.
             var json = new GlobalJson(new Sdk("7.0.400", "disable"));
@@ -231,13 +242,13 @@ public class BumpSdkCommandTests
                 context,
                 new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true },
                 CancellationToken.None);
-            result.ShouldBe(0);
 
             var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
-            globalJson.Version.ShouldBe("7.0.410");
-
-            testConsole.Output.ShouldContain("SDK version bumped");
-            testConsole.Output.ShouldContain("sdk: 7.0.400 > 7.0.410");
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => globalJson.Version.ShouldBe("7.0.410"),
+                () => testConsole.Output.ShouldContain("SDK version bumped"),
+                () => testConsole.Output.ShouldContain("sdk: 7.0.400 > 7.0.410"));
         }
     }
 }

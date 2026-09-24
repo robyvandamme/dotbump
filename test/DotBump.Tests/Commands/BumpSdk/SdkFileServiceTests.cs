@@ -19,34 +19,39 @@ public class SdkFileServiceTests
             var loggerMock = new Mock<ILogger>();
             var service = new SdkFileService(loggerMock.Object);
             var currentSdk = service.GetCurrentSdkVersionFromFile(filePath);
-            currentSdk.ShouldNotBeNull();
-            currentSdk.Version.ShouldNotBeNullOrWhiteSpace();
-            currentSdk.SemanticVersion.ShouldNotBeNull();
+
+            currentSdk.ShouldSatisfyAllConditions(
+                () => currentSdk.ShouldNotBeNull(),
+                () => currentSdk.Version.ShouldNotBeNullOrWhiteSpace(),
+                () => currentSdk.SemanticVersion.ShouldNotBeNull());
         }
 
-        [Fact]
-        public void With_Incorrect_FilePath_Throws_ArgumentException()
+        [Theory]
+        [InlineData("/NotData/global.json")]
+        [InlineData("./global.json")]
+        public void With_Incorrect_FilePath_Throws_DotBumpException(string relativeOrSubPath)
         {
-            var filePath = Directory.GetCurrentDirectory() + "/NotData/global.json";
+            var filePath = Directory.GetCurrentDirectory() + relativeOrSubPath;
             var loggerMock = new Mock<ILogger>();
             var service = new SdkFileService(loggerMock.Object);
-            Should.Throw<DotBumpException>(() => service.GetCurrentSdkVersionFromFile(filePath));
-            filePath = "./global.json";
+
             Should.Throw<DotBumpException>(() => service.GetCurrentSdkVersionFromFile(filePath));
         }
 
         [Fact]
-        public void With_Bad_Version_Data_Sets_0_Version()
+        public void With_Bad_Version_Data_Returns_Zero_Version()
         {
             var filePath = Directory.GetCurrentDirectory() + "/Data/bad-global.json";
             var loggerMock = new Mock<ILogger>();
             var service = new SdkFileService(loggerMock.Object);
             var currentSdk = service.GetCurrentSdkVersionFromFile(filePath);
-            currentSdk.ShouldNotBeNull();
-            currentSdk.SemanticVersion.IsValid.ShouldBeFalse();
-            currentSdk.SemanticVersion.Major.ShouldBe(0);
-            currentSdk.SemanticVersion.Minor.ShouldBe(0);
-            currentSdk.SemanticVersion.Patch.ShouldBe(0);
+
+            currentSdk.ShouldSatisfyAllConditions(
+                () => currentSdk.ShouldNotBeNull(),
+                () => currentSdk.SemanticVersion.IsValid.ShouldBeFalse(),
+                () => currentSdk.SemanticVersion.Major.ShouldBe(0),
+                () => currentSdk.SemanticVersion.Minor.ShouldBe(0),
+                () => currentSdk.SemanticVersion.Patch.ShouldBe(0));
         }
     }
 }

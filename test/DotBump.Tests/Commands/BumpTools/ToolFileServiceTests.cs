@@ -22,7 +22,7 @@ public class ToolFileServiceTests
     public class GetToolsManifest
     {
         [Fact]
-        public void Throws_FileNotFoundException_When_Manifest_Not_Found()
+        public void With_Missing_Manifest_Throws_FileNotFoundException()
         {
             var directory = new LocalDirectory("./.config");
             directory.EnsureFileDeleted("dotnet-tools.json");
@@ -33,7 +33,7 @@ public class ToolFileServiceTests
         }
 
         [Fact]
-        public void Returns_ToolsManifest_When_File_Exists()
+        public void With_File_Exists_Returns_ToolsManifest()
         {
             var directory = new LocalDirectory("./.config");
             var manifest = new ToolsManifest
@@ -50,14 +50,15 @@ public class ToolFileServiceTests
             var service = new ToolFileService(new Mock<ILogger>().Object);
             var result = service.GetToolsManifest();
 
-            result.ShouldNotBeNull();
-            result.Version.ShouldBe(1);
-            result.Tools.ShouldContainKey("mytool");
-            result.Tools["mytool"].Version.ShouldBe("1.0.0");
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldNotBeNull(),
+                () => result.Version.ShouldBe(1),
+                () => result.Tools.ShouldContainKey("mytool"),
+                () => result.Tools["mytool"].Version.ShouldBe("1.0.0"));
         }
 
         [Fact]
-        public void Throws_DotBumpException_When_Manifest_Could_Not_Be_Deserialized()
+        public void With_Invalid_Manifest_Throws_DotBumpException()
         {
             var directory = new LocalDirectory("./.config");
             directory.EnsureFileCreated("dotnet-tools.json", "null");
@@ -71,7 +72,7 @@ public class ToolFileServiceTests
     public class SaveToolsManifest
     {
         [Fact]
-        public void Throws_ArgumentNullException_When_Manifest_Is_Null()
+        public void With_Null_Manifest_Throws_ArgumentNullException()
         {
             var service = new ToolFileService(new Mock<ILogger>().Object);
 
@@ -79,7 +80,7 @@ public class ToolFileServiceTests
         }
 
         [Fact]
-        public void Throws_DotBumpException_When_Directory_Not_Found()
+        public void With_Missing_Directory_Throws_DotBumpException()
         {
             var directory = new LocalDirectory("./.config");
             directory.EnsureDirectoryDeleted();
@@ -107,7 +108,7 @@ public class ToolFileServiceTests
         }
 
         [Fact]
-        public void Saves_Manifest_Correctly()
+        public void With_Valid_Manifest_Persists_Manifest()
         {
             var directory = new LocalDirectory("./.config");
             directory.EnsureDirectoryCreated();

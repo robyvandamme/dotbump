@@ -1,9 +1,5 @@
 # dotBump Tests
 
-## Style
-
-Testing out a couple of different patterns for the tests at the moment, will converge at some moment in time.
-
 ## bumpTools Command Test
 
 For the command tests I have picked some tools that have older versions and so should be stable and not break the 
@@ -66,4 +62,3 @@ contains all the package release information. This is 2 pages of information.
 
 The dotBump GitHub feed. This one is different from the nuget.org feed in that it returns less attributes. Since the 
 current list of packages is small not all cases are covered.
-

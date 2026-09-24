@@ -15,7 +15,7 @@ public class NuGetConfigValidatorTests
         private readonly ILogger _loggerMock = new Mock<ILogger>().Object;
 
         [Fact]
-        public void Should_Return_Empty_List_When_Config_Is_Valid()
+        public void With_Valid_Config_Returns_Empty_List()
         {
             // Arrange
             var config = new NuGetConfig
@@ -42,7 +42,7 @@ public class NuGetConfigValidatorTests
         }
 
         [Fact]
-        public void Should_Validate_Invalid_Protocol_Version()
+        public void With_Invalid_Protocol_Version_Returns_Validation_Error()
         {
             // Arrange
             var config = new NuGetConfig
@@ -65,13 +65,14 @@ public class NuGetConfigValidatorTests
             var result = validator.Validate(config);
 
             // Assert
-            result.Count.ShouldBe(1);
-            result[0].ErrorMessage!.ShouldContain("invalid protocol version");
-            result[0].MemberNames.ShouldContain(nameof(PackageSource.ProtocolVersion));
+            result.ShouldSatisfyAllConditions(
+                () => result.Count.ShouldBe(1),
+                () => result[0].ErrorMessage!.ShouldContain("invalid protocol version"),
+                () => result[0].MemberNames.ShouldContain(nameof(PackageSource.ProtocolVersion)));
         }
 
         [Fact]
-        public void Should_Validate_Invalid_URL()
+        public void With_Invalid_Url_Returns_Validation_Error()
         {
             // Arrange
             var config = new NuGetConfig
@@ -89,13 +90,14 @@ public class NuGetConfigValidatorTests
             var result = validator.Validate(config);
 
             // Assert
-            result.Count.ShouldBe(1);
-            result[0].ErrorMessage!.ShouldContain("invalid URL");
-            result[0].MemberNames.ShouldContain(nameof(PackageSource.Value));
+            result.ShouldSatisfyAllConditions(
+                () => result.Count.ShouldBe(1),
+                () => result[0].ErrorMessage!.ShouldContain("invalid URL"),
+                () => result[0].MemberNames.ShouldContain(nameof(PackageSource.Value)));
         }
 
         [Fact]
-        public void Should_Report_Multiple_Validation_Errors_For_Package_Source()
+        public void With_Multiple_Source_Errors_Returns_Multiple_Validation_Errors()
         {
             // Arrange
             var config = new NuGetConfig
@@ -113,13 +115,14 @@ public class NuGetConfigValidatorTests
             var result = validator.Validate(config);
 
             // Assert
-            result.Count.ShouldBe(2);
-            result.Any(r => r.MemberNames.Contains(nameof(PackageSource.ProtocolVersion))).ShouldBeTrue();
-            result.Any(r => r.MemberNames.Contains(nameof(PackageSource.Value))).ShouldBeTrue();
+            result.ShouldSatisfyAllConditions(
+                () => result.Count.ShouldBe(2),
+                () => result.Any(r => r.MemberNames.Contains(nameof(PackageSource.ProtocolVersion))).ShouldBeTrue(),
+                () => result.Any(r => r.MemberNames.Contains(nameof(PackageSource.Value))).ShouldBeTrue());
         }
 
         [Fact]
-        public void Should_Validate_Credential_Values_Start_And_End_With_Percent()
+        public void With_Invalid_Credential_Values_Returns_Validation_Errors()
         {
             var configCredentials = new Dictionary<string, SourceCredential>();
             var userName = new Credential() { Key = "UserName", Value = "Some Value" };
@@ -150,15 +153,16 @@ public class NuGetConfigValidatorTests
             var result = validator.Validate(config);
 
             // Assert
-            result.Count.ShouldBe(2);
-            result[0].ErrorMessage!.ShouldContain(
-                "Credential value for Username for source nuget.org must start and end with a % character");
-            result[1].ErrorMessage!.ShouldContain(
-                "Credential value for ClearTextPassword for source nuget.org must start and end with a % character");
+            result.ShouldSatisfyAllConditions(
+                () => result.Count.ShouldBe(2),
+                () => result[0].ErrorMessage!.ShouldContain(
+                    "Credential value for Username for source nuget.org must start and end with a % character"),
+                () => result[1].ErrorMessage!.ShouldContain(
+                    "Credential value for ClearTextPassword for source nuget.org must start and end with a % character"));
         }
 
         [Fact]
-        public void Should_Validate_Credential_Keys()
+        public void With_Invalid_Credential_Keys_Returns_Validation_Errors()
         {
             var configCredentials = new Dictionary<string, SourceCredential>();
             var userName = new Credential() { Key = "User", Value = "%VALID%" };
@@ -189,15 +193,16 @@ public class NuGetConfigValidatorTests
             var result = validator.Validate(config);
 
             // Assert
-            result.Count.ShouldBe(2);
-            result[0].ErrorMessage!.ShouldContain(
-                "Credential key for source nuget.org should be UserName or ClearTextPassword");
-            result[1].ErrorMessage!.ShouldContain(
-                "Credential key for source nuget.org should be UserName or ClearTextPassword");
+            result.ShouldSatisfyAllConditions(
+                () => result.Count.ShouldBe(2),
+                () => result[0].ErrorMessage!.ShouldContain(
+                    "Credential key for source nuget.org should be UserName or ClearTextPassword"),
+                () => result[1].ErrorMessage!.ShouldContain(
+                    "Credential key for source nuget.org should be UserName or ClearTextPassword"));
         }
 
         [Fact]
-        public void Should_Accept_Valid_Credential_Values()
+        public void With_Valid_Credential_Values_Returns_Empty_List()
         {
             var configCredentials = new Dictionary<string, SourceCredential>();
             var userName = new Credential() { Key = "UserName", Value = "%OK%" };
@@ -233,7 +238,7 @@ public class NuGetConfigValidatorTests
         }
 
         [Fact]
-        public void Should_Not_Accept_Non_HTTPS_URLs()
+        public void With_Non_Https_Url_Returns_Validation_Error()
         {
             // Arrange
             var config = new NuGetConfig
@@ -251,12 +256,13 @@ public class NuGetConfigValidatorTests
             var result = validator.Validate(config);
 
             // Assert
-            result.Count.ShouldBe(1);
-            result[0].ErrorMessage!.ShouldContain("invalid URL");
+            result.ShouldSatisfyAllConditions(
+                () => result.Count.ShouldBe(1),
+                () => result[0].ErrorMessage!.ShouldContain("invalid URL"));
         }
 
         [Fact]
-        public void Should_Not_Accept_HTTP_URLs()
+        public void With_Http_Url_Returns_Validation_Error()
         {
             // Arrange
             var config = new NuGetConfig
@@ -274,8 +280,9 @@ public class NuGetConfigValidatorTests
             var result = validator.Validate(config);
 
             // Assert
-            result.Count.ShouldBe(1);
-            result[0].ErrorMessage!.ShouldContain("invalid URL");
+            result.ShouldSatisfyAllConditions(
+                () => result.Count.ShouldBe(1),
+                () => result[0].ErrorMessage!.ShouldContain("invalid URL"));
         }
     }
 }
