@@ -155,6 +155,57 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Symlinked_File_Outside_Root_Is_Skipped()
+        {
+            ResetTempDirectory();
+            var outsidePath = OutsidePath("Outside.csproj");
+            CopyFixture("Sample.csproj", outsidePath);
+            if (!TryCreateSymbolicLink(TempPath("Linked.csproj"), outsidePath, directory: false))
+            {
+                return;
+            }
+
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void With_Symlinked_File_Inside_Root_Is_Skipped_But_Target_Still_Found()
+        {
+            ResetTempDirectory();
+            var targetPath = TempPath("Real.csproj");
+            CopyFixture("Sample.csproj", targetPath);
+            if (!TryCreateSymbolicLink(TempPath("Linked.csproj"), targetPath, directory: false))
+            {
+                return;
+            }
+
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Count(package => package.PackageId == "Newtonsoft.Json").ShouldBe(1),
+                () => manifest.Packages.First(package => package.PackageId == "Newtonsoft.Json")
+                    .FilePath.ShouldEndWith("Real.csproj"));
+        }
+
+        [Fact]
+        public void With_Symlinked_Directory_Is_Skipped()
+        {
+            ResetTempDirectory();
+            var outsideDirectory = OutsideDirectory.AbsolutePath;
+            CopyFixture("Sample.csproj", Path.Combine(outsideDirectory, "Outside.csproj"));
+            if (!TryCreateSymbolicLink(TempPath("linked-dir"), outsideDirectory, directory: true))
+            {
+                return;
+            }
+
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldBeEmpty();
+        }
+
+        [Fact]
         public void With_Missing_Directory_Throws_DotBumpException()
         {
             ResetTempDirectory();
@@ -277,15 +328,28 @@ public class PackageFileServiceTests
 
     private static LocalDirectory TempDirectory => new("./temp/packages");
 
+    private static LocalDirectory OutsideDirectory => new("./temp/outside");
+
     private static void ResetTempDirectory()
     {
         TempDirectory.EnsureDirectoryDeleted();
+        OutsideDirectory.EnsureDirectoryDeleted();
         TempDirectory.EnsureDirectoryCreated();
     }
 
     private static string TempPath(params string[] segments)
     {
-        var path = TempDirectory.AbsolutePath;
+        return CombinePath(TempDirectory.AbsolutePath, segments);
+    }
+
+    private static string OutsidePath(params string[] segments)
+    {
+        return CombinePath(OutsideDirectory.AbsolutePath, segments);
+    }
+
+    private static string CombinePath(string root, params string[] segments)
+    {
+        var path = root;
         foreach (var segment in segments)
         {
             path = Path.Combine(path, segment);
@@ -306,5 +370,35 @@ public class PackageFileServiceTests
             Path.Combine(Directory.GetCurrentDirectory(), FixtureDirectory, fixtureFileName),
             destinationPath,
             overwrite: true);
+    }
+
+    private static bool TryCreateSymbolicLink(string linkPath, string targetPath, bool directory)
+    {
+        try
+        {
+            if (directory)
+            {
+                Directory.CreateSymbolicLink(linkPath, targetPath);
+            }
+            else
+            {
+                File.CreateSymbolicLink(linkPath, targetPath);
+            }
+
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            // Creating symlinks on Windows requires Developer Mode or elevation, so tolerate that case.
+            // On any other platform a failure is unexpected and should fail the test.
+            if (!OperatingSystem.IsWindows())
+            {
+                throw new InvalidOperationException(
+                    $"Failed to create symbolic link '{linkPath}' -> '{targetPath}'.",
+                    e);
+            }
+
+            return false;
+        }
     }
 }

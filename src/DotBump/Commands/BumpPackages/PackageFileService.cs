@@ -18,7 +18,9 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
     private static readonly string[] s_projectExtensions = [".csproj", ".fsproj", ".vbproj"];
     private static readonly string[] s_excludedDirectories = ["bin", "obj", ".git", ".vs", "node_modules"];
-    private static readonly string[] s_packageElementNames = ["PackageReference", "PackageVersion", "GlobalPackageReference"];
+
+    private static readonly string[] s_packageElementNames =
+        ["PackageReference", "PackageVersion", "GlobalPackageReference"];
 
     public PackageManifest GetPackageManifest(string repositoryPath)
     {
@@ -65,32 +67,6 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         logger.MethodReturn(nameof(PackageFileService), nameof(SavePackageManifest));
     }
 
-    private static IEnumerable<string> EnumerateCandidateFiles(string rootPath)
-    {
-        var pendingDirectories = new Stack<string>();
-        pendingDirectories.Push(rootPath);
-
-        while (pendingDirectories.Count > 0)
-        {
-            var directory = pendingDirectories.Pop();
-
-            foreach (var subDirectory in Directory.EnumerateDirectories(directory))
-            {
-                if (s_excludedDirectories.Contains(Path.GetFileName(subDirectory), StringComparer.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                pendingDirectories.Push(subDirectory);
-            }
-
-            foreach (var filePath in Directory.EnumerateFiles(directory).Where(IsCandidateFile))
-            {
-                yield return filePath;
-            }
-        }
-    }
-
     private static bool IsCandidateFile(string filePath)
     {
         var fileName = Path.GetFileName(filePath);
@@ -133,9 +109,12 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
     private static (string? Version, XAttribute? Attribute, XElement? Element) ReadVersion(XElement element)
     {
         var attribute = element.Attributes()
-            .FirstOrDefault(attribute => attribute.Name.LocalName.Equals("Version", StringComparison.Ordinal))
-            ?? element.Attributes()
-                .FirstOrDefault(attribute => attribute.Name.LocalName.Equals("VersionOverride", StringComparison.Ordinal));
+                            .FirstOrDefault(attribute =>
+                                attribute.Name.LocalName.Equals("Version", StringComparison.Ordinal))
+                        ?? element.Attributes()
+                            .FirstOrDefault(attribute => attribute.Name.LocalName.Equals(
+                                "VersionOverride",
+                                StringComparison.Ordinal));
 
         if (attribute != null)
         {
@@ -201,6 +180,49 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         return new UTF8Encoding(false);
     }
 
+    private IEnumerable<string> EnumerateCandidateFiles(string rootPath)
+    {
+        var pendingDirectories = new Stack<string>();
+        pendingDirectories.Push(rootPath);
+
+        while (pendingDirectories.Count > 0)
+        {
+            var directory = pendingDirectories.Pop();
+
+            foreach (var subDirectory in Directory.EnumerateDirectories(directory))
+            {
+                if (s_excludedDirectories.Contains(Path.GetFileName(subDirectory), StringComparer.OrdinalIgnoreCase)
+                    || IsReparsePoint(subDirectory))
+                {
+                    continue;
+                }
+
+                pendingDirectories.Push(subDirectory);
+            }
+
+            foreach (var filePath in Directory.EnumerateFiles(directory)
+                         .Where(IsCandidateFile)
+                         .Where(filePath => !IsReparsePoint(filePath)))
+            {
+                yield return filePath;
+            }
+        }
+    }
+
+    private bool IsReparsePoint(string path)
+    {
+        try
+        {
+            return File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // If the entry cannot be inspected (vanished or inaccessible), skip it rather than abort the scan.
+            logger.Debug(e, "Skipping {Path} because its attributes could not be read", path);
+            return true;
+        }
+    }
+
     private void ReadPackageVersions(string filePath, PackageManifest manifest)
     {
         XDocument document;
@@ -257,18 +279,19 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
-            manifest.Add(new PackageVersionEntry
-            {
-                PackageId = packageId,
-                OriginalVersion = version,
-                Version = version,
-                FilePath = filePath,
-                SourceKind = sourceKind,
-                ElementName = elementName,
-                Element = element,
-                VersionAttribute = versionAttribute,
-                VersionElement = versionElement,
-            });
+            manifest.Add(
+                new PackageVersionEntry
+                {
+                    PackageId = packageId,
+                    OriginalVersion = version,
+                    Version = version,
+                    FilePath = filePath,
+                    SourceKind = sourceKind,
+                    ElementName = elementName,
+                    Element = element,
+                    VersionAttribute = versionAttribute,
+                    VersionElement = versionElement,
+                });
 
             packageFound = true;
         }

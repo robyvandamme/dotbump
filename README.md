@@ -237,6 +237,7 @@ output report.
 Other current limitations:
 
 * MSBuild `Condition` attributes are ignored, so conditionally referenced packages are treated as active.
+* Symlinked files and directories are skipped; only regular files are scanned.
 * Explicit `<Import ... />` elements are not followed; only the conventional `Directory.Build.props`,
   `Directory.Build.targets`, `Directory.Packages.props` and project files are scanned.
 * `packages.lock.json` files are not updated.
