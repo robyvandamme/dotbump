@@ -24,8 +24,9 @@ USAGE:
     dotnet dotbump [OPTIONS] <COMMAND>
 
 COMMANDS:
-    sdk      Bump the global.json SDK version
-    tools    Bump the local .NET tools versions
+    sdk       Bump the global.json SDK version
+    tools     Bump the local .NET tools versions
+    packages  Bump the NuGet package versions
 
 OPTIONS:
     -h, --help       Prints help information
@@ -156,3 +157,101 @@ Example:
 </configuration>
 
 ```
+
+### Bump the NuGet Package versions
+
+Bump the versions of NuGet packages referenced in a repository.
+
+Use the `minor` type option to bump the packages to the latest minor or patch version for the current major
+version. Use the `patch` type option to bump the packages to the latest patch version for the current minor version.
+
+The command scans the directory passed via `--path` (defaults to the current directory) recursively and takes the
+following files into account:
+
+| File | Contents |
+| ---- | -------- |
+| `*.csproj`, `*.fsproj`, `*.vbproj` | `<PackageReference>` entries, where the version can be a `Version` attribute, a `<Version>` child element or a `VersionOverride` attribute. |
+| `Directory.Packages.props` | Central Package Management `<PackageVersion>` and `<GlobalPackageReference>` entries. |
+| `Directory.Build.props`, `Directory.Build.targets` | Shared `<PackageReference>`, `<PackageVersion>` and `<GlobalPackageReference>` entries. |
+
+Directories named `bin`, `obj`, `.git`, `.vs` and `node_modules` are skipped.
+
+```text
+DESCRIPTION:
+Bump the NuGet package versions. Use the 'minor' type option to bump the
+packages to the latest minor or patch versions for the current major version.
+Use the 'patch' type option to bump the packages to the latest patch version for
+the current minor version.
+
+USAGE:
+    dotnet dotbump packages [OPTIONS]
+
+EXAMPLES:
+    dotnet dotbump packages
+    dotnet dotbump packages --type patch
+    dotnet dotbump packages --path ./src --config ./custom-nuget.config --output bump-packages-report.json
+    dotnet dotbump packages --debug true --logfile bump-packages-log.txt
+
+OPTIONS:
+    -h, --help       Prints help information
+        --debug      Enable debug logging for troubleshooting. Includes response data
+        --logfile    The file to send the log output to
+    -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`
+    -o, --output     Output file name. The name of the file to write the result to. The output format is json
+    -c, --config     The nuget config file to use. Defaults to `./nuget.config`
+    -p, --path       The root directory to scan. Defaults to the current directory
+```
+
+The output file (`--output`) uses the same JSON report format as the `sdk` and `tools` commands, and the command
+returns exit code `1` when an error occurs (for example an invalid NuGet configuration).
+
+#### How versions are bumped
+
+* All occurrences of the same package id across the repository are bumped to a single target version.
+* The **highest** currently referenced version is used as the starting point for resolving a newer version, so an
+  occurrence is never downgraded. If an occurrence happens to be below the resolved target it is upgraded to the
+  target as well.
+* If no newer version is found, the package is left unchanged.
+* Pre-release handling matches the local tools: if the current version is a pre-release, pre-release versions are
+  considered but stable versions are preferred; otherwise only stable versions are considered.
+* Only files that actually change are written back, and their formatting, XML declaration, encoding and line endings
+  are preserved.
+
+#### Private feeds
+
+Private feeds are configured through `nuget.config` in the same way as for the local tools. See
+[Private Feeds](#private-feeds) above.
+
+#### Limitations (beta)
+
+The following are intentionally **not supported yet**. Packages that use them are skipped, leaving the existing value
+untouched:
+
+* Version **ranges** (e.g. `Version="[1.0.0, 2.0.0)"`).
+* **Floating** versions (e.g. `Version="1.2.*"`).
+* MSBuild **version properties** (e.g. `Version="$(MyPackageVersion)"`).
+
+Skipped packages are only logged at debug level; run with `--debug true` to see them. They are **not** included in the
+output report.
+
+Other current limitations:
+
+* MSBuild `Condition` attributes are ignored, so conditionally referenced packages are treated as active.
+* Explicit `<Import ... />` elements are not followed; only the conventional `Directory.Build.props`,
+  `Directory.Build.targets`, `Directory.Packages.props` and project files are scanned.
+* `packages.lock.json` files are not updated.
+* A `<PackageReference>` without a version (the usual Central Package Management setup) is ignored, because its
+  version is defined by the corresponding `<PackageVersion>` in `Directory.Packages.props`, which is scanned instead.
+
+#### Beta feedback
+
+This feature is new. If a package or file format in your repository is not detected correctly, or a version is
+resolved unexpectedly, please open an issue with a minimal reproduction (the relevant project/props file and the
+package you expected to be bumped) and a debug log file. You can generate one by running the command with
+`--debug true --logfile bump-packages-log.txt`, for example:
+
+```shell
+dotnet dotbump packages --debug true --logfile bump-packages-log.txt
+```
+
+Please review the log before attaching it and redact anything sensitive.
