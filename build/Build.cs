@@ -64,7 +64,8 @@ class Build : NukeBuild
                 var timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
                 semVer = $"{semVer}.{timestamp}";
 
-                var projects = Solution.AllProjects.Where(p => p.Path.ToString().EndsWith(".csproj", StringComparison.OrdinalIgnoreCase));
+                var projects = Solution.AllProjects.Where(p =>
+                    p.Path.ToString().EndsWith(".csproj", StringComparison.OrdinalIgnoreCase));
                 foreach (var project in projects)
                 {
                     var content = File.ReadAllText(project.Path);
@@ -154,6 +155,9 @@ class Build : NukeBuild
         .OnlyWhenStatic(() => PackAndPublish)
         .Executes(() =>
         {
+            Log.Information("Cleaning package output directory: {Directory}", PackagesDirectory);
+            PackagesDirectory.CreateOrCleanDirectory();
+
             Log.Information("Packing...");
             DotNetTasks.DotNetPack(o => o
                 .SetNoBuild(true)
