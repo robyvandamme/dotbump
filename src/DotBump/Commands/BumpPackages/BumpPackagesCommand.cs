@@ -1,36 +1,40 @@
 // Copyright © Roby Van Damme.
 
-using DotBump.Commands.BumpTools.Interfaces;
+using DotBump.Commands.BumpPackages.Interfaces;
 using DotBump.Common;
 using DotBump.Reports;
 using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
-namespace DotBump.Commands.BumpTools;
+namespace DotBump.Commands.BumpPackages;
 
-internal class BumpToolsCommand(
+internal class BumpPackagesCommand(
     IAnsiConsole console,
     ILogger logger,
-    IBumpToolsHandler bumpToolsHandler)
-    : AsyncCommand<BumpToolsSettings>
+    IBumpPackagesHandler bumpPackagesHandler)
+    : AsyncCommand<BumpPackagesSettings>
 {
     private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
+    private readonly string _defaultRepositoryPath = Directory.GetCurrentDirectory();
 
     internal Task<int> ExecuteForTestAsync(
         CommandContext context,
-        BumpToolsSettings settings,
+        BumpPackagesSettings settings,
         CancellationToken cancellationToken)
         => ExecuteAsync(context, settings, cancellationToken);
 
-    protected override async Task<int> ExecuteAsync(CommandContext context, BumpToolsSettings settings, CancellationToken cancellationToken)
+    protected override async Task<int> ExecuteAsync(
+        CommandContext context,
+        BumpPackagesSettings settings,
+        CancellationToken cancellationToken)
     {
-        logger.MethodStart(nameof(BumpToolsCommand), nameof(ExecuteAsync));
+        logger.MethodStart(nameof(BumpPackagesCommand), nameof(ExecuteAsync));
 
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(settings);
 
-        if (context.Name != "tools")
+        if (context.Name != "packages")
         {
             throw new DotBumpException($"Unsupported command name {context.Name}");
         }
@@ -39,18 +43,22 @@ internal class BumpToolsCommand(
         {
             var bumpType = settings.BumpType ?? BumpType.Minor;
             var outputFile = settings.Output;
+            var repositoryPath = !string.IsNullOrWhiteSpace(settings.RepositoryPath)
+                ? Path.GetFullPath(settings.RepositoryPath)
+                : _defaultRepositoryPath;
             var nugetConfigPath = !string.IsNullOrWhiteSpace(settings.NuGetConfigPath)
                 ? Path.GetFullPath(settings.NuGetConfigPath)
                 : _defaultNugetConfigPath;
 
             logger.Debug("Bump type: {Type}", bumpType);
+            logger.Debug("Repository path : {RepositoryPath}", repositoryPath);
             logger.Debug("Output file : {OutputFile}", outputFile);
             logger.Debug("NuGet config : {NuGetConfig}", nugetConfigPath);
 
             console.MarkupLine(
-                $"Bumping Tools with settings: type={bumpType}, output: {outputFile ?? "none"}, config: {nugetConfigPath}");
+                $"Bumping Packages with settings: type={bumpType}, path={repositoryPath}, output: {outputFile ?? "none"}, config: {nugetConfigPath}");
 
-            var bumpReport = await bumpToolsHandler.HandleAsync(bumpType, nugetConfigPath);
+            var bumpReport = await bumpPackagesHandler.HandleAsync(bumpType, repositoryPath, nugetConfigPath);
 
             WriteReportToConsole(bumpReport);
 
@@ -58,7 +66,7 @@ internal class BumpToolsCommand(
 
             if (bumpReport.Errors.Any())
             {
-                logger.MethodReturn(nameof(BumpToolsCommand), nameof(ExecuteAsync));
+                logger.MethodReturn(nameof(BumpPackagesCommand), nameof(ExecuteAsync));
                 return 1;
             }
         }
@@ -66,13 +74,13 @@ internal class BumpToolsCommand(
         catch (Exception e)
 #pragma warning restore CA1031
         {
-            logger.Error(e, "An error occurred while trying to bump the tools");
+            logger.Error(e, "An error occurred while trying to bump the packages");
             console.WriteException(e, ExceptionFormats.ShortenEverything);
-            logger.MethodReturn(nameof(BumpToolsCommand), nameof(ExecuteAsync));
+            logger.MethodReturn(nameof(BumpPackagesCommand), nameof(ExecuteAsync));
             return 1;
         }
 
-        logger.MethodReturn(nameof(BumpToolsCommand), nameof(ExecuteAsync));
+        logger.MethodReturn(nameof(BumpPackagesCommand), nameof(ExecuteAsync));
         return 0;
     }
 
@@ -80,7 +88,7 @@ internal class BumpToolsCommand(
     {
         if (bumpReport.Errors.Any())
         {
-            console.MarkupLine("An error occurred bumping tool versions.");
+            console.MarkupLine("An error occurred bumping package versions.");
             foreach (var bumpReportError in bumpReport.Errors)
             {
                 console.MarkupLine(bumpReportError);
@@ -90,11 +98,11 @@ internal class BumpToolsCommand(
         {
             if (!bumpReport.HasChanges)
             {
-                console.MarkupLine("No tool versions were bumped.");
+                console.MarkupLine("No package versions were bumped.");
             }
             else
             {
-                console.MarkupLine("Tool versions bumped:");
+                console.MarkupLine("Package versions bumped:");
                 foreach (var bumpResult in bumpReport.Results)
                 {
                     if (bumpResult.WasBumped)

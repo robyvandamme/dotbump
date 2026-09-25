@@ -88,7 +88,7 @@ internal sealed class NuGetClient(HttpClient httpClient, ILogger logger) : INuGe
                 return null;
             }
 
-            logger.Error(e, "An HTTP Request exception occured calling {PackageUrl}", builder.Uri);
+            logger.Error(e, "An HTTP Request exception occurred calling {PackageUrl}", builder.Uri);
             throw;
         }
 

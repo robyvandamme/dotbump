@@ -1,0 +1,15 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageVersion Include="Serilog">
+      <Version>3.0.0</Version>
+    </PackageVersion>
+    <GlobalPackageReference Include="StyleCop.Analyzers" Version="1.2.0" />
+  </ItemGroup>
+
+</Project>
