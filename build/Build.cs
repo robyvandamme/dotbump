@@ -1,7 +1,9 @@
 // Copyright © Roby Van Damme.
 
+using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -52,11 +54,27 @@ class Build : NukeBuild
         .OnlyWhenStatic(() => PackAndPublish)
         .Executes(() =>
         {
-            var result = dotnet($"gitversion /showvariable SemVer").StdToText();
-            Log.Information("Setting version: {Version}", result);
+            var semVer = dotnet("gitversion /showvariable SemVer").StdToText().Trim();
 
             // NOTE: for some reason /updateprojectfiles only works (locally) when I add the verbosity argument...
             dotnet($"gitversion path {Solution.Directory} /verbosity Normal /updateprojectfiles");
+
+            if (semVer.Contains("alpha", StringComparison.OrdinalIgnoreCase))
+            {
+                var timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+                semVer = $"{semVer}.{timestamp}";
+
+                var projects = Solution.AllProjects.Where(p =>
+                    p.Path.ToString().EndsWith(".csproj", StringComparison.OrdinalIgnoreCase));
+                foreach (var project in projects)
+                {
+                    var content = File.ReadAllText(project.Path);
+                    content = Regex.Replace(content, @"<Version>.*?</Version>", $"<Version>{semVer}</Version>");
+                    File.WriteAllText(project.Path, content);
+                }
+            }
+
+            Log.Information("Setting version: {Version}", semVer);
         });
 
     Target Clean => t => t
@@ -137,6 +155,9 @@ class Build : NukeBuild
         .OnlyWhenStatic(() => PackAndPublish)
         .Executes(() =>
         {
+            Log.Information("Cleaning package output directory: {Directory}", PackagesDirectory);
+            PackagesDirectory.CreateOrCleanDirectory();
+
             Log.Information("Packing...");
             DotNetTasks.DotNetPack(o => o
                 .SetNoBuild(true)
