@@ -220,6 +220,22 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Update_Attribute_Returns_Package_Entry()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Update=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            File.WriteAllText(TempPath("Update.csproj"), content);
+
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldContain(package =>
+                package.PackageId == "Newtonsoft.Json"
+                && package.Version == "13.0.1"
+                && package.ElementName == "PackageReference");
+        }
+
+        [Fact]
         public void With_Missing_Directory_Throws_DotBumpException()
         {
             ResetTempDirectory();

@@ -174,6 +174,9 @@ following files into account:
 | `Directory.Packages.props` | Central Package Management `<PackageVersion>` and `<GlobalPackageReference>` entries. |
 | `Directory.Build.props`, `Directory.Build.targets` | Shared `<PackageReference>`, `<PackageVersion>` and `<GlobalPackageReference>` entries. |
 
+The package id is read from the `Include` attribute, or, for override entries, the `Update` attribute. The version is
+read from a `Version` attribute, a `<Version>` child element or a `VersionOverride` attribute.
+
 Directories named `bin`, `obj`, `.git`, `.vs` and `node_modules` are skipped.
 
 ```text
@@ -243,6 +246,9 @@ Other current limitations:
 * `packages.lock.json` files are not updated.
 * A `<PackageReference>` without a version (the usual Central Package Management setup) is ignored, because its
   version is defined by the corresponding `<PackageVersion>` in `Directory.Packages.props`, which is scanned instead.
+* `Update=` override entries are currently treated the same as `Include` entries: all occurrences of the same package
+  id are unified to a single target version. The intended semantics — in particular overriding a package that is also
+  referenced with `Include` — are not decided yet, so treat `Update=` as unsupported for now.
 
 #### Beta feedback
 
