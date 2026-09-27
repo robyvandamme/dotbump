@@ -48,7 +48,7 @@ internal class BumpToolsCommand(
             logger.Debug("NuGet config : {NuGetConfig}", nugetConfigPath);
 
             console.MarkupLine(
-                $"Bumping Tools with settings: type={bumpType}, output: {outputFile ?? "none"}, config: {nugetConfigPath}");
+                $"Bumping Tools with settings: type={bumpType}, output: {Markup.Escape(outputFile ?? "none")}, config: {Markup.Escape(nugetConfigPath)}");
 
             var bumpReport = await bumpToolsHandler.HandleAsync(bumpType, nugetConfigPath);
 
@@ -83,7 +83,7 @@ internal class BumpToolsCommand(
             console.MarkupLine("An error occurred bumping tool versions.");
             foreach (var bumpReportError in bumpReport.Errors)
             {
-                console.MarkupLine(bumpReportError);
+                console.MarkupLine(Markup.Escape(bumpReportError));
             }
         }
         else
@@ -99,7 +99,7 @@ internal class BumpToolsCommand(
                 {
                     if (bumpResult.WasBumped)
                     {
-                        console.MarkupLine(bumpResult.ToString());
+                        console.MarkupLine(Markup.Escape(bumpResult.ToString()));
                     }
                 }
             }

@@ -60,6 +60,23 @@ public class BumpPackagesCommandTests
         }
 
         [Fact]
+        public async Task With_Markup_Unsafe_Repository_Path_Returns_0_And_Writes_Literal_Path()
+        {
+            using var testConsole = new TestConsole().Width(500);
+            var handler = CreateHandler(CreateReport(("MyPackage", "1.0.0")));
+            var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
+
+            var result = await command.ExecuteForTestAsync(
+                CreateContext("packages"),
+                new BumpPackagesSettings { RepositoryPath = "./[draft]/app" },
+                CancellationToken.None);
+
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => testConsole.Output.ShouldContain("[draft]"));
+        }
+
+        [Fact]
         public async Task With_Report_Errors_Returns_1()
         {
             using var testConsole = new TestConsole();
