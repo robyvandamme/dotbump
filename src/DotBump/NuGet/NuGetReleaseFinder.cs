@@ -11,30 +11,6 @@ namespace DotBump.NuGet;
 
 internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
 {
-    public IReadOnlyCollection<string> GetRegistrationsUrls(IReadOnlyCollection<ServiceIndex> serviceIndexes)
-    {
-        logger.MethodStart(nameof(NuGetReleaseFinder), nameof(GetRegistrationsUrls), serviceIndexes);
-
-        ArgumentNullException.ThrowIfNull(serviceIndexes);
-
-        var baseUrls = new List<string>();
-
-        foreach (var nuGetServiceIndex in serviceIndexes)
-        {
-            var registrationResource = nuGetServiceIndex.Resources.FirstOrDefault(o => o.Type.Equals(
-                "RegistrationsBaseUrl",
-                StringComparison.OrdinalIgnoreCase));
-            if (registrationResource != null)
-            {
-                baseUrls.Add(registrationResource.Id);
-            }
-        }
-
-        logger.MethodReturn(nameof(NuGetReleaseFinder), nameof(GetRegistrationsUrls), baseUrls);
-
-        return baseUrls;
-    }
-
     public string GetRegistrationsBaseUrl(ServiceIndex serviceIndex)
     {
         logger.MethodStart(nameof(NuGetReleaseFinder), nameof(GetRegistrationsBaseUrl), serviceIndex);
