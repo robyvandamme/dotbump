@@ -10,6 +10,12 @@ tests due to future tool version changes.
 * dotnet-reportgenerator-globaltool: has an unlisted version and a version that fails the semantic version check. 
   Use version 4.x.
 
+These command tests run against the real nuget.org feed end to end rather than using offline fixtures. The versions
+above are deliberately old and researched to stay stable, so the expected bumped versions should not change and the
+tests are not flaky. `NuGetClient` itself is covered offline with a fake `HttpMessageHandler`; the live tests exist to
+validate the real feed integration. If a pinned package ever moves, update this list and the expectations in
+`BumpToolsCommandTests` together rather than removing the test.
+
 ## Release Finder Tests
 
 For the different NuGet test cases I have added example json result files to be able to easily test the logic to 
