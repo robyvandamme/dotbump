@@ -197,6 +197,107 @@ public class NuGetConfigFileServiceTests
             }
         }
 
+        [Fact]
+        public void With_Package_Source_Missing_Attributes_Returns_Empty_Values()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add />
+                    </packageSources>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.PackageSources.ShouldHaveSingleItem();
+                result.PackageSources.First().ShouldSatisfyAllConditions(
+                    () => result.PackageSources.First().Key.ShouldBeEmpty(),
+                    () => result.PackageSources.First().Value.ShouldBeEmpty(),
+                    () => result.PackageSources.First().ProtocolVersion.ShouldBeEmpty());
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void With_Credential_Missing_Attributes_Returns_Empty_Values()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add key=""myorg"" value=""https://somedomain.com/myorg/nuget/v3/index.json"" protocolVersion=""3"" />
+                    </packageSources>
+                    <packageSourceCredentials>
+                        <myorg>
+                            <add />
+                        </myorg>
+                    </packageSourceCredentials>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.Credentials.ShouldContainKey("myorg");
+                result.Credentials["myorg"].Credentials.ShouldHaveSingleItem();
+                result.Credentials["myorg"].Credentials.First().ShouldSatisfyAllConditions(
+                    () => result.Credentials["myorg"].Credentials.First().Key.ShouldBeEmpty(),
+                    () => result.Credentials["myorg"].Credentials.First().Value.ShouldBeEmpty());
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void With_Source_Credential_Without_Entries_Returns_Empty_Credentials()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add key=""myorg"" value=""https://somedomain.com/myorg/nuget/v3/index.json"" protocolVersion=""3"" />
+                    </packageSources>
+                    <packageSourceCredentials>
+                        <myorg></myorg>
+                    </packageSourceCredentials>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.Credentials.ShouldContainKey("myorg");
+                result.Credentials["myorg"].Credentials.ShouldBeEmpty();
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
         private static string CreateTempConfigFile(string content)
         {
             var localDirectory = new LocalDirectory(Environment.CurrentDirectory);
