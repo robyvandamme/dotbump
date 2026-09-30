@@ -458,6 +458,11 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
+            // Bounds check only: the span content is intentionally not compared to OriginalVersion,
+            // because the span covers the raw (possibly entity-encoded) text while OriginalVersion
+            // holds the decoded value (see ReadVersion). Content drift is impossible here anyway —
+            // `text` is the same captured string the span was computed from (GetFileText), so a wrong
+            // span can only come from capture, which now fails fast at read time (review H2).
             if (package.VersionStart < 0
                 || package.VersionLength <= 0
                 || package.VersionStart + package.VersionLength > text.Length)

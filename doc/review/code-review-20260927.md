@@ -15,7 +15,7 @@ Findings below are ordered by severity. No critical (data-loss/security-breach) 
 | # | Severity | Finding |
 |---|----------|---------|
 | H1 | High | Unescaped Spectre markup in console output can fail the command on paths containing `[`/`]` |
-| H2 | High | Version spans are applied without verifying the span content matches the original version (corruption risk) |
+| H2 | High | Version spans are applied without verifying the span content matches the original version (corruption risk) — partially resolved, see H2 |
 | M1 | Medium | `CancellationToken` is accepted but never propagated to handler/resolver/HTTP calls |
 | M2 | Medium | Fully sequential HTTP resolution (sources × packages) with all-or-nothing failure semantics |
 | M3 | Medium | `PackageManifest.Warnings` is write-only dead state; skipped packages are never surfaced |
@@ -56,6 +56,19 @@ console.WriteLine(bumpResult.ToString());
 Note: the same pattern exists in `BumpSdkCommand` and `BumpToolsCommand`; fixing it in a shared helper (e.g. an `IConsole` extension) would cover all three.
 
 ### H2. Version spans are applied without verifying the span content
+
+> **Status (2026-09-30): partially resolved.**
+>
+> - **Part 2 — silent `GetOffset` fallback: fixed.** `GetOffset` now returns `-1`, both span-capture
+>   callers reject out-of-range offsets, and an unlocatable span is skipped at read time with a
+>   `Warning` and a manifest warning. Covered by the `GetOffset`, `GetVersionSpan` and
+>   `With_Out_Of_Bounds_Span_Skips_And_Warns` tests.
+> - **Part 1 — span-content assertion in `ApplyChanges`: deliberately not fixed.** The span is raw
+>   (possibly entity-encoded) text while `OriginalVersion` is decoded, so the literal check below
+>   would reject valid entity-encoded versions (see `With_Entity_Encoded_Version_Normalizes_Value_On_Bump`).
+>   The rationale is documented in code at `ReadVersion` (guard removed in `eb01a576`) and at the
+>   `ApplyChanges` bounds check; span/content drift is impossible in practice because the save path
+>   edits the same captured text the span was computed from.
 
 **Files:** `src/DotBump/Commands/BumpPackages/PackageFileService.cs:204-213`, `:225-259`, `:432-466`
 
@@ -283,9 +296,10 @@ Gaps:
 2. **Case-insensitive id unification end-to-end.** `PackageManifestTests` checks `GetPackageIds` casing, but nothing verifies that `Newtonsoft.json` in one file and `Newtonsoft.Json` in another are both bumped to one target via `SetVersion`/`ApplyChanges`.
 3. **Warnings not asserted as surfaced.** `With_Unsupported_Versions_Skips_And_Warns` asserts the manifest state only — consistent with finding M3; if warnings are meant to reach the user, add a command-level assertion.
 4. **Markup-unsafe paths.** No test feeds a path containing `[`/`]` (would currently fail — finding H1).
-5. **Span-mismatch guard.** No test exercises the `ApplyChanges` invalid-span warning path (finding H2) — worth adding once the content check is in.
+5. **Span-mismatch guard.** The `ApplyChanges` invalid-span warning path is now covered by `With_Out_Of_Bounds_Span_Skips_And_Warns`; the span-content check itself is deliberately not added (see the H2 disposition above), so no content-mismatch test is warranted.
 6. **Duplicated test helper.** `CreateManifest` is copy-pasted verbatim in `BumpPackagesCommandTests` and `BumpPackagesHandlerTests`. Extract a shared factory (the test `AGENTS.md` favors shared helpers).
 7. **Shared static service.** `PackageFileServiceTests` uses a single `static readonly s_service`; safe under xUnit's per-class sequential execution, but an instance-per-test field would remove the implicit coupling.
+8. **Save-time skip is not surfaced.** When `ApplyChanges` skips an invalid span, the warning only reaches the logger — `manifest.Warnings` stays empty while the manifest (and therefore the report) still claims the bump, and log `Warning`s are hidden without `--debug`. Failing test `With_Unapplied_Span_Surfaces_Warning` added to pin the decision (keep state, surface the failure); fix pending in the next commit, including propagation to the report.
 
 ---
 
