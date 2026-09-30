@@ -31,6 +31,7 @@ internal class BumpPackagesHandler(
         if (validationErrors.Any())
         {
             bumpReport.ReportErrors(validationErrors);
+            bumpReport.ReportWarnings(manifest.Warnings);
             logger.MethodReturn(nameof(BumpPackagesHandler), nameof(HandleAsync), bumpReport);
             return bumpReport;
         }
@@ -60,6 +61,8 @@ internal class BumpPackagesHandler(
             packageFileService.SavePackageManifest(manifest);
         }
 
+        bumpReport.ReportWarnings(manifest.Warnings);
+
         logger.MethodReturn(nameof(BumpPackagesHandler), nameof(HandleAsync), bumpReport);
 
         return bumpReport;
@@ -76,17 +79,22 @@ internal class BumpPackagesHandler(
 
         foreach (var packageId in manifest.GetPackageIds())
         {
-            var versions = manifest.Packages
+            var occurrences = manifest.Packages
                 .Where(package => string.Equals(package.PackageId, packageId, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            var versions = occurrences
                 .Select(package => package.SemanticVersion)
                 .Where(version => version.IsValid)
                 .ToList();
 
             if (versions.Count == 0)
             {
-                logger.Debug(
-                    "Skipping {PackageId} because none of its versions is a valid semantic version",
-                    packageId);
+                var invalidVersions = string.Join(", ", occurrences.Select(package => $"'{package.Version}'"));
+                var warning =
+                    $"Skipping '{packageId}' because version(s) {invalidVersions} cannot be parsed as a semantic version.";
+                logger.Warning("{Warning}", warning);
+                manifest.AddWarning(warning);
                 continue;
             }
 

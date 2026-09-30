@@ -234,8 +234,9 @@ untouched:
 * **Floating** versions (e.g. `Version="1.2.*"`).
 * MSBuild **version properties** (e.g. `Version="$(MyPackageVersion)"`).
 
-Skipped packages are only logged at debug level; run with `--debug true` to see them. They are **not** included in the
-output report.
+Skipped packages are listed under `warnings` in the output report, so automated runs (for example a dependency-update
+PR that embeds the report) can surface them without extra debugging. They are also logged at warning level; run with
+`--debug true` to see them in the log.
 
 Other current limitations:
 

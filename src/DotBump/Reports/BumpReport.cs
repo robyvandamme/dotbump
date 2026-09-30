@@ -16,6 +16,7 @@ internal class BumpReport
 {
     private readonly List<BumpResult> _results = new();
     private readonly List<string> _errors = new();
+    private readonly List<string> _warnings = new();
 
     public BumpReport(ToolsManifest toolsManifest, BumpType bumpType)
     {
@@ -43,7 +44,8 @@ internal class BumpReport
 
         foreach (var packageId in packageManifest.GetPackageIds())
         {
-            _results.Add(new BumpResult(packageId, GetReferenceVersion(packageManifest, packageId, useCurrentVersion: false)));
+            _results.Add(
+                new BumpResult(packageId, GetReferenceVersion(packageManifest, packageId, useCurrentVersion: false)));
         }
     }
 
@@ -56,6 +58,8 @@ internal class BumpReport
     public IReadOnlyCollection<BumpResult> Results => _results;
 
     public IReadOnlyCollection<string> Errors => _errors;
+
+    public IReadOnlyCollection<string> Warnings => _warnings;
 
     [JsonIgnore]
     public bool HasChanges
@@ -117,6 +121,14 @@ internal class BumpReport
             }
         }
 
+        TimeStamp = DateTime.UtcNow;
+    }
+
+    public void ReportWarnings(IReadOnlyCollection<string> warnings)
+    {
+        ArgumentNullException.ThrowIfNull(warnings);
+
+        _warnings.AddRange(warnings);
         TimeStamp = DateTime.UtcNow;
     }
 

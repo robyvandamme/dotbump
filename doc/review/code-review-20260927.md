@@ -14,11 +14,11 @@ Findings below are ordered by severity. No critical (data-loss/security-breach) 
 
 | # | Severity | Finding |
 |---|----------|---------|
-| H1 | High | Unescaped Spectre markup in console output can fail the command on paths containing `[`/`]` |
+| H1 | High | Unescaped Spectre markup in console output can fail the command on paths containing `[`/`]` — resolved, see H1 |
 | H2 | High | Version spans are applied without verifying the span content matches the original version (corruption risk) — partially resolved, see H2 |
 | M1 | Medium | `CancellationToken` is accepted but never propagated to handler/resolver/HTTP calls |
 | M2 | Medium | Fully sequential HTTP resolution (sources × packages) with all-or-nothing failure semantics |
-| M3 | Medium | `PackageManifest.Warnings` is write-only dead state; skipped packages are never surfaced |
+| M3 | Medium | `PackageManifest.Warnings` is write-only dead state; skipped packages are never surfaced — resolved, see M3 |
 | M4 | Medium | NuGet config content and raw credential values can end up in logs |
 | M5 | Medium | Duplicated "highest valid version per package" logic, O(ids × occurrences) |
 | M6 | Medium | `BumpReport` has temporal coupling (ctor before mutation, `ReportChanges` after) and mixed responsibilities |
@@ -30,6 +30,12 @@ Findings below are ordered by severity. No critical (data-loss/security-breach) 
 ## High severity
 
 ### H1. Unescaped Spectre markup in console output
+
+> **Status (2026-09-30): resolved.**
+>
+> All dynamic content passed to Spectre is escaped (`Markup.Escape`) in `BumpPackagesCommand`, `BumpSdkCommand` and
+> `BumpToolsCommand`: the settings line, the error lines and the result lines. Regression tests feed `[draft]`-style
+> markup-unsafe paths through all three commands (test gap 4).
 
 **Files:** `src/DotBump/Commands/BumpPackages/BumpPackagesCommand.cs:58-59`, `:94`, `:110`
 
@@ -152,6 +158,17 @@ Additionally, a single non-404 HTTP failure (transient 500, timeout) aborts the 
 - Consider collecting per-package failures into `bumpReport.ReportErrors(...)` and continuing, so partial results are still reported (the report already has an error channel, and the command already returns `1` when errors exist).
 
 ### M3. `PackageManifest.Warnings` is write-only dead state
+
+> **Status (2026-09-30): resolved — surfaced via the report.**
+>
+> Warnings now flow service → `PackageManifest.Warnings` → `BumpReport.ReportWarnings(...)` → the `warnings` array in
+> the JSON report (and the markdown output planned for automated dependency-update PRs). Deliberately **not** printed
+> to the console, and the default log level stays `Error`; every warning-semantic message is logged at
+> `LogEventLevel.Warning`, so it appears in logs only with `--debug`. This also covers the save-time skip (test gap 8)
+> and packages whose versions cannot be parsed as a semantic version (e.g. four-part versions like `1.2.3.4`).
+> Covered by `With_Unapplied_Span_Surfaces_Warning`, `With_Unsupported_Versions_Skips_And_Warns` (log level),
+> `With_Read_Warnings_Reports_Warnings`, `With_Validation_Errors_Still_Reports_Read_Warnings`,
+> `With_Invalid_Semantic_Version_Skips_And_Reports_Warning` and `BumpReportTests`.
 
 **Files:** `PackageFileService.cs:392-396`, `DataModel/PackageManifest.cs:23`
 
@@ -294,12 +311,12 @@ Gaps:
 
 1. **BOM preservation on actual change.** `With_Unchanged_Manifest_Leaves_File_Byte_For_Byte` proves the untouched case, but there is no test where a UTF-8-BOM (or UTF-16) file *is* modified and the BOM is asserted to survive (`DetectEncoding` + `WriteText` path).
 2. **Case-insensitive id unification end-to-end.** `PackageManifestTests` checks `GetPackageIds` casing, but nothing verifies that `Newtonsoft.json` in one file and `Newtonsoft.Json` in another are both bumped to one target via `SetVersion`/`ApplyChanges`.
-3. **Warnings not asserted as surfaced.** `With_Unsupported_Versions_Skips_And_Warns` asserts the manifest state only — consistent with finding M3; if warnings are meant to reach the user, add a command-level assertion.
-4. **Markup-unsafe paths.** No test feeds a path containing `[`/`]` (would currently fail — finding H1).
+3. **Warnings not asserted as surfaced.** Resolved: warnings are asserted through to the report (`With_Read_Warnings_Reports_Warnings`, `With_Validation_Errors_Still_Reports_Read_Warnings`, `BumpReportTests`) and `With_Unsupported_Versions_Skips_And_Warns` now also asserts `LogEventLevel.Warning` output. No console assertion — the report is the intended surface (see M3).
+4. **Markup-unsafe paths.** Resolved: `[draft]`-style markup-unsafe paths are exercised for all three commands (finding H1 resolved above).
 5. **Span-mismatch guard.** The `ApplyChanges` invalid-span warning path is now covered by `With_Out_Of_Bounds_Span_Skips_And_Warns`; the span-content check itself is deliberately not added (see the H2 disposition above), so no content-mismatch test is warranted.
 6. **Duplicated test helper.** `CreateManifest` is copy-pasted verbatim in `BumpPackagesCommandTests` and `BumpPackagesHandlerTests`. Extract a shared factory (the test `AGENTS.md` favors shared helpers).
 7. **Shared static service.** `PackageFileServiceTests` uses a single `static readonly s_service`; safe under xUnit's per-class sequential execution, but an instance-per-test field would remove the implicit coupling.
-8. **Save-time skip is not surfaced.** When `ApplyChanges` skips an invalid span, the warning only reaches the logger — `manifest.Warnings` stays empty while the manifest (and therefore the report) still claims the bump, and log `Warning`s are hidden without `--debug`. Failing test `With_Unapplied_Span_Surfaces_Warning` added to pin the decision (keep state, surface the failure); fix pending in the next commit, including propagation to the report.
+8. **Save-time skip is not surfaced.** Resolved: `ApplyChanges` records the skipped bump via `manifest.AddWarning`, the handler propagates warnings to the report after saving, and `With_Unapplied_Span_Surfaces_Warning` passes (state is kept, the failure is reported).
 
 ---
 

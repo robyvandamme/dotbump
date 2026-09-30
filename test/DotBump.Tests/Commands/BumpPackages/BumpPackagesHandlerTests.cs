@@ -107,14 +107,14 @@ public class BumpPackagesHandlerTests
         }
 
         [Fact]
-        public async Task With_Invalid_Semantic_Version_Skips_Package()
+        public async Task With_Invalid_Semantic_Version_Skips_And_Reports_Warning()
         {
             var manifest = CreateManifest(("MyPackage", "1.2.3.4"));
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver();
             var handler = CreateHandler(fileService, resolver);
 
-            await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+            var report = await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
 
             resolver.Verify(
                 r => r.ResolveAsync(
@@ -122,6 +122,43 @@ public class BumpPackagesHandlerTests
                     BumpType.Minor,
                     It.IsAny<NuGetConfig>()),
                 Times.Once);
+            report.Warnings.ShouldContain(warning =>
+                warning.Contains("MyPackage", StringComparison.Ordinal)
+                && warning.Contains("1.2.3.4", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public async Task With_Read_Warnings_Reports_Warnings()
+        {
+            const string readWarning =
+                "Skipping 'Other.Package' in 'Other.csproj' because version '1.0.*' is not supported.";
+            var manifest = CreateManifest(("MyPackage", "1.0.0"));
+            manifest.AddWarning(readWarning);
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(("MyPackage", "1.1.0"));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+
+            report.Warnings.ShouldContain(readWarning);
+        }
+
+        [Fact]
+        public async Task With_Validation_Errors_Still_Reports_Read_Warnings()
+        {
+            const string readWarning =
+                "Skipping 'Other.Package' in 'Other.csproj' because version '1.0.*' is not supported.";
+            var manifest = CreateManifest(("MyPackage", "1.0.0"));
+            manifest.AddWarning(readWarning);
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver();
+            var handler = CreateHandler(fileService, resolver, [new ValidationResult("bad config")]);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+
+            report.ShouldSatisfyAllConditions(
+                () => report.Errors.ShouldContain("bad config"),
+                () => report.Warnings.ShouldContain(readWarning));
         }
 
         private static PackageManifest CreateManifest(params (string Id, string Version)[] packages)

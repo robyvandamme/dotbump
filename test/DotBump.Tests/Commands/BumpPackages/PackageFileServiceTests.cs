@@ -110,14 +110,16 @@ public class PackageFileServiceTests
         {
             ResetTempDirectory();
             CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            var (service, sink) = CreateServiceWithSink();
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = service.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.GetPackageIds().ShouldSatisfyAllConditions(
                 () => manifest.GetPackageIds().ShouldNotContain("GitVersion.MsBuild"),
                 () => manifest.GetPackageIds().ShouldNotContain("Shouldly"),
                 () => manifest.GetPackageIds().ShouldNotContain("xunit"),
                 () => manifest.Warnings.Count.ShouldBe(3));
+            sink.Events.Count(logEvent => logEvent.Level == LogEventLevel.Warning).ShouldBe(3);
         }
 
         [Fact]
@@ -607,6 +609,39 @@ public class PackageFileServiceTests
                 logEvent.Level == LogEventLevel.Warning
                 && logEvent.RenderMessage(null).Contains("recorded span is invalid", StringComparison.Ordinal));
         }
+
+        [Fact]
+        public void With_Unapplied_Span_Surfaces_Warning()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("UnappliedSpan.csproj");
+            File.WriteAllText(path, content);
+            var originalBytes = File.ReadAllBytes(path);
+            var manifest = new PackageManifest();
+            manifest.Add(
+                new PackageVersionEntry
+                {
+                    PackageId = "Newtonsoft.Json",
+                    OriginalVersion = "13.0.1",
+                    Version = "13.0.1",
+                    FilePath = path,
+                    SourceKind = PackageSourceKind.Project,
+                    ElementName = "PackageReference",
+                    VersionStart = content.Length + 100,
+                    VersionLength = 6,
+                });
+            manifest.RegisterFileText(path, content);
+
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+            s_service.SavePackageManifest(manifest);
+
+            File.ReadAllBytes(path).ShouldBe(originalBytes);
+            manifest.HasChanges.ShouldBeTrue();
+            manifest.Warnings.ShouldContain(warning =>
+                warning.Contains("recorded span is invalid", StringComparison.Ordinal));
+        }
     }
 
     public class GetOffset
@@ -633,7 +668,8 @@ public class PackageFileServiceTests
         [Fact]
         public void With_Attribute_Line_Number_Out_Of_Range_Returns_No_Span()
         {
-            const string text = "<Project>\n  <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n</Project>\n";
+            const string text =
+                "<Project>\n  <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n</Project>\n";
             var attribute = XDocument.Parse(text, LoadOptions.SetLineInfo)
                 .Descendants("PackageReference").Single().Attribute("Version")!;
 
@@ -646,7 +682,8 @@ public class PackageFileServiceTests
         [Fact]
         public void With_Attribute_Offset_Beyond_Text_Length_Returns_No_Span()
         {
-            const string text = "<Project>\n  <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n</Project>\n";
+            const string text =
+                "<Project>\n  <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n</Project>\n";
             var attribute = XDocument.Parse(text, LoadOptions.SetLineInfo)
                 .Descendants("PackageReference").Single().Attribute("Version")!;
 

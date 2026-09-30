@@ -60,7 +60,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
-            var updatedText = ApplyChanges(filePath, text, manifest.Packages);
+            var updatedText = ApplyChanges(manifest, filePath, text);
             WriteText(filePath, updatedText);
             logger.Debug("Updated package versions in {File}", filePath);
         }
@@ -409,7 +409,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             {
                 var warning =
                     $"Skipping {elementName} '{packageId}' in '{filePath}' because version '{version}' is not supported.";
-                logger.Debug("{Warning}", warning);
+                logger.Warning("{Warning}", warning);
                 manifest.AddWarning(warning);
                 continue;
             }
@@ -446,11 +446,11 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         }
     }
 
-    private string ApplyChanges(string filePath, string text, IReadOnlyList<PackageVersionEntry> packages)
+    private string ApplyChanges(PackageManifest manifest, string filePath, string text)
     {
         var edits = new List<(int Start, int Length, string NewVersion)>();
 
-        foreach (var package in packages)
+        foreach (var package in manifest.Packages)
         {
             if (!string.Equals(package.FilePath, filePath, StringComparison.Ordinal)
                 || string.Equals(package.Version, package.OriginalVersion, StringComparison.OrdinalIgnoreCase))
@@ -467,11 +467,10 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 || package.VersionLength <= 0
                 || package.VersionStart + package.VersionLength > text.Length)
             {
-                logger.Warning(
-                    "Skipping version '{Version}' for {PackageId} in {File} because its recorded span is invalid",
-                    package.OriginalVersion,
-                    package.PackageId,
-                    filePath);
+                var warning =
+                    $"Skipping version '{package.OriginalVersion}' for '{package.PackageId}' in '{filePath}' because its recorded span is invalid.";
+                logger.Warning("{Warning}", warning);
+                manifest.AddWarning(warning);
                 continue;
             }
 
