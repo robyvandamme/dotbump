@@ -1,7 +1,7 @@
 ﻿// Copyright © Roby Van Damme.
 
 using System.Globalization;
-using DotBump;
+using Destructurama;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -25,6 +25,7 @@ internal static class LoggerConfigurator
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.ControlledBy(defaultLevelSwitch)
+                .Destructure.UsingAttributes()
 #if DEBUG
                 .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
 #endif
@@ -38,6 +39,7 @@ internal static class LoggerConfigurator
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.ControlledBy(defaultLevelSwitch)
+                .Destructure.UsingAttributes()
 #if DEBUG
                 .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
 #endif
