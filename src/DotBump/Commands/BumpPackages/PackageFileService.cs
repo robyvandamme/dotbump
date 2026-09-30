@@ -68,6 +68,27 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         logger.MethodReturn(nameof(PackageFileService), nameof(SavePackageManifest));
     }
 
+    internal static int GetOffset(int[] lineStartOffsets, int lineNumber, int linePosition)
+    {
+        var lineIndex = lineNumber - 1;
+        if (lineIndex < 0 || lineIndex >= lineStartOffsets.Length)
+        {
+            return -1;
+        }
+
+        return lineStartOffsets[lineIndex] + (linePosition - 1);
+    }
+
+    internal static (int Start, int Length) GetVersionSpan(string text, int[] lineStartOffsets, XObject source)
+    {
+        return source switch
+        {
+            XAttribute attribute => GetAttributeVersionSpan(text, lineStartOffsets, attribute),
+            XElement element => GetElementVersionSpan(text, lineStartOffsets, element),
+            _ => (-1, 0),
+        };
+    }
+
     private static bool IsCandidateFile(string filePath)
     {
         var fileName = Path.GetFileName(filePath);
@@ -206,27 +227,6 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         return offsets.ToArray();
     }
 
-    private static int GetOffset(int[] lineStartOffsets, int lineNumber, int linePosition)
-    {
-        var lineIndex = lineNumber - 1;
-        if (lineIndex < 0 || lineIndex >= lineStartOffsets.Length)
-        {
-            return 0;
-        }
-
-        return lineStartOffsets[lineIndex] + (linePosition - 1);
-    }
-
-    private static (int Start, int Length) GetVersionSpan(string text, int[] lineStartOffsets, XObject source)
-    {
-        return source switch
-        {
-            XAttribute attribute => GetAttributeVersionSpan(text, lineStartOffsets, attribute),
-            XElement element => GetElementVersionSpan(text, lineStartOffsets, element),
-            _ => (-1, 0),
-        };
-    }
-
     // The span covers the raw attribute value exactly as written between the quotes, which may be
     // entity-encoded. It is intentionally not required to equal the decoded version stored on the
     // entry (see ReadVersion).
@@ -242,6 +242,11 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         }
 
         var attributeStart = GetOffset(lineStartOffsets, lineInfo.LineNumber, lineInfo.LinePosition);
+        if (attributeStart < 0 || attributeStart > text.Length)
+        {
+            return (-1, 0);
+        }
+
         var equalsIndex = text.IndexOf('=', attributeStart);
         if (equalsIndex < 0)
         {
@@ -280,6 +285,11 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         }
 
         var valueStart = GetOffset(lineStartOffsets, textLineInfo.LineNumber, textLineInfo.LinePosition);
+        if (valueStart < 0 || valueStart > text.Length)
+        {
+            return (-1, 0);
+        }
+
         var valueEnd = text.IndexOf('<', valueStart);
 
         return valueEnd > valueStart ? TrimSpan(text, valueStart, valueEnd) : (-1, 0);
@@ -407,11 +417,10 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             var (versionStart, versionLength) = GetVersionSpan(text, lineStartOffsets, versionSource);
             if (versionStart < 0)
             {
-                logger.Debug(
-                    "Skipping {Element} {PackageId} in {File} because its version value could not be located",
-                    elementName,
-                    packageId,
-                    filePath);
+                var warning =
+                    $"Skipping {elementName} '{packageId}' in '{filePath}' because its version value could not be located.";
+                logger.Warning("{Warning}", warning);
+                manifest.AddWarning(warning);
                 continue;
             }
 

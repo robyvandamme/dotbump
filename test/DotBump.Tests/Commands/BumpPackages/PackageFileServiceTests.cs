@@ -1,11 +1,13 @@
 // Copyright © Roby Van Damme.
 
+using System.Xml.Linq;
 using DotBump.Commands.BumpPackages;
 using DotBump.Commands.BumpPackages.DataModel;
 using DotBump.Common;
 using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
+using Serilog.Events;
 using Shouldly;
 
 namespace DotBump.Tests.Commands.BumpPackages;
@@ -249,6 +251,25 @@ public class PackageFileServiceTests
                 package.PackageId == "Newtonsoft.Json"
                 && package.OriginalVersion == "13.0.1"
                 && package.Version == "13.0.1");
+        }
+
+        [Fact]
+        public void With_Version_Element_Containing_Leading_Comment_Skips_And_Warns()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\">\n      <Version> <!-- keep --> 3.0.0 </Version>\n    </PackageReference>\n  </ItemGroup>\n</Project>\n";
+            File.WriteAllText(TempPath("CommentedVersion.csproj"), content);
+            var (service, sink) = CreateServiceWithSink();
+
+            var manifest = service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.GetPackageIds().ShouldNotContain("Newtonsoft.Json");
+            manifest.Warnings.ShouldContain(warning =>
+                warning.Contains("could not be located", StringComparison.Ordinal));
+            sink.Events.ShouldContain(logEvent =>
+                logEvent.Level == LogEventLevel.Warning
+                && logEvent.RenderMessage(null).Contains("could not be located", StringComparison.Ordinal));
         }
 
         [Fact]
@@ -552,6 +573,113 @@ public class PackageFileServiceTests
 
             File.ReadAllText(path).ShouldBe(content.Replace(" 3.0.0 ", " 3.0.1 ", StringComparison.Ordinal));
         }
+
+        [Fact]
+        public void With_Out_Of_Bounds_Span_Skips_And_Warns()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("InvalidSpan.csproj");
+            File.WriteAllText(path, content);
+            var originalBytes = File.ReadAllBytes(path);
+            var (service, sink) = CreateServiceWithSink();
+            var manifest = new PackageManifest();
+            manifest.Add(
+                new PackageVersionEntry
+                {
+                    PackageId = "Newtonsoft.Json",
+                    OriginalVersion = "13.0.1",
+                    Version = "13.0.1",
+                    FilePath = path,
+                    SourceKind = PackageSourceKind.Project,
+                    ElementName = "PackageReference",
+                    VersionStart = content.Length + 100,
+                    VersionLength = 6,
+                });
+            manifest.RegisterFileText(path, content);
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+
+            service.SavePackageManifest(manifest);
+
+            File.ReadAllBytes(path).ShouldBe(originalBytes);
+            sink.Events.ShouldContain(logEvent =>
+                logEvent.Level == LogEventLevel.Warning
+                && logEvent.RenderMessage(null).Contains("recorded span is invalid", StringComparison.Ordinal));
+        }
+    }
+
+    public class GetOffset
+    {
+        [Fact]
+        public void With_Line_Number_Out_Of_Range_Returns_No_Offset()
+        {
+            var offset = PackageFileService.GetOffset([0], 5, 1);
+
+            offset.ShouldBe(-1);
+        }
+
+        [Fact]
+        public void With_Valid_Line_And_Position_Returns_Offset()
+        {
+            var offset = PackageFileService.GetOffset([0, 10], 2, 3);
+
+            offset.ShouldBe(12);
+        }
+    }
+
+    public class GetVersionSpan
+    {
+        [Fact]
+        public void With_Attribute_Line_Number_Out_Of_Range_Returns_No_Span()
+        {
+            const string text = "<Project>\n  <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n</Project>\n";
+            var attribute = XDocument.Parse(text, LoadOptions.SetLineInfo)
+                .Descendants("PackageReference").Single().Attribute("Version")!;
+
+            var (start, length) = PackageFileService.GetVersionSpan(text, [], attribute);
+
+            start.ShouldBe(-1);
+            length.ShouldBe(0);
+        }
+
+        [Fact]
+        public void With_Attribute_Offset_Beyond_Text_Length_Returns_No_Span()
+        {
+            const string text = "<Project>\n  <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n</Project>\n";
+            var attribute = XDocument.Parse(text, LoadOptions.SetLineInfo)
+                .Descendants("PackageReference").Single().Attribute("Version")!;
+
+            var (start, length) = PackageFileService.GetVersionSpan(text, [0, text.Length + 100], attribute);
+
+            start.ShouldBe(-1);
+            length.ShouldBe(0);
+        }
+
+        [Fact]
+        public void With_Element_Line_Number_Out_Of_Range_Returns_No_Span()
+        {
+            const string text = "<Project>\n  <Version>13.0.1</Version>\n</Project>\n";
+            var versionElement = XDocument.Parse(text, LoadOptions.SetLineInfo)
+                .Descendants("Version").Single();
+
+            var (start, length) = PackageFileService.GetVersionSpan(text, [], versionElement);
+
+            start.ShouldBe(-1);
+            length.ShouldBe(0);
+        }
+
+        [Fact]
+        public void With_Valid_Attribute_Returns_Span()
+        {
+            const string text = "<PackageReference Version=\"13.0.1\" />";
+            var attribute = XDocument.Parse(text, LoadOptions.SetLineInfo)
+                .Descendants("PackageReference").Single().Attribute("Version")!;
+
+            var (start, length) = PackageFileService.GetVersionSpan(text, [0], attribute);
+
+            text.Substring(start, length).ShouldBe("13.0.1");
+        }
     }
 
     private static LocalDirectory TempDirectory => new("./temp/packages");
@@ -598,6 +726,17 @@ public class PackageFileServiceTests
             Path.Combine(Directory.GetCurrentDirectory(), FixtureDirectory, fixtureFileName),
             destinationPath,
             overwrite: true);
+    }
+
+    private static (PackageFileService Service, TestLogSink Sink) CreateServiceWithSink()
+    {
+        var sink = new TestLogSink();
+        var logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.Sink(sink)
+            .CreateLogger();
+
+        return (new PackageFileService(logger), sink);
     }
 
     private static bool TryCreateSymbolicLink(string linkPath, string targetPath, bool directory)
