@@ -236,6 +236,22 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Entity_Encoded_Version_Returns_Decoded_Version()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13&#46;0&#46;1\" />\n  </ItemGroup>\n</Project>\n";
+            File.WriteAllText(TempPath("Entities.csproj"), content);
+
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldContain(package =>
+                package.PackageId == "Newtonsoft.Json"
+                && package.OriginalVersion == "13.0.1"
+                && package.Version == "13.0.1");
+        }
+
+        [Fact]
         public void With_Missing_Directory_Throws_DotBumpException()
         {
             ResetTempDirectory();
@@ -401,6 +417,22 @@ public class PackageFileServiceTests
             s_service.SavePackageManifest(manifest);
 
             File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void With_Entity_Encoded_Version_Normalizes_Value_On_Bump()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13&#46;0&#46;1\" />\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("EntityVersion.csproj");
+            File.WriteAllText(path, content);
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+            s_service.SavePackageManifest(manifest);
+
+            File.ReadAllText(path).ShouldBe(content.Replace("13&#46;0&#46;1", "13.0.2", StringComparison.Ordinal));
         }
 
         [Fact]

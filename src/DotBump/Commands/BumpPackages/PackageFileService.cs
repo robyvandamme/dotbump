@@ -107,6 +107,11 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             ?.Value;
     }
 
+    // The returned version is the XML-decoded value (XAttribute.Value / XElement.Value). The matching
+    // span captured by GetVersionSpan addresses the raw text instead, so the two can legitimately
+    // differ for entity-encoded values (e.g. "13&#46;0&#46;1" decodes to "13.0.1"). This is why a
+    // decoded-vs-raw equality guard was deliberately removed (commit eb01a576) and must not be
+    // reintroduced.
     private static (string? Version, XObject? Source) ReadVersion(XElement element)
     {
         var attribute = element.Attributes()
@@ -222,6 +227,9 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         };
     }
 
+    // The span covers the raw attribute value exactly as written between the quotes, which may be
+    // entity-encoded. It is intentionally not required to equal the decoded version stored on the
+    // entry (see ReadVersion).
     private static (int Start, int Length) GetAttributeVersionSpan(
         string text,
         int[] lineStartOffsets,

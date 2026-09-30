@@ -15,7 +15,9 @@ internal sealed class PackageVersionEntry
     public required string PackageId { get; init; }
 
     /// <summary>
-    /// Gets the version as it was found in the file.
+    /// Gets the original version as an XML-decoded value (entities resolved). This can differ from the
+    /// raw text recorded by <see cref="VersionStart"/> and <see cref="VersionLength"/>, which span the
+    /// encoded representation as written in the file.
     /// </summary>
     public required string OriginalVersion { get; init; }
 
