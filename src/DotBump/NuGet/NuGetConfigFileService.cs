@@ -32,9 +32,7 @@ internal class NuGetConfigFileService(ILogger logger) : INuGetConfigFileService
             defaultConfig.PackageSources.Add(
                 new PackageSource
                 {
-                    Key = "nuget.org",
-                    ProtocolVersion = "3",
-                    Value = "https://api.nuget.org/v3/index.json",
+                    Key = "nuget.org", ProtocolVersion = "3", Value = "https://api.nuget.org/v3/index.json",
                 });
             logger.MethodReturn(nameof(NuGetConfigFileService), nameof(GetNuGetConfiguration), defaultConfig);
             return defaultConfig;
@@ -62,7 +60,7 @@ internal class NuGetConfigFileService(ILogger logger) : INuGetConfigFileService
 
         if (doc.Root == null)
         {
-            logger.Error("Unable to read the nuget config file at {FilePath} with {Content}", filePath, doc);
+            logger.Error("Unable to read the nuget config file at {FilePath}", filePath);
             throw new DotBumpException($"Unable to read the nuget config file at {filePath}.");
         }
 
@@ -85,10 +83,17 @@ internal class NuGetConfigFileService(ILogger logger) : INuGetConfigFileService
         if (config.PackageSources.Count == 0)
         {
             // No package sources found...
+            var credentialSectionNames = doc.Root.Element("packageSourceCredentials")?
+                .Elements()
+                .Select(element => element.Name.LocalName)
+                .ToList() ?? [];
+            var credentialSections = credentialSectionNames.Count > 0
+                ? string.Join(", ", credentialSectionNames)
+                : "none";
             logger.Error(
-                "No package sources were found in the NuGet config {FilePath} with content {Content}",
+                "No package sources were found in the NuGet config {FilePath} (credential sections: {CredentialSections})",
                 filePath,
-                doc);
+                credentialSections);
             throw new DotBumpException($"No package sources were found in the NuGet config  {filePath}");
         }
 

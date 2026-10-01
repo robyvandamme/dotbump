@@ -6,6 +6,8 @@ using DotBump.NuGet;
 using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 using Shouldly;
 
 namespace DotBump.Tests.NuGet;
@@ -298,6 +300,79 @@ public class NuGetConfigFileServiceTests
             }
         }
 
+        [Fact]
+        public void With_Credentials_Only_Logs_Without_Config_Content()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSourceCredentials>
+                        <myorg>
+                            <add key=""Username"" value=""myuser"" />
+                            <add key=""ClearTextPassword"" value=""mypassword"" />
+                        </myorg>
+                    </packageSourceCredentials>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var (service, sink) = CreateServiceWithSink();
+
+            try
+            {
+                // Act
+                Should.Throw<DotBumpException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
+
+                // Assert
+                sink.Events.ShouldSatisfyAllConditions(
+                    () => sink.Events.ShouldContain(logEvent => logEvent.Level == LogEventLevel.Error),
+                    () => sink.Events.ShouldNotContain(logEvent =>
+                        logEvent.RenderMessage(null).Contains("mypassword", StringComparison.Ordinal)));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void With_Plaintext_Credential_Debug_Log_Redacts_Value()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add key=""myorg"" value=""https://myorg.pkgs.visualstudio.com/_packaging/myorg/nuget/v3/index.json"" protocolVersion=""3"" />
+                    </packageSources>
+                    <packageSourceCredentials>
+                        <myorg>
+                            <add key=""Username"" value=""myuser"" />
+                            <add key=""ClearTextPassword"" value=""mypassword"" />
+                        </myorg>
+                    </packageSourceCredentials>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var (service, sink) = CreateServiceWithSink();
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+                var rendered = string.Join("\n", sink.Events.Select(logEvent => logEvent.RenderMessage(null)));
+
+                // Assert
+                result.Credentials.ShouldContainKey("myorg");
+                rendered.ShouldSatisfyAllConditions(
+                    () => rendered.ShouldNotContain("mypassword"),
+                    () => rendered.ShouldNotContain("myuser"),
+                    () => rendered.ShouldContain("***"));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
         private static string CreateTempConfigFile(string content)
         {
             var localDirectory = new LocalDirectory(Environment.CurrentDirectory);
@@ -305,6 +380,16 @@ public class NuGetConfigFileServiceTests
             localDirectory.EnsureFileDeleted(filename);
             localDirectory.EnsureFileCreated(filename, content);
             return "nuget.config";
+        }
+
+        private static (NuGetConfigFileService Service, TestLogSink Sink) CreateServiceWithSink()
+        {
+            var sink = new TestLogSink();
+            var logger = LoggerConfigurator.CreateConfiguration(new LoggingLevelSwitch(LogEventLevel.Verbose))
+                .WriteTo.Sink(sink)
+                .CreateLogger();
+
+            return (new NuGetConfigFileService(logger), sink);
         }
     }
 }

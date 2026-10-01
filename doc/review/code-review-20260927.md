@@ -19,7 +19,7 @@ Findings below are ordered by severity. No critical (data-loss/security-breach) 
 | M1 | Medium | `CancellationToken` is accepted but never propagated to handler/resolver/HTTP calls |
 | M2 | Medium | Fully sequential HTTP resolution (sources × packages) with all-or-nothing failure semantics |
 | M3 | Medium | `PackageManifest.Warnings` is write-only dead state; skipped packages are never surfaced — resolved, see M3 |
-| M4 | Medium | NuGet config content and raw credential values can end up in logs |
+| M4 | Medium | NuGet config content and raw credential values can end up in logs — resolved (handled at high priority), see M4 |
 | M5 | Medium | Duplicated "highest valid version per package" logic, O(ids × occurrences) |
 | M6 | Medium | `BumpReport` has temporal coupling (ctor before mutation, `ReportChanges` after) and mixed responsibilities |
 | M7 | Medium | Inconsistent case-sensitivity semantics for version comparison vs. change detection |
@@ -178,6 +178,22 @@ Warnings for skipped packages (ranges, floating versions, `$(Property)` versions
 
 ### M4. NuGet config content and raw credential values can be logged
 
+> **Status (2026-09-30): resolved — handled at high priority.**
+>
+> - **Raw config content is no longer logged.** Both `{Content}` Error messages in `NuGetConfigFileService` now log
+>   the file path (plus credential-section names for the "no package sources" case) instead of the raw XML, which
+>   previously dumped `packageSourceCredentials` — including plaintext passwords — into the default-visible
+>   (`Error`) log.
+> - **Attribute-based redaction is actually wired.** `.Destructure.UsingAttributes()` had been accidentally removed
+>   in an earlier commit, which made every `[LogMasked]`/`[NotLogged]` attribute inert (including the
+>   `NuGetClientCredential` masking praised above). It is restored and now lives in a single
+>   `LoggerConfigurator.CreateConfiguration(...)` seam shared by production and tests, so a removal fails a test.
+> - The `MethodStart`/`MethodReturn` destructuring of `NuGetConfig` and `NuGetClientConfig` is deliberately kept:
+>   it shows which sources and credential keys exist, with values rendered as `***`. Note that masking only covers
+>   properties carrying `[LogMasked]` — new credential-shaped properties must carry the attribute too.
+> - Covered by `With_Credentials_Only_Logs_Without_Config_Content`,
+>   `With_Plaintext_Credential_Debug_Log_Redacts_Value`, `LoggerConfiguratorTests` and `NuGetClientFactoryTests`.
+
 **Files:** `NuGet/NuGetConfigFileService.cs:65`, `:88-91`, `:39-45`, `:45`; `NuGet/DataModel/NuGetConfiguration/Credential.cs`
 
 ```csharp
@@ -326,7 +342,7 @@ Gaps:
 - **No-downgrade guard** (`BumpPackagesHandler.cs:49-53`) with a matching test — reference version is the highest current occurrence, so occurrences are never rolled back.
 - **Validation before I/O** — NuGet config errors are reported through `ReportErrors` before any network call, and the command returns exit code `1` without saving.
 - **Filesystem hygiene** — excluded directories, reparse-point skipping with graceful degradation on inaccessible entries, and candidate-file filtering.
-- **Credential masking** — `[LogMasked]` on `NuGetClientCredential` (see M4 for the remaining gap on raw `Credential.Value`).
+- **Credential masking** — `[LogMasked]` on `NuGetClientCredential` and `Credential.Value`, wired through the single `LoggerConfigurator.CreateConfiguration` seam and pinned by tests (see M4).
 - **Consistency with existing conventions** — file headers, file-scoped namespaces, primary constructors, Serilog message templates (no interpolation), `MethodStart`/`MethodReturn` tracing, `DotBumpException`, and the Pascal_Snake_Case test naming.
 
 ---
