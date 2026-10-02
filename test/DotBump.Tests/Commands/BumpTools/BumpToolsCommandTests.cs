@@ -33,10 +33,13 @@ public class BumpToolsCommandTests
         };
 
         [Fact]
-        public async Task With_Missing_Tools_Manifest_Returns_1_And_FileNotFoundException()
+        public async Task With_Missing_Tools_Manifest_Returns_1_And_Reports_Locator_Error()
         {
-            var missingManifestPath = Path.Combine(s_tempDirectory.AbsolutePath, "missing-dotnet-tools.json");
-            s_tempDirectory.EnsureFileDeleted("missing-dotnet-tools.json");
+            var currentDirectory = Directory.GetCurrentDirectory();
+            var rootManifest = Path.Combine(currentDirectory, "dotnet-tools.json");
+            var legacyManifest = Path.Combine(currentDirectory, ".config", "dotnet-tools.json");
+            File.Delete(rootManifest);
+            File.Delete(legacyManifest);
 
             var loggerMock = new Mock<ILogger>().Object;
             using var testConsole = new TestConsole();
@@ -47,18 +50,18 @@ public class BumpToolsCommandTests
             var validator = new NuGetConfigValidator(loggerMock);
             var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
-            var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+            var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
             var arguments = new[] { "bump", "tools" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
             var result = await command.ExecuteForTestAsync(
                 context,
-                new BumpToolsSettings() { ToolManifestPath = missingManifestPath },
+                new BumpToolsSettings(),
                 CancellationToken.None);
 
             result.ShouldSatisfyAllConditions(
                 () => result.ShouldBe(1),
-                () => testConsole.Output.ShouldContain("FileNotFoundException: Tool manifest file not found"));
+                () => testConsole.Output.ShouldContain("Could not find a tools manifest"));
         }
 
         [Fact]
@@ -75,7 +78,7 @@ public class BumpToolsCommandTests
             var validator = new NuGetConfigValidator(loggerMock);
             var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
-            var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+            var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
             var arguments = new[] { "bump", "tools" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
@@ -106,7 +109,7 @@ public class BumpToolsCommandTests
             var validator = new NuGetConfigValidator(loggerMock);
             var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
-            var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+            var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
             var arguments = new[] { "bump", "tools" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
@@ -142,7 +145,7 @@ public class BumpToolsCommandTests
                 var validator = new NuGetConfigValidator(loggerMock);
                 var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
-                var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+                var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
                 var arguments = new[] { "bump", "tools" };
                 var remainingArguments = new Mock<IRemainingArguments>();
                 var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
@@ -201,7 +204,7 @@ public class BumpToolsCommandTests
                     validator,
                     loggerMock);
 
-                var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+                var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
                 var arguments = new[] { "bump", "tools" };
                 var remainingArguments = new Mock<IRemainingArguments>();
                 var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
@@ -236,12 +239,12 @@ public class BumpToolsCommandTests
                         Tools = new Dictionary<string, ToolManifestEntry>(),
                     },
                     BumpType.Minor));
-            var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
+            var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), handler.Object, new ToolManifestLocator(Mock.Of<ILogger>()));
             var context = new CommandContext(["bump", "tools"], new Mock<IRemainingArguments>().Object, "tools", null);
 
             var result = await command.ExecuteForTestAsync(
                 context,
-                new BumpToolsSettings { NuGetConfigPath = "./[draft]/nuget.config" },
+                new BumpToolsSettings { NuGetConfigPath = "./[draft]/nuget.config", ToolManifestPath = s_toolManifestPath },
                 CancellationToken.None);
 
             result.ShouldSatisfyAllConditions(
@@ -264,7 +267,7 @@ public class BumpToolsCommandTests
                         Tools = new Dictionary<string, ToolManifestEntry>(),
                     },
                     BumpType.Minor));
-            var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
+            var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), handler.Object, new ToolManifestLocator(Mock.Of<ILogger>()));
             var context = new CommandContext(["bump", "tools"], new Mock<IRemainingArguments>().Object, "tools", null);
 
             var result = await command.ExecuteForTestAsync(

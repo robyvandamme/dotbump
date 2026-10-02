@@ -12,12 +12,11 @@ namespace DotBump.Commands.BumpTools;
 internal class BumpToolsCommand(
     IAnsiConsole console,
     ILogger logger,
-    IBumpToolsHandler bumpToolsHandler)
+    IBumpToolsHandler bumpToolsHandler,
+    IToolManifestLocator toolManifestLocator)
     : AsyncCommand<BumpToolsSettings>
 {
     private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
-
-    private readonly string _defaultToolManifestPath = Path.Combine(Directory.GetCurrentDirectory(), "dotnet-tools.json");
 
     internal Task<int> ExecuteForTestAsync(
         CommandContext context,
@@ -44,9 +43,7 @@ internal class BumpToolsCommand(
             var nugetConfigPath = !string.IsNullOrWhiteSpace(settings.NuGetConfigPath)
                 ? Path.GetFullPath(settings.NuGetConfigPath)
                 : _defaultNugetConfigPath;
-            var toolManifestPath = !string.IsNullOrWhiteSpace(settings.ToolManifestPath)
-                ? Path.GetFullPath(settings.ToolManifestPath)
-                : _defaultToolManifestPath;
+            var toolManifestPath = toolManifestLocator.Resolve(settings.ToolManifestPath);
 
             logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("Output file : {OutputFile}", outputFile);

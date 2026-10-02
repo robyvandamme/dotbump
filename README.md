@@ -99,7 +99,8 @@ OPTIONS:
     -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`           
     -o, --output     Output file name. The name of the file to write the result to. The output format is json
     -c, --config     The nuget config file to use. Defaults to `./nuget.config`                             
-    -m, --manifest   The tools manifest file to update. Defaults to `./dotnet-tools.json`                   
+    -m, --manifest   The tools manifest file to update. Defaults to                                        
+                     `./dotnet-tools.json`, falling back to `./.config/dotnet-tools.json`                   
 
 ```
 

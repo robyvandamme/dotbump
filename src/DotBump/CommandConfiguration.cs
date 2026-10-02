@@ -52,6 +52,7 @@ internal static class CommandConfiguration
                 .WithExample(SdkCommandName, "--security-only", "true", "--debug", "true", "--logfile", "bump-sdk-log.txt");
 
             config.Settings.Registrar.Register<IToolFileService, ToolFileService>();
+            config.Settings.Registrar.Register<IToolManifestLocator, ToolManifestLocator>();
             config.Settings.Registrar.Register<INuGetConfigFileService, NuGetConfigFileService>();
             config.Settings.Registrar.Register<INuGetReleaseFinder, NuGetReleaseFinder>();
             config.Settings.Registrar.Register<IBumpToolsHandler, BumpToolsHandler>();
