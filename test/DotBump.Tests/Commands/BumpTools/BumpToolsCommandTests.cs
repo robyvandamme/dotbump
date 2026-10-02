@@ -4,7 +4,9 @@ using System.Text.Json;
 using DotBump.Commands;
 using DotBump.Commands.BumpTools;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
+using DotBump.Commands.BumpTools.Interfaces;
 using DotBump.NuGet;
+using DotBump.Reports;
 using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
@@ -39,7 +41,7 @@ public class BumpToolsCommandTests
             var clientFactory = new NuGetClientFactory(loggerMock);
             var releaseService = new NuGetReleaseFinder(loggerMock);
             var validator = new NuGetConfigValidator(loggerMock);
-            var handler = new BumpToolsHandler(fileService, nugetConfigFileService, clientFactory, releaseService, validator, loggerMock);
+            var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
             var command = new BumpToolsCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "tools" };
@@ -64,7 +66,7 @@ public class BumpToolsCommandTests
             var clientFactory = new NuGetClientFactory(loggerMock);
             var releaseService = new NuGetReleaseFinder(loggerMock);
             var validator = new NuGetConfigValidator(loggerMock);
-            var handler = new BumpToolsHandler(fileService, nugetConfigFileService, clientFactory, releaseService, validator, loggerMock);
+            var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
             var command = new BumpToolsCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "tools" };
@@ -92,7 +94,7 @@ public class BumpToolsCommandTests
             var clientFactory = new NuGetClientFactory(loggerMock);
             var releaseService = new NuGetReleaseFinder(loggerMock);
             var validator = new NuGetConfigValidator(loggerMock);
-            var handler = new BumpToolsHandler(fileService, nugetConfigFileService, clientFactory, releaseService, validator, loggerMock);
+            var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
             var command = new BumpToolsCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "tools" };
@@ -125,7 +127,7 @@ public class BumpToolsCommandTests
                 var clientFactory = new NuGetClientFactory(loggerMock);
                 var releaseService = new NuGetReleaseFinder(loggerMock);
                 var validator = new NuGetConfigValidator(loggerMock);
-                var handler = new BumpToolsHandler(fileService, nugetConfigFileService, clientFactory, releaseService, validator, loggerMock);
+                var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
                 var command = new BumpToolsCommand(testConsole, loggerMock, handler);
                 var arguments = new[] { "bump", "tools" };
@@ -182,8 +184,7 @@ public class BumpToolsCommandTests
                 var handler = new BumpToolsHandler(
                     fileService,
                     nugetConfigFileService,
-                    clientFactory,
-                    releaseService,
+                    new PackageVersionResolver(clientFactory, releaseService, loggerMock),
                     validator,
                     loggerMock);
 
@@ -205,6 +206,34 @@ public class BumpToolsCommandTests
             {
                 File.Delete(tempFile);
             }
+        }
+
+        [Fact]
+        public async Task With_Markup_Unsafe_Config_Path_Returns_0_And_Writes_Literal_Path()
+        {
+            using var testConsole = new TestConsole().Width(500);
+            var handler = new Mock<IBumpToolsHandler>();
+            handler
+                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>()))
+                .ReturnsAsync(new BumpReport(
+                    new ToolsManifest
+                    {
+                        Version = 1,
+                        IsRoot = true,
+                        Tools = new Dictionary<string, ToolManifestEntry>(),
+                    },
+                    BumpType.Minor));
+            var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
+            var context = new CommandContext(["bump", "tools"], new Mock<IRemainingArguments>().Object, "tools", null);
+
+            var result = await command.ExecuteForTestAsync(
+                context,
+                new BumpToolsSettings { NuGetConfigPath = "./[draft]/nuget.config" },
+                CancellationToken.None);
+
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => testConsole.Output.ShouldContain("[draft]"));
         }
 
         private static void ConfigurePrivateToolsManifest()

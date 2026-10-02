@@ -1,8 +1,11 @@
 // Copyright © Roby Van Damme.
 
 using System.Text.Json;
+using DotBump.Commands;
 using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.DataModel;
+using DotBump.Commands.BumpSdk.Interfaces;
+using DotBump.Reports;
 using DotBump.Tests.Commands.BumpSdk.Fakes;
 using DotBump.Tests.TestHelpers;
 using Moq;
@@ -249,6 +252,26 @@ public class BumpSdkCommandTests
                 () => globalJson.Version.ShouldBe("7.0.410"),
                 () => testConsole.Output.ShouldContain("SDK version bumped"),
                 () => testConsole.Output.ShouldContain("sdk: 7.0.400 > 7.0.410"));
+        }
+
+        [Fact]
+        public async Task With_Markup_Unsafe_GlobalJson_Path_Returns_0_And_Writes_Literal_Path()
+        {
+            using var testConsole = new TestConsole().Width(500);
+            var handler = new Mock<IBumpSdkHandler>();
+            handler
+                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .ReturnsAsync(new BumpReport(new Sdk("8.0.405", "disable"), BumpType.Minor));
+            var command = new BumpSdkCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
+
+            var result = await command.ExecuteForTestAsync(
+                new CommandContext(["bump", "sdk"], new Mock<IRemainingArguments>().Object, "sdk", null),
+                new BumpSdkSettings { GlobalJsonPath = "./[draft]/global.json" },
+                CancellationToken.None);
+
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => testConsole.Output.ShouldContain("[draft]"));
         }
     }
 }

@@ -1,0 +1,488 @@
+// Copyright © Roby Van Damme.
+
+using System.Text;
+using System.Xml;
+using System.Xml.Linq;
+using DotBump.Commands.BumpPackages.DataModel;
+using DotBump.Commands.BumpPackages.Interfaces;
+using DotBump.Common;
+using Serilog;
+
+namespace DotBump.Commands.BumpPackages;
+
+internal sealed class PackageFileService(ILogger logger) : IPackageFileService
+{
+    private const string DirectoryPackagesPropsFileName = "Directory.Packages.props";
+    private const string DirectoryBuildPropsFileName = "Directory.Build.props";
+    private const string DirectoryBuildTargetsFileName = "Directory.Build.targets";
+
+    private static readonly string[] s_projectExtensions = [".csproj", ".fsproj", ".vbproj"];
+    private static readonly string[] s_excludedDirectories = ["bin", "obj", ".git", ".vs", "node_modules"];
+
+    private static readonly string[] s_packageElementNames =
+        ["PackageReference", "PackageVersion", "GlobalPackageReference"];
+
+    public PackageManifest GetPackageManifest(string repositoryPath)
+    {
+        logger.MethodStart(nameof(PackageFileService), nameof(GetPackageManifest), repositoryPath);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(repositoryPath);
+
+        var rootPath = Path.GetFullPath(repositoryPath);
+        if (!Directory.Exists(rootPath))
+        {
+            throw new DotBumpException($"Repository directory '{rootPath}' does not exist.");
+        }
+
+        var manifest = new PackageManifest();
+
+        foreach (var filePath in EnumerateCandidateFiles(rootPath))
+        {
+            ReadPackageVersions(filePath, manifest);
+        }
+
+        logger.MethodReturn(nameof(PackageFileService), nameof(GetPackageManifest), manifest);
+
+        return manifest;
+    }
+
+    public void SavePackageManifest(PackageManifest manifest)
+    {
+        logger.MethodStart(nameof(PackageFileService), nameof(SavePackageManifest));
+
+        ArgumentNullException.ThrowIfNull(manifest);
+
+        foreach (var filePath in manifest.ChangedFiles)
+        {
+            var text = manifest.GetFileText(filePath);
+            if (text == null)
+            {
+                continue;
+            }
+
+            var updatedText = ApplyChanges(manifest, filePath, text);
+            WriteText(filePath, updatedText);
+            logger.Debug("Updated package versions in {File}", filePath);
+        }
+
+        logger.MethodReturn(nameof(PackageFileService), nameof(SavePackageManifest));
+    }
+
+    internal static int GetOffset(int[] lineStartOffsets, int lineNumber, int linePosition)
+    {
+        var lineIndex = lineNumber - 1;
+        if (lineIndex < 0 || lineIndex >= lineStartOffsets.Length)
+        {
+            return -1;
+        }
+
+        return lineStartOffsets[lineIndex] + (linePosition - 1);
+    }
+
+    internal static (int Start, int Length) GetVersionSpan(string text, int[] lineStartOffsets, XObject source)
+    {
+        return source switch
+        {
+            XAttribute attribute => GetAttributeVersionSpan(text, lineStartOffsets, attribute),
+            XElement element => GetElementVersionSpan(text, lineStartOffsets, element),
+            _ => (-1, 0),
+        };
+    }
+
+    private static bool IsCandidateFile(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+
+        if (fileName.Equals(DirectoryPackagesPropsFileName, StringComparison.OrdinalIgnoreCase)
+            || fileName.Equals(DirectoryBuildPropsFileName, StringComparison.OrdinalIgnoreCase)
+            || fileName.Equals(DirectoryBuildTargetsFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return s_projectExtensions.Contains(Path.GetExtension(filePath), StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static PackageSourceKind GetSourceKind(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+
+        if (fileName.Equals(DirectoryPackagesPropsFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            return PackageSourceKind.CentralPackageManagement;
+        }
+
+        if (fileName.Equals(DirectoryBuildPropsFileName, StringComparison.OrdinalIgnoreCase)
+            || fileName.Equals(DirectoryBuildTargetsFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            return PackageSourceKind.SharedMsBuild;
+        }
+
+        return PackageSourceKind.Project;
+    }
+
+    private static string? ReadAttribute(XElement element, string attributeName)
+    {
+        return element.Attributes()
+            .FirstOrDefault(attribute => attribute.Name.LocalName.Equals(attributeName, StringComparison.Ordinal))
+            ?.Value;
+    }
+
+    // The returned version is the XML-decoded value (XAttribute.Value / XElement.Value). The matching
+    // span captured by GetVersionSpan addresses the raw text instead, so the two can legitimately
+    // differ for entity-encoded values (e.g. "13&#46;0&#46;1" decodes to "13.0.1"). This is why a
+    // decoded-vs-raw equality guard was deliberately removed (commit eb01a576) and must not be
+    // reintroduced.
+    private static (string? Version, XObject? Source) ReadVersion(XElement element)
+    {
+        var attribute = element.Attributes()
+                            .FirstOrDefault(attribute =>
+                                attribute.Name.LocalName.Equals("Version", StringComparison.Ordinal))
+                        ?? element.Attributes()
+                            .FirstOrDefault(attribute => attribute.Name.LocalName.Equals(
+                                "VersionOverride",
+                                StringComparison.Ordinal));
+
+        if (attribute != null)
+        {
+            return (attribute.Value.Trim(), attribute);
+        }
+
+        var childElement = element.Elements()
+            .FirstOrDefault(child => child.Name.LocalName.Equals("Version", StringComparison.Ordinal));
+
+        return childElement != null
+            ? (childElement.Value.Trim(), childElement)
+            : (null, null);
+    }
+
+    private static bool IsSupportedVersion(string version)
+    {
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            return false;
+        }
+
+        if (version.Contains("$(", StringComparison.Ordinal) || version.Contains('*'))
+        {
+            return false;
+        }
+
+        return version.IndexOfAny(['[', ']', '(', ')', ',']) < 0;
+    }
+
+    private static string ReadText(string filePath)
+    {
+        var bytes = File.ReadAllBytes(filePath);
+        var encoding = DetectEncoding(bytes);
+        var preambleLength = encoding.GetPreamble().Length;
+
+        return encoding.GetString(bytes, preambleLength, bytes.Length - preambleLength);
+    }
+
+    private static void WriteText(string filePath, string text)
+    {
+        // The encoding is detected from the original bytes and carries the BOM, so the file is
+        // written back with the same encoding and byte order mark it had before.
+        var encoding = DetectEncoding(File.ReadAllBytes(filePath));
+        File.WriteAllText(filePath, text, encoding);
+    }
+
+    private static Encoding DetectEncoding(byte[] bytes)
+    {
+        if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+        {
+            return new UTF8Encoding(true);
+        }
+
+        if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
+        {
+            return new UnicodeEncoding(false, true);
+        }
+
+        if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+        {
+            return new UnicodeEncoding(true, true);
+        }
+
+        return new UTF8Encoding(false);
+    }
+
+    private static int[] GetLineStartOffsets(string text)
+    {
+        var offsets = new List<int> { 0 };
+
+        for (var i = 0; i < text.Length; i++)
+        {
+            var character = text[i];
+            var isLineBreak = character == '\n'
+                              || (character == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n'));
+
+            if (isLineBreak)
+            {
+                offsets.Add(i + 1);
+            }
+        }
+
+        return offsets.ToArray();
+    }
+
+    // The span covers the raw attribute value exactly as written between the quotes, which may be
+    // entity-encoded. It is intentionally not required to equal the decoded version stored on the
+    // entry (see ReadVersion).
+    private static (int Start, int Length) GetAttributeVersionSpan(
+        string text,
+        int[] lineStartOffsets,
+        XAttribute attribute)
+    {
+        var lineInfo = (IXmlLineInfo)attribute;
+        if (!lineInfo.HasLineInfo())
+        {
+            return (-1, 0);
+        }
+
+        var attributeStart = GetOffset(lineStartOffsets, lineInfo.LineNumber, lineInfo.LinePosition);
+        if (attributeStart < 0 || attributeStart > text.Length)
+        {
+            return (-1, 0);
+        }
+
+        var equalsIndex = text.IndexOf('=', attributeStart);
+        if (equalsIndex < 0)
+        {
+            return (-1, 0);
+        }
+
+        var quoteIndex = equalsIndex + 1;
+        while (quoteIndex < text.Length && char.IsWhiteSpace(text[quoteIndex]))
+        {
+            quoteIndex++;
+        }
+
+        if (quoteIndex >= text.Length || (text[quoteIndex] != '"' && text[quoteIndex] != '\''))
+        {
+            return (-1, 0);
+        }
+
+        var quote = text[quoteIndex];
+        var valueStart = quoteIndex + 1;
+        var valueEnd = text.IndexOf(quote, valueStart);
+
+        return valueEnd < 0 ? (-1, 0) : TrimSpan(text, valueStart, valueEnd);
+    }
+
+    private static (int Start, int Length) GetElementVersionSpan(
+        string text,
+        int[] lineStartOffsets,
+        XElement versionElement)
+    {
+        // The version is the text node of the <Version> element; its line info points at the text
+        // itself rather than the element's start tag, so attributes or comments cannot be matched.
+        var textNode = versionElement.Nodes().OfType<XText>().FirstOrDefault();
+        if (textNode is not IXmlLineInfo textLineInfo || !textLineInfo.HasLineInfo())
+        {
+            return (-1, 0);
+        }
+
+        var valueStart = GetOffset(lineStartOffsets, textLineInfo.LineNumber, textLineInfo.LinePosition);
+        if (valueStart < 0 || valueStart > text.Length)
+        {
+            return (-1, 0);
+        }
+
+        var valueEnd = text.IndexOf('<', valueStart);
+
+        return valueEnd > valueStart ? TrimSpan(text, valueStart, valueEnd) : (-1, 0);
+    }
+
+    private static (int Start, int Length) TrimSpan(string text, int start, int end)
+    {
+        while (start < end && char.IsWhiteSpace(text[start]))
+        {
+            start++;
+        }
+
+        while (end > start && char.IsWhiteSpace(text[end - 1]))
+        {
+            end--;
+        }
+
+        return end > start ? (start, end - start) : (-1, 0);
+    }
+
+    private IEnumerable<string> EnumerateCandidateFiles(string rootPath)
+    {
+        var pendingDirectories = new Stack<string>();
+        pendingDirectories.Push(rootPath);
+
+        while (pendingDirectories.Count > 0)
+        {
+            var directory = pendingDirectories.Pop();
+
+            foreach (var subDirectory in Directory.EnumerateDirectories(directory))
+            {
+                if (s_excludedDirectories.Contains(Path.GetFileName(subDirectory), StringComparer.OrdinalIgnoreCase)
+                    || IsReparsePoint(subDirectory))
+                {
+                    continue;
+                }
+
+                pendingDirectories.Push(subDirectory);
+            }
+
+            foreach (var filePath in Directory.EnumerateFiles(directory)
+                         .Where(IsCandidateFile)
+                         .Where(filePath => !IsReparsePoint(filePath)))
+            {
+                yield return filePath;
+            }
+        }
+    }
+
+    private bool IsReparsePoint(string path)
+    {
+        try
+        {
+            return File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // If the entry cannot be inspected (vanished or inaccessible), skip it rather than abort the scan.
+            logger.Debug(e, "Skipping {Path} because its attributes could not be read", path);
+            return true;
+        }
+    }
+
+    private void ReadPackageVersions(string filePath, PackageManifest manifest)
+    {
+        var text = ReadText(filePath);
+
+        XDocument document;
+        try
+        {
+            document = XDocument.Load(
+                new StringReader(text),
+                LoadOptions.PreserveWhitespace | LoadOptions.SetLineInfo);
+        }
+        catch (XmlException e)
+        {
+            throw new DotBumpException($"Failed to read '{filePath}'.", e);
+        }
+
+        var root = document.Root;
+        if (root == null)
+        {
+            return;
+        }
+
+        var sourceKind = GetSourceKind(filePath);
+        var lineStartOffsets = GetLineStartOffsets(text);
+        var packageFound = false;
+
+        foreach (var element in root.Descendants())
+        {
+            var elementName = element.Name.LocalName;
+            if (!s_packageElementNames.Contains(elementName))
+            {
+                continue;
+            }
+
+            var packageId = ReadAttribute(element, "Include") ?? ReadAttribute(element, "Update");
+            if (string.IsNullOrWhiteSpace(packageId))
+            {
+                continue;
+            }
+
+            var (version, versionSource) = ReadVersion(element);
+
+            if (version == null || versionSource == null)
+            {
+                logger.Debug(
+                    "Skipping {Element} {PackageId} in {File} because it has no version",
+                    elementName,
+                    packageId,
+                    filePath);
+                continue;
+            }
+
+            if (!IsSupportedVersion(version))
+            {
+                var warning =
+                    $"Skipping {elementName} '{packageId}' in '{filePath}' because version '{version}' is not supported.";
+                logger.Warning("{Warning}", warning);
+                manifest.AddWarning(warning);
+                continue;
+            }
+
+            var (versionStart, versionLength) = GetVersionSpan(text, lineStartOffsets, versionSource);
+            if (versionStart < 0)
+            {
+                var warning =
+                    $"Skipping {elementName} '{packageId}' in '{filePath}' because its version value could not be located.";
+                logger.Warning("{Warning}", warning);
+                manifest.AddWarning(warning);
+                continue;
+            }
+
+            manifest.Add(
+                new PackageVersionEntry
+                {
+                    PackageId = packageId,
+                    OriginalVersion = version,
+                    Version = version,
+                    FilePath = filePath,
+                    SourceKind = sourceKind,
+                    ElementName = elementName,
+                    VersionStart = versionStart,
+                    VersionLength = versionLength,
+                });
+
+            packageFound = true;
+        }
+
+        if (packageFound)
+        {
+            manifest.RegisterFileText(filePath, text);
+        }
+    }
+
+    private string ApplyChanges(PackageManifest manifest, string filePath, string text)
+    {
+        var edits = new List<(int Start, int Length, string NewVersion)>();
+
+        foreach (var package in manifest.Packages)
+        {
+            if (!string.Equals(package.FilePath, filePath, StringComparison.Ordinal)
+                || string.Equals(package.Version, package.OriginalVersion, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // Bounds check only: the span content is intentionally not compared to OriginalVersion,
+            // because the span covers the raw (possibly entity-encoded) text while OriginalVersion
+            // holds the decoded value (see ReadVersion). Content drift is impossible here anyway —
+            // `text` is the same captured string the span was computed from (GetFileText), so a wrong
+            // span can only come from capture, which now fails fast at read time (review H2).
+            if (package.VersionStart < 0
+                || package.VersionLength <= 0
+                || package.VersionStart + package.VersionLength > text.Length)
+            {
+                var warning =
+                    $"Skipping version '{package.OriginalVersion}' for '{package.PackageId}' in '{filePath}' because its recorded span is invalid.";
+                logger.Warning("{Warning}", warning);
+                manifest.AddWarning(warning);
+                continue;
+            }
+
+            edits.Add((package.VersionStart, package.VersionLength, package.Version));
+        }
+
+        // Apply from the end of the file backwards so earlier offsets remain valid.
+        foreach (var edit in edits.OrderByDescending(edit => edit.Start))
+        {
+            text = text.Remove(edit.Start, edit.Length).Insert(edit.Start, edit.NewVersion);
+        }
+
+        return text;
+    }
+}

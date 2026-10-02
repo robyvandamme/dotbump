@@ -46,7 +46,7 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
             logger.Debug("Security updates only: {Security}", securityOnly);
 
             console.MarkupLine(
-                $"Bumping SDK with settings: type={bumpType}, file={globalJsonPath}, output: {outputFile ?? "none"}, securityOnly: {securityOnly}");
+                $"Bumping SDK with settings: type={bumpType}, file={Markup.Escape(globalJsonPath)}, output: {Markup.Escape(outputFile ?? "none")}, securityOnly: {securityOnly}");
 
             var bumpReport = await bumpSdkHandler.HandleAsync(bumpType, globalJsonPath, securityOnly)
                 .ConfigureAwait(false);
@@ -65,7 +65,7 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
         catch (Exception e)
 #pragma warning restore CA1031
         {
-            logger.Error(e, "An error occured while trying to bump the sdk");
+            logger.Error(e, "An error occurred while trying to bump the sdk");
             console.WriteException(e, ExceptionFormats.ShortenEverything);
             logger.MethodReturn(nameof(BumpSdkCommand), nameof(ExecuteAsync));
             return 1;
@@ -79,10 +79,10 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
     {
         if (bumpReport.Errors.Any())
         {
-            console.MarkupLine($"An error occured bumping the SDK version.");
+            console.MarkupLine($"An error occurred bumping the SDK version.");
             foreach (var bumpReportError in bumpReport.Errors)
             {
-                console.MarkupLine(bumpReportError);
+                console.MarkupLine(Markup.Escape(bumpReportError));
             }
         }
         else
@@ -98,7 +98,7 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
                 {
                     if (bumpResult.WasBumped)
                     {
-                        console.MarkupLine(bumpResult.ToString());
+                        console.MarkupLine(Markup.Escape(bumpResult.ToString()));
                     }
                 }
             }

@@ -29,8 +29,11 @@ xUnit v2, Shouldly, Moq (Loose), Spectre.Console.Testing
 * File System & Isolation: Keep disk-touching tests isolated. Use `LocalDirectory("./temp")` and helpers
   (`EnsureFileCreated`, `EnsureFileDeleted`) or ensure generated output files are deleted before/after execution. Never
   mutate permanent repo files.
-* Test Data & Fixtures: Use offline JSON files under `Data/` (e.g., `Data/NuGet/*`, `Data/global.json`) instead of live
-  network calls. Refer to `TESTS.md` for documented test cases, data feeds, and pinned tool versions.
+* Test Data & Fixtures: Prefer offline JSON files under `Data/` (e.g., `Data/NuGet/*`, `Data/global.json`) over live
+  network calls, and use a fake `HttpMessageHandler` or `INuGetClient` when testing HTTP behaviour. Real-feed tests are
+  acceptable when the behaviour is reproducible and the test will not be flaky; the `bumpTools` command tests are an
+  example, running end to end against the older, pinned tool versions documented in `TESTS.md`. Refer to `TESTS.md` for
+  documented test cases, data feeds, and pinned tool versions.
 
 ## Canonical Examples
 

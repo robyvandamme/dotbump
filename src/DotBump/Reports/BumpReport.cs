@@ -2,11 +2,14 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotBump.Commands;
+using DotBump.Commands.BumpPackages.DataModel;
 using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
+using DotBump.Common;
 
 namespace DotBump.Reports;
 
@@ -14,6 +17,7 @@ internal class BumpReport
 {
     private readonly List<BumpResult> _results = new();
     private readonly List<string> _errors = new();
+    private readonly List<string> _warnings = new();
 
     public BumpReport(ToolsManifest toolsManifest, BumpType bumpType)
     {
@@ -32,6 +36,20 @@ internal class BumpReport
         _results.Add(new BumpResult("sdk", sdk.Version));
     }
 
+    public BumpReport(PackageManifest packageManifest, BumpType bumpType)
+    {
+        ArgumentNullException.ThrowIfNull(packageManifest);
+
+        CommandName = "packages";
+        BumpType = bumpType;
+
+        foreach (var packageId in packageManifest.GetPackageIds())
+        {
+            _results.Add(
+                new BumpResult(packageId, GetReferenceVersion(packageManifest, packageId, useCurrentVersion: false)));
+        }
+    }
+
     public string CommandName { get; init; }
 
     public BumpType BumpType { get; init; }
@@ -41,6 +59,8 @@ internal class BumpReport
     public IReadOnlyCollection<BumpResult> Results => _results;
 
     public IReadOnlyCollection<string> Errors => _errors;
+
+    public IReadOnlyCollection<string> Warnings => _warnings;
 
     [JsonIgnore]
     public bool HasChanges
@@ -74,6 +94,24 @@ internal class BumpReport
         TimeStamp = DateTime.UtcNow;
     }
 
+    public void ReportChanges(PackageManifest packageManifest)
+    {
+        ArgumentNullException.ThrowIfNull(packageManifest);
+
+        foreach (var packageId in packageManifest.GetPackageIds())
+        {
+            var reportItem = _results.FirstOrDefault(o => o.Id.Equals(
+                packageId,
+                StringComparison.OrdinalIgnoreCase));
+            if (reportItem != null)
+            {
+                reportItem.NewVersion = GetReferenceVersion(packageManifest, packageId, useCurrentVersion: true);
+            }
+        }
+
+        TimeStamp = DateTime.UtcNow;
+    }
+
     public void ReportErrors(List<ValidationResult> validationErrors)
     {
         foreach (var error in validationErrors)
@@ -84,6 +122,14 @@ internal class BumpReport
             }
         }
 
+        TimeStamp = DateTime.UtcNow;
+    }
+
+    public void ReportWarnings(IReadOnlyCollection<string> warnings)
+    {
+        ArgumentNullException.ThrowIfNull(warnings);
+
+        _warnings.AddRange(warnings);
         TimeStamp = DateTime.UtcNow;
     }
 
@@ -101,6 +147,11 @@ internal class BumpReport
             {
                 WriteIndented = true,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+
+                // Keeps readable characters such as apostrophes (') as-is instead of the default
+                // JavaScriptEncoder.Default escaping them to \u0027. The report is consumed as JSON,
+                // not injected into HTML, so relaxed escaping is safe here.
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                 Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
             };
             await File.WriteAllTextAsync(
@@ -108,5 +159,31 @@ internal class BumpReport
                 JsonSerializer.Serialize(this, options),
                 new UTF8Encoding());
         }
+    }
+
+    /// <summary>
+    /// Gets the reference version for a package: the highest semantic version across all its
+    /// occurrences, falling back to the first occurrence when none is a valid semantic version.
+    /// </summary>
+    private static string GetReferenceVersion(
+        PackageManifest packageManifest,
+        string packageId,
+        bool useCurrentVersion)
+    {
+        var entries = packageManifest.Packages
+            .Where(package => string.Equals(package.PackageId, packageId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var versions = entries
+            .Select(entry => new SemanticVersion(useCurrentVersion ? entry.Version : entry.OriginalVersion))
+            .Where(version => version.IsValid)
+            .ToList();
+
+        if (versions.Count > 0)
+        {
+            return versions.OrderByDescending(version => version).First().Version;
+        }
+
+        return useCurrentVersion ? entries[0].Version : entries[0].OriginalVersion;
     }
 }

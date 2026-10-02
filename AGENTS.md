@@ -145,7 +145,8 @@ Every `.cs` file must begin with the copyright header without a year:
     - Keep disk operations isolated using `LocalDirectory("./temp")` or cleanup helpers; never mutate repo files in
       place.
 - **Test Data**: Add mock JSON payloads to `test/DotBump.Tests/Data/` (configured with `CopyToOutputDirectory`) rather
-  than making network calls.
+  than making network calls. Real-feed tests are acceptable when the behaviour is reproducible and not flaky; the
+  `bumpTools` command tests are a documented example (see `test/DotBump.Tests/TESTS.md`).
 - See `test/DotBump.Tests/AGENTS.md` for complete patterns and canonical examples, and `test/DotBump.Tests/TESTS.md` for
   documented test cases and pinned tool versions.
 
