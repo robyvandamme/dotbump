@@ -67,6 +67,32 @@ public class BumpReportTests
                 File.Delete(path);
             }
         }
+
+        [Fact]
+        public async Task With_Apostrophes_Serializes_Without_Unicode_Escaping()
+        {
+            const string warning =
+                "Skipping 'Other.Package' because version '1.0.*' is not supported.";
+            var report = CreateReport();
+            report.ReportWarnings([warning]);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "report.json");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                var json = await File.ReadAllTextAsync(path);
+                json.ShouldSatisfyAllConditions(
+                    () => json.ShouldContain("'Other.Package'"),
+                    () => json.ShouldNotContain("\\u0027"));
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
     }
 
     private static BumpReport CreateReport()

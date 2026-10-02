@@ -2,6 +2,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotBump.Commands;
@@ -146,6 +147,11 @@ internal class BumpReport
             {
                 WriteIndented = true,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+
+                // Keeps readable characters such as apostrophes (') as-is instead of the default
+                // JavaScriptEncoder.Default escaping them to \u0027. The report is consumed as JSON,
+                // not injected into HTML, so relaxed escaping is safe here.
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                 Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
             };
             await File.WriteAllTextAsync(
