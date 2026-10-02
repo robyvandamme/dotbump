@@ -2,6 +2,7 @@
 
 using DotBump.Commands.BumpTools;
 using DotBump.Common;
+using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
 using Shouldly;
@@ -12,6 +13,10 @@ public class ToolManifestLocatorTests
 {
     public class Resolve
     {
+        private static readonly LocalDirectory s_currentDirectory = new("./");
+
+        private static readonly LocalDirectory s_configDirectory = new("./.config");
+
         [Fact]
         public void With_Explicit_Path_Returns_Full_Path()
         {
@@ -25,13 +30,11 @@ public class ToolManifestLocatorTests
         [Fact]
         public void With_Root_Manifest_Present_Returns_Root_Manifest()
         {
-            var currentDirectory = Directory.GetCurrentDirectory();
-            var rootManifest = Path.Combine(currentDirectory, "dotnet-tools.json");
-            var legacyManifest = Path.Combine(currentDirectory, ".config", "dotnet-tools.json");
+            var rootManifest = Path.Combine(s_currentDirectory.AbsolutePath, "dotnet-tools.json");
+            var legacyManifest = Path.Combine(s_configDirectory.AbsolutePath, "dotnet-tools.json");
 
-            File.WriteAllText(rootManifest, "{}");
-            Directory.CreateDirectory(Path.GetDirectoryName(legacyManifest)!);
-            File.WriteAllText(legacyManifest, "{}");
+            s_currentDirectory.EnsureFileCreated("dotnet-tools.json", "{}");
+            s_configDirectory.EnsureFileCreated("dotnet-tools.json", "{}");
 
             try
             {
@@ -43,21 +46,18 @@ public class ToolManifestLocatorTests
             }
             finally
             {
-                File.Delete(rootManifest);
-                File.Delete(legacyManifest);
+                s_currentDirectory.EnsureFileDeleted("dotnet-tools.json");
+                s_configDirectory.EnsureFileDeleted("dotnet-tools.json");
             }
         }
 
         [Fact]
         public void With_Only_Legacy_Manifest_Present_Returns_Legacy_Manifest()
         {
-            var currentDirectory = Directory.GetCurrentDirectory();
-            var rootManifest = Path.Combine(currentDirectory, "dotnet-tools.json");
-            var legacyManifest = Path.Combine(currentDirectory, ".config", "dotnet-tools.json");
+            var legacyManifest = Path.Combine(s_configDirectory.AbsolutePath, "dotnet-tools.json");
 
-            File.Delete(rootManifest);
-            Directory.CreateDirectory(Path.GetDirectoryName(legacyManifest)!);
-            File.WriteAllText(legacyManifest, "{}");
+            s_currentDirectory.EnsureFileDeleted("dotnet-tools.json");
+            s_configDirectory.EnsureFileCreated("dotnet-tools.json", "{}");
 
             try
             {
@@ -69,19 +69,15 @@ public class ToolManifestLocatorTests
             }
             finally
             {
-                File.Delete(legacyManifest);
+                s_configDirectory.EnsureFileDeleted("dotnet-tools.json");
             }
         }
 
         [Fact]
         public void With_No_Manifest_Present_Throws_DotBumpException()
         {
-            var currentDirectory = Directory.GetCurrentDirectory();
-            var rootManifest = Path.Combine(currentDirectory, "dotnet-tools.json");
-            var legacyManifest = Path.Combine(currentDirectory, ".config", "dotnet-tools.json");
-
-            File.Delete(rootManifest);
-            File.Delete(legacyManifest);
+            s_currentDirectory.EnsureFileDeleted("dotnet-tools.json");
+            s_configDirectory.EnsureFileDeleted("dotnet-tools.json");
 
             var locator = new ToolManifestLocator(new Mock<ILogger>().Object);
 

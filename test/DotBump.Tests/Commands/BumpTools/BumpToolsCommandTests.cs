@@ -24,6 +24,10 @@ public class BumpToolsCommandTests
 
         private static readonly LocalDirectory s_tempDirectory = new("./temp");
 
+        private static readonly LocalDirectory s_currentDirectory = new("./");
+
+        private static readonly LocalDirectory s_configDirectory = new("./.config");
+
         private static readonly string s_toolManifestPath = Path.Combine(s_tempDirectory.AbsolutePath, "dotnet-tools.json");
 
         private static readonly JsonSerializerOptions s_serializerOptions = new()
@@ -35,11 +39,8 @@ public class BumpToolsCommandTests
         [Fact]
         public async Task With_Missing_Tools_Manifest_Returns_1_And_Reports_Locator_Error()
         {
-            var currentDirectory = Directory.GetCurrentDirectory();
-            var rootManifest = Path.Combine(currentDirectory, "dotnet-tools.json");
-            var legacyManifest = Path.Combine(currentDirectory, ".config", "dotnet-tools.json");
-            File.Delete(rootManifest);
-            File.Delete(legacyManifest);
+            s_currentDirectory.EnsureFileDeleted("dotnet-tools.json");
+            s_configDirectory.EnsureFileDeleted("dotnet-tools.json");
 
             var loggerMock = new Mock<ILogger>().Object;
             using var testConsole = new TestConsole();
