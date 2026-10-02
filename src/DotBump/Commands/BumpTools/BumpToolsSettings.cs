@@ -23,6 +23,10 @@ internal class BumpToolsSettings : BumpSettings
     [CommandOption("-c|--config")]
     public string? NuGetConfigPath { get; init; }
 
+    [Description("The tools manifest file to update. Defaults to `./dotnet-tools.json`.")]
+    [CommandOption("-m|--manifest")]
+    public string? ToolManifestPath { get; init; }
+
     public override ValidationResult Validate()
     {
         // If a config file is passed, verify it exists before passing it on.
@@ -32,6 +36,16 @@ internal class BumpToolsSettings : BumpSettings
             if (!File.Exists(normalizedPath))
             {
                 return ValidationResult.Error($"The file {NuGetConfigPath} does not exist.");
+            }
+        }
+
+        // If a manifest file is passed, verify it exists before passing it on.
+        if (!string.IsNullOrWhiteSpace(ToolManifestPath))
+        {
+            var normalizedPath = Path.GetFullPath(ToolManifestPath);
+            if (!File.Exists(normalizedPath))
+            {
+                return ValidationResult.Error($"The file {ToolManifestPath} does not exist.");
             }
         }
 

@@ -87,6 +87,7 @@ USAGE:
 EXAMPLES:
     dotnet dotbump tools
     dotnet dotbump tools --type patch
+    dotnet dotbump tools --manifest ./other/dotnet-tools.json
     dotnet dotbump tools --config ./custom-nuget.config --output bump-tools-report.json
     dotnet dotbump tools --debug true --logfile bump-tools-log.txt
 
@@ -97,7 +98,8 @@ OPTIONS:
         --logfile    The file to send the log output to                                                      
     -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`           
     -o, --output     Output file name. The name of the file to write the result to. The output format is json
-    -c, --config     The nuget config file to use. Defaults to `./nuget.config`     
+    -c, --config     The nuget config file to use. Defaults to `./nuget.config`                             
+    -m, --manifest   The tools manifest file to update. Defaults to `./dotnet-tools.json`                   
 
 ```
 

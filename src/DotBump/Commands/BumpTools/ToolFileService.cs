@@ -16,21 +16,19 @@ internal class ToolFileService(ILogger logger) : IToolFileService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    private readonly string _defaultToolManifestPath = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        ".config",
-        "dotnet-tools.json");
-
-    public ToolsManifest GetToolsManifest()
+    public ToolsManifest GetToolsManifest(string manifestPath)
     {
         logger.MethodStart(nameof(ToolFileService), nameof(GetToolsManifest));
 
-        if (!File.Exists(_defaultToolManifestPath))
+        ArgumentException.ThrowIfNullOrWhiteSpace(manifestPath);
+
+        var fullPath = Path.GetFullPath(manifestPath);
+        if (!File.Exists(fullPath))
         {
-            throw new FileNotFoundException($"Tool manifest file not found at path: {_defaultToolManifestPath}");
+            throw new FileNotFoundException($"Tool manifest file not found at path: {fullPath}");
         }
 
-        var json = File.ReadAllText(_defaultToolManifestPath);
+        var json = File.ReadAllText(fullPath);
         var manifest = JsonSerializer.Deserialize<ToolsManifest>(json, s_serializerOptions);
 
         if (manifest == null)
@@ -44,25 +42,28 @@ internal class ToolFileService(ILogger logger) : IToolFileService
     }
 
     /// <summary>
-    /// Saves the default tool manifest.
+    /// Saves the tool manifest.
     /// </summary>
     /// <param name="manifest">The updated tools manifest.</param>
+    /// <param name="manifestPath">The path of the tools manifest to save.</param>
     /// <exception cref="DotBumpException">If the manifest can not be found.</exception>
-    public void SaveToolsManifest(ToolsManifest manifest)
+    public void SaveToolsManifest(ToolsManifest manifest, string manifestPath)
     {
         logger.MethodStart(nameof(ToolFileService), nameof(SaveToolsManifest));
 
         ArgumentNullException.ThrowIfNull(manifest);
+        ArgumentException.ThrowIfNullOrWhiteSpace(manifestPath);
 
+        var fullPath = Path.GetFullPath(manifestPath);
         var json = JsonSerializer.Serialize(manifest, s_serializerOptions);
 
-        var directoryPath = Path.GetDirectoryName(_defaultToolManifestPath);
+        var directoryPath = Path.GetDirectoryName(fullPath);
         if (!Directory.Exists(directoryPath))
         {
-            throw new DotBumpException($"Tools file directory {_defaultToolManifestPath} not found");
+            throw new DotBumpException($"Tools file directory {fullPath} not found");
         }
 
-        File.WriteAllText(_defaultToolManifestPath, json);
+        File.WriteAllText(fullPath, json);
 
         logger.MethodReturn(nameof(ToolFileService), nameof(SaveToolsManifest));
     }

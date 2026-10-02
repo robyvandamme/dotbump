@@ -6,5 +6,5 @@ namespace DotBump.Commands.BumpTools.Interfaces;
 
 internal interface IBumpToolsHandler
 {
-    Task<BumpReport> HandleAsync(BumpType bumpType, string nugetConfigPath);
+    Task<BumpReport> HandleAsync(BumpType bumpType, string nugetConfigPath, string toolManifestPath);
 }

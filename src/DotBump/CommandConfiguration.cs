@@ -66,6 +66,7 @@ internal static class CommandConfiguration
                     "Use the 'patch' type option to bump the tools to the latest patch version for the current minor version. ")
                 .WithExample(ToolsCommandName)
                 .WithExample(ToolsCommandName, "--type", "patch")
+                .WithExample(ToolsCommandName, "--manifest", "./other/dotnet-tools.json")
                 .WithExample(ToolsCommandName, "--config", "./custom-nuget.config", "--output", "bump-tools-report.json")
                 .WithExample(ToolsCommandName, "--debug", "true", "--logfile", "bump-tools-log.txt");
 
