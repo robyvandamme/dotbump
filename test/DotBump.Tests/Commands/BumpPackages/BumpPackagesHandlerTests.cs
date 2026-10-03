@@ -73,6 +73,21 @@ public class BumpPackagesHandlerTests
         }
 
         [Fact]
+        public async Task With_Resolved_Version_Differing_Only_In_Casing_Does_Not_Bump_Or_Save()
+        {
+            var manifest = CreateManifest(("MyPackage", "1.0.0-RC1"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(("MyPackage", "1.0.0-rc1"));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Patch, "./repo", "nuget.config");
+
+            report.HasChanges.ShouldBeFalse();
+            manifest.Packages.Single().Version.ShouldBe("1.0.0-RC1");
+            fileService.Verify(s => s.SavePackageManifest(It.IsAny<PackageManifest>()), Times.Never);
+        }
+
+        [Fact]
         public async Task With_No_Resolved_Version_Does_Not_Save()
         {
             var manifest = CreateManifest(("MyPackage", "1.0.0"));

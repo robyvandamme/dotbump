@@ -246,6 +246,33 @@ If step 3 is skipped or reordered, the report silently reports wrong data — no
 
 ### M7. Inconsistent case-sensitivity for versions
 
+> **Status (2026-10-03): resolved — aligned on case-insensitive semantics (NuGet-style).**
+>
+> Chosen direction: a version that differs only by casing is **not** a different version. `SemanticVersion`
+> ordering now compares pre-release identifiers with `OrdinalIgnoreCase` (both numeric identifiers still compare
+> numerically), and `SemanticVersion` equality/`GetHashCode` were overridden so a record-equal comparison agrees
+> with `CompareTo == 0` (e.g. `1.0.0-RC1` equals `1.0.0-rc1`). Change detection was already `OrdinalIgnoreCase`
+> and is left unchanged, so ordering and change detection now agree: a casing-only difference resolves as
+> `CompareTo == 0`, fails the `newVersion > reference` guard, and is correctly reported as "no change" instead of
+> applying then reporting "No package versions were bumped."
+>
+> This is a deliberate deviation from SemVer's "ASCII sort order" wording, and it matches current NuGet
+> behavior, which "uses case insensitive string comparisons for pre-release components" (so `1.0.0-alpha` and
+> `1.0.0-Alpha` are equal), per the
+> [NuGet package versioning reference](https://learn.microsoft.com/en-us/nuget/concepts/package-versioning).
+> A proposal to switch NuGet to ordinal comparison (NuGet/Home#11621) was declined by the NuGet team as a
+> breaking change. Documented at `ComparePreReleaseIdentifiers`. Covered by
+> `With_PreRelease_Differing_Only_In_Casing_Returns_Zero`, `With_Different_PreRelease_Identifiers_Returns_Expected_Order`
+> and `With_Resolved_Version_Differing_Only_In_Casing_Does_Not_Bump_Or_Save`.
+>
+> **Follow-up (2026-10-03): `GetHashCode` aligned with `CompareTo`.** Because `Equals` delegates to
+> `CompareTo == 0`, and `CompareTo` has always compared numeric pre-release identifiers by value, versions such as
+> `1.0.0-beta.01` and `1.0.0-beta.1` are equal but the original hash (case-insensitive over the raw label) produced
+> different hashes — a broken equals/hash contract that would break `HashSet`/`Dictionary` lookups. `GetHashCode`
+> now hashes each identifier using the same rules as `CompareTo` (numeric by parsed value, otherwise
+> case-insensitively). Covered by `With_Numeric_Identifier_Leading_Zero_Returns_Zero_And_Same_Hash`. No production
+> code currently keys a hash collection by `SemanticVersion`, so this was a latent contract fix.
+
 **Files:** `PackageManifest.cs:28-29`, `PackageFileService.cs:439`, `BumpResult.cs:25`, `BumpReport.cs:65-66` vs. `Common/SemanticVersion.cs:176-231`
 
 Change detection everywhere uses `StringComparison.OrdinalIgnoreCase`:
@@ -265,6 +292,12 @@ public bool HasChanges => _packages.Any(package =>
 
 ### L1. Validator credential-key casing is inconsistent with the resolver
 
+> **Status (2026-10-03): resolved.**
+>
+> `NuGetConfigValidator` now compares `ClearTextPassword` with `StringComparison.OrdinalIgnoreCase`, matching the
+> resolver's `NuGetClientConfig` lookup, so a key such as `cleartextPASSWORD` is accepted by both. Covered by
+> `With_Mixed_Case_Credential_Keys_Returns_Empty_List`.
+
 `NuGetConfigValidator.cs:64-65`:
 
 ```csharp
@@ -275,6 +308,14 @@ if (!cred.Key.Equals("UserName", StringComparison.OrdinalIgnoreCase) &&
 `NuGetClientConfig` looks up both keys with `OrdinalIgnoreCase`. So `key="cleartextpassword"` is *accepted* by the resolver but *rejected* by the validator — contradictory errors. Use `OrdinalIgnoreCase` for both comparisons.
 
 ### L2. `BumpPackagesSettings.Validate` can throw instead of returning an error
+
+> **Status (2026-10-03): resolved.**
+>
+> Added `Common/PathValidation.TryGetFullPath`, which wraps `Path.GetFullPath` and returns `false` for invalid input
+> (`ArgumentException`, `NotSupportedException`, `PathTooLongException`) instead of throwing. Both
+> `BumpPackagesSettings` (`--config`, `--path`) and `BumpToolsSettings` (`--config`, `--manifest`) now return a
+> `ValidationResult.Error` (`"The file/directory {path} is not a valid path."`). Covered by the invalid-path cases in
+> `BumpPackagesSettingsTests` and `BumpToolsSettingsTests`.
 
 `BumpPackagesSettings.cs:35`, `:45` — `Path.GetFullPath(...)` throws `ArgumentException` for invalid path characters rather than yielding a friendly `ValidationResult.Error`. Wrap in try/catch and convert to a validation message.
 

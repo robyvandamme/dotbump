@@ -1,6 +1,7 @@
 // Copyright © Roby Van Damme.
 
 using System.ComponentModel;
+using DotBump.Common;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -32,8 +33,12 @@ internal class BumpToolsSettings : BumpSettings
         // If a config file is passed, verify it exists before passing it on.
         if (!string.IsNullOrWhiteSpace(NuGetConfigPath))
         {
-            var normalizedPath = Path.GetFullPath(NuGetConfigPath);
-            if (!File.Exists(normalizedPath))
+            if (!PathValidation.TryGetFullPath(NuGetConfigPath, out var normalizedConfigPath))
+            {
+                return ValidationResult.Error($"The file {NuGetConfigPath} is not a valid path.");
+            }
+
+            if (!File.Exists(normalizedConfigPath))
             {
                 return ValidationResult.Error($"The file {NuGetConfigPath} does not exist.");
             }
@@ -42,8 +47,12 @@ internal class BumpToolsSettings : BumpSettings
         // If a manifest file is passed, verify it exists before passing it on.
         if (!string.IsNullOrWhiteSpace(ToolManifestPath))
         {
-            var normalizedPath = Path.GetFullPath(ToolManifestPath);
-            if (!File.Exists(normalizedPath))
+            if (!PathValidation.TryGetFullPath(ToolManifestPath, out var normalizedManifestPath))
+            {
+                return ValidationResult.Error($"The file {ToolManifestPath} is not a valid path.");
+            }
+
+            if (!File.Exists(normalizedManifestPath))
             {
                 return ValidationResult.Error($"The file {ToolManifestPath} does not exist.");
             }
