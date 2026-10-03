@@ -265,6 +265,12 @@ public bool HasChanges => _packages.Any(package =>
 
 ### L1. Validator credential-key casing is inconsistent with the resolver
 
+> **Status (2026-10-03): resolved.**
+>
+> `NuGetConfigValidator` now compares `ClearTextPassword` with `StringComparison.OrdinalIgnoreCase`, matching the
+> resolver's `NuGetClientConfig` lookup, so a key such as `cleartextPASSWORD` is accepted by both. Covered by
+> `With_Mixed_Case_Credential_Keys_Returns_Empty_List`.
+
 `NuGetConfigValidator.cs:64-65`:
 
 ```csharp

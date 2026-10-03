@@ -238,6 +238,42 @@ public class NuGetConfigValidatorTests
         }
 
         [Fact]
+        public void With_Mixed_Case_Credential_Keys_Returns_Empty_List()
+        {
+            var configCredentials = new Dictionary<string, SourceCredential>();
+            var userName = new Credential() { Key = "userNAME", Value = "%OK%" };
+            var password = new Credential() { Key = "cleartextPASSWORD", Value = "%OK%" };
+            var sourceCredential = new SourceCredential() { SourceName = "nuget.org", };
+            sourceCredential.Credentials.Add(userName);
+            sourceCredential.Credentials.Add(password);
+            configCredentials.Add("nuget.org", sourceCredential);
+
+            // Arrange
+            var config = new NuGetConfig
+            {
+                PackageSources =
+                    new List<PackageSource>
+                    {
+                        new()
+                        {
+                            Key = "nuget.org",
+                            Value = "https://api.nuget.org/v3/index.json",
+                            ProtocolVersion = "3",
+                        },
+                    },
+                Credentials = configCredentials,
+            };
+
+            var validator = new NuGetConfigValidator(_loggerMock);
+
+            // Act
+            var result = validator.Validate(config);
+
+            // Assert
+            result.ShouldBeEmpty();
+        }
+
+        [Fact]
         public void With_Non_Https_Url_Returns_Validation_Error()
         {
             // Arrange
