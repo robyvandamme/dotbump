@@ -282,6 +282,14 @@ if (!cred.Key.Equals("UserName", StringComparison.OrdinalIgnoreCase) &&
 
 ### L2. `BumpPackagesSettings.Validate` can throw instead of returning an error
 
+> **Status (2026-10-03): resolved.**
+>
+> Added `Common/PathValidation.TryGetFullPath`, which wraps `Path.GetFullPath` and returns `false` for invalid input
+> (`ArgumentException`, `NotSupportedException`, `PathTooLongException`) instead of throwing. Both
+> `BumpPackagesSettings` (`--config`, `--path`) and `BumpToolsSettings` (`--config`, `--manifest`) now return a
+> `ValidationResult.Error` (`"The file/directory {path} is not a valid path."`). Covered by the invalid-path cases in
+> `BumpPackagesSettingsTests` and `BumpToolsSettingsTests`.
+
 `BumpPackagesSettings.cs:35`, `:45` — `Path.GetFullPath(...)` throws `ArgumentException` for invalid path characters rather than yielding a friendly `ValidationResult.Error`. Wrap in try/catch and convert to a validation message.
 
 ### L3. Hardcoded command name
