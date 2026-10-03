@@ -1,5 +1,6 @@
 // Copyright © Roby Van Damme.
 
+using System.Text;
 using System.Xml.Linq;
 using DotBump.Commands.BumpPackages;
 using DotBump.Commands.BumpPackages.DataModel;
@@ -347,6 +348,30 @@ public class PackageFileServiceTests
             s_service.SavePackageManifest(manifest);
 
             File.ReadAllBytes(TempPath("Sample.csproj")).ShouldBe(originalBytes);
+        }
+
+        [Fact]
+        public void With_Utf8_Bom_File_Modified_Preserves_Bom_And_Encoding()
+        {
+            AssertBomPreserved_On_Modification(new UTF8Encoding(true), "Simple.csproj");
+        }
+
+        [Fact]
+        public void With_Utf16_Le_Bom_File_Modified_Preserves_Bom_And_Encoding()
+        {
+            AssertBomPreserved_On_Modification(new UnicodeEncoding(false, true), "Simple.csproj");
+        }
+
+        [Fact]
+        public void With_Utf16_Be_Bom_File_Modified_Preserves_Bom_And_Encoding()
+        {
+            AssertBomPreserved_On_Modification(new UnicodeEncoding(true, true), "Simple.csproj");
+        }
+
+        [Fact]
+        public void With_No_Bom_File_Modified_Does_Not_Add_Bom()
+        {
+            AssertBomPreserved_On_Modification(new UTF8Encoding(false), "Simple.csproj");
         }
 
         [Fact]
@@ -717,6 +742,45 @@ public class PackageFileServiceTests
 
             text.Substring(start, length).ShouldBe("13.0.1");
         }
+    }
+
+    /// <summary>
+    /// Writes a minimal project file with the supplied encoding, applies a version bump via
+    /// <see cref="PackageFileService"/>, and asserts the file is written back with the same
+    /// preamble (byte order mark) and encoding, exercising the read/detect/write path.
+    /// </summary>
+    private static void AssertBomPreserved_On_Modification(Encoding encoding, string fileName)
+    {
+        ResetTempDirectory();
+        var path = TempPath(fileName);
+        const string content =
+            "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+        WriteEncodedFile(path, content, encoding);
+
+        var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+        manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+        s_service.SavePackageManifest(manifest);
+
+        var bytes = File.ReadAllBytes(path);
+        var expectedPreamble = encoding.GetPreamble();
+
+        bytes.Take(expectedPreamble.Length).ShouldBe(expectedPreamble);
+
+        var decoded = encoding.GetString(bytes, expectedPreamble.Length, bytes.Length - expectedPreamble.Length);
+        decoded.ShouldSatisfyAllConditions(
+            () => decoded.ShouldContain("13.0.2"),
+            () => decoded.ShouldNotContain("13.0.1"));
+    }
+
+    private static void WriteEncodedFile(string path, string content, Encoding encoding)
+    {
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, content, encoding);
     }
 
     private static LocalDirectory TempDirectory => new("./temp/packages");

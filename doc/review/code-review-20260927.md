@@ -366,7 +366,11 @@ Overall the test suite is a strong point: `PackageFileServiceTests` covers byte-
 
 Gaps:
 
-1. **BOM preservation on actual change.** `With_Unchanged_Manifest_Leaves_File_Byte_For_Byte` proves the untouched case, but there is no test where a UTF-8-BOM (or UTF-16) file *is* modified and the BOM is asserted to survive (`DetectEncoding` + `WriteText` path).
+1. **BOM preservation on actual change.** Resolved: `With_Utf8_Bom_File_Modified_Preserves_Bom_And_Encoding`,
+   `With_Utf16_Le_Bom_File_Modified_Preserves_Bom_And_Encoding`,
+   `With_Utf16_Be_Bom_File_Modified_Preserves_Bom_And_Encoding` and
+   `With_No_Bom_File_Modified_Does_Not_Add_Bom` write an encoded file with a real version bump and assert the preamble,
+   encoding and content survive (`DetectEncoding` + `WriteText` path).
 2. **Case-insensitive id unification end-to-end.** `PackageManifestTests` checks `GetPackageIds` casing, but nothing verifies that `Newtonsoft.json` in one file and `Newtonsoft.Json` in another are both bumped to one target via `SetVersion`/`ApplyChanges`.
 3. **Warnings not asserted as surfaced.** Resolved: warnings are asserted through to the report (`With_Read_Warnings_Reports_Warnings`, `With_Validation_Errors_Still_Reports_Read_Warnings`, `BumpReportTests`) and `With_Unsupported_Versions_Skips_And_Warns` now also asserts `LogEventLevel.Warning` output. No console assertion — the report is the intended surface (see M3).
 4. **Markup-unsafe paths.** Resolved: `[draft]`-style markup-unsafe paths are exercised for all three commands (finding H1 resolved above).
