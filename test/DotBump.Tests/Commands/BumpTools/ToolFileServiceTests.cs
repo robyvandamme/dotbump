@@ -24,18 +24,29 @@ public class ToolFileServiceTests
         [Fact]
         public void With_Missing_Manifest_Throws_FileNotFoundException()
         {
-            var directory = new LocalDirectory("./.config");
+            var directory = new LocalDirectory("./temp");
+            var manifestPath = Path.Combine(directory.AbsolutePath, "dotnet-tools.json");
             directory.EnsureFileDeleted("dotnet-tools.json");
 
             var service = new ToolFileService(new Mock<ILogger>().Object);
 
-            Should.Throw<FileNotFoundException>(() => service.GetToolsManifest());
+            Should.Throw<FileNotFoundException>(() => service.GetToolsManifest(manifestPath));
+        }
+
+        [Fact]
+        public void With_Empty_Path_Throws_ArgumentException()
+        {
+            var service = new ToolFileService(new Mock<ILogger>().Object);
+
+            Should.Throw<ArgumentException>(() => service.GetToolsManifest(" "));
         }
 
         [Fact]
         public void With_File_Exists_Returns_ToolsManifest()
         {
-            var directory = new LocalDirectory("./.config");
+            var directory = new LocalDirectory("./temp");
+            directory.EnsureDirectoryCreated();
+            var manifestPath = Path.Combine(directory.AbsolutePath, "dotnet-tools.json");
             var manifest = new ToolsManifest
             {
                 Version = 1,
@@ -45,10 +56,10 @@ public class ToolFileServiceTests
                     ["mytool"] = new() { Version = "1.0.0", Commands = ["mytool"], RollForward = false },
                 },
             };
-            directory.EnsureFileCreated("dotnet-tools.json", JsonSerializer.Serialize(manifest, s_serializerOptions));
+            File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, s_serializerOptions));
 
             var service = new ToolFileService(new Mock<ILogger>().Object);
-            var result = service.GetToolsManifest();
+            var result = service.GetToolsManifest(manifestPath);
 
             result.ShouldSatisfyAllConditions(
                 () => result.ShouldNotBeNull(),
@@ -60,12 +71,14 @@ public class ToolFileServiceTests
         [Fact]
         public void With_Invalid_Manifest_Throws_DotBumpException()
         {
-            var directory = new LocalDirectory("./.config");
-            directory.EnsureFileCreated("dotnet-tools.json", "null");
+            var directory = new LocalDirectory("./temp");
+            directory.EnsureDirectoryCreated();
+            var manifestPath = Path.Combine(directory.AbsolutePath, "dotnet-tools.json");
+            File.WriteAllText(manifestPath, "null");
 
             var service = new ToolFileService(new Mock<ILogger>().Object);
 
-            Should.Throw<DotBumpException>(() => service.GetToolsManifest());
+            Should.Throw<DotBumpException>(() => service.GetToolsManifest(manifestPath));
         }
     }
 
@@ -76,14 +89,25 @@ public class ToolFileServiceTests
         {
             var service = new ToolFileService(new Mock<ILogger>().Object);
 
-            Should.Throw<ArgumentNullException>(() => service.SaveToolsManifest(null!));
+            Should.Throw<ArgumentNullException>(() => service.SaveToolsManifest(null!, "dotnet-tools.json"));
+        }
+
+        [Fact]
+        public void With_Empty_Path_Throws_ArgumentException()
+        {
+            var service = new ToolFileService(new Mock<ILogger>().Object);
+
+            var manifest = new ToolsManifest { Tools = new Dictionary<string, ToolManifestEntry>() };
+
+            Should.Throw<ArgumentException>(() => service.SaveToolsManifest(manifest, " "));
         }
 
         [Fact]
         public void With_Missing_Directory_Throws_DotBumpException()
         {
-            var directory = new LocalDirectory("./.config");
+            var directory = new LocalDirectory("./temp/missing");
             directory.EnsureDirectoryDeleted();
+            var manifestPath = Path.Combine(directory.AbsolutePath, "dotnet-tools.json");
 
             var manifest = new ToolsManifest
             {
@@ -97,21 +121,15 @@ public class ToolFileServiceTests
 
             var service = new ToolFileService(new Mock<ILogger>().Object);
 
-            try
-            {
-                Should.Throw<DotBumpException>(() => service.SaveToolsManifest(manifest));
-            }
-            finally
-            {
-                directory.EnsureDirectoryCreated();
-            }
+            Should.Throw<DotBumpException>(() => service.SaveToolsManifest(manifest, manifestPath));
         }
 
         [Fact]
         public void With_Valid_Manifest_Persists_Manifest()
         {
-            var directory = new LocalDirectory("./.config");
+            var directory = new LocalDirectory("./temp");
             directory.EnsureDirectoryCreated();
+            var manifestPath = Path.Combine(directory.AbsolutePath, "dotnet-tools.json");
             var manifest = new ToolsManifest
             {
                 Version = 1,
@@ -123,9 +141,9 @@ public class ToolFileServiceTests
             };
 
             var service = new ToolFileService(new Mock<ILogger>().Object);
-            service.SaveToolsManifest(manifest);
+            service.SaveToolsManifest(manifest, manifestPath);
 
-            var loaded = service.GetToolsManifest();
+            var loaded = service.GetToolsManifest(manifestPath);
             loaded.Tools["mytool"].Version.ShouldBe("2.0.0");
         }
     }

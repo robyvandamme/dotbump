@@ -52,6 +52,7 @@ internal static class CommandConfiguration
                 .WithExample(SdkCommandName, "--security-only", "true", "--debug", "true", "--logfile", "bump-sdk-log.txt");
 
             config.Settings.Registrar.Register<IToolFileService, ToolFileService>();
+            config.Settings.Registrar.Register<IToolManifestLocator, ToolManifestLocator>();
             config.Settings.Registrar.Register<INuGetConfigFileService, NuGetConfigFileService>();
             config.Settings.Registrar.Register<INuGetReleaseFinder, NuGetReleaseFinder>();
             config.Settings.Registrar.Register<IBumpToolsHandler, BumpToolsHandler>();
@@ -66,6 +67,7 @@ internal static class CommandConfiguration
                     "Use the 'patch' type option to bump the tools to the latest patch version for the current minor version. ")
                 .WithExample(ToolsCommandName)
                 .WithExample(ToolsCommandName, "--type", "patch")
+                .WithExample(ToolsCommandName, "--manifest", "./other/dotnet-tools.json")
                 .WithExample(ToolsCommandName, "--config", "./custom-nuget.config", "--output", "bump-tools-report.json")
                 .WithExample(ToolsCommandName, "--debug", "true", "--logfile", "bump-tools-log.txt");
 

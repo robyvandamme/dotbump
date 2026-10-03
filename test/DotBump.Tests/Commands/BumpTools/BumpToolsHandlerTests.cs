@@ -33,11 +33,11 @@ public class BumpToolsHandlerTests
                 .ReturnsAsync(new Dictionary<string, SemanticVersion> { ["mytool"] = new("1.1.0") });
             var handler = CreateHandler(fileService, resolver);
 
-            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
+            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config", "dotnet-tools.json");
 
             report.HasChanges.ShouldBeTrue();
             manifest.Tools["mytool"].Version.ShouldBe("1.1.0");
-            fileService.Verify(s => s.SaveToolsManifest(manifest), Times.Once);
+            fileService.Verify(s => s.SaveToolsManifest(manifest, "dotnet-tools.json"), Times.Once);
         }
 
         [Fact]
@@ -54,10 +54,10 @@ public class BumpToolsHandlerTests
                 .ReturnsAsync(new Dictionary<string, SemanticVersion>());
             var handler = CreateHandler(fileService, resolver);
 
-            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
+            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config", "dotnet-tools.json");
 
             report.HasChanges.ShouldBeFalse();
-            fileService.Verify(s => s.SaveToolsManifest(It.IsAny<ToolsManifest>()), Times.Never);
+            fileService.Verify(s => s.SaveToolsManifest(It.IsAny<ToolsManifest>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -68,10 +68,10 @@ public class BumpToolsHandlerTests
             var resolver = new Mock<IPackageVersionResolver>();
             var handler = CreateHandler(fileService, resolver, [new ValidationResult("bad config")]);
 
-            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config");
+            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config", "dotnet-tools.json");
 
             report.Errors.ShouldContain("bad config");
-            fileService.Verify(s => s.SaveToolsManifest(It.IsAny<ToolsManifest>()), Times.Never);
+            fileService.Verify(s => s.SaveToolsManifest(It.IsAny<ToolsManifest>(), It.IsAny<string>()), Times.Never);
             resolver.Verify(
                 r => r.ResolveAsync(
                     It.IsAny<IReadOnlyCollection<PackageToBump>>(),
@@ -94,7 +94,7 @@ public class BumpToolsHandlerTests
                 .ReturnsAsync(new Dictionary<string, SemanticVersion>());
             var handler = CreateHandler(fileService, resolver);
 
-            await handler.HandleAsync(BumpType.Minor, "nuget.config");
+            await handler.HandleAsync(BumpType.Minor, "nuget.config", "dotnet-tools.json");
 
             resolver.Verify(
                 r => r.ResolveAsync(
@@ -123,7 +123,7 @@ public class BumpToolsHandlerTests
         private static Mock<IToolFileService> CreateFileService(ToolsManifest manifest)
         {
             var fileService = new Mock<IToolFileService>();
-            fileService.Setup(s => s.GetToolsManifest()).Returns(manifest);
+            fileService.Setup(s => s.GetToolsManifest(It.IsAny<string>())).Returns(manifest);
             return fileService;
         }
 

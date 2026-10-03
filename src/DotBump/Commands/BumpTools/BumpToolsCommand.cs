@@ -12,7 +12,8 @@ namespace DotBump.Commands.BumpTools;
 internal class BumpToolsCommand(
     IAnsiConsole console,
     ILogger logger,
-    IBumpToolsHandler bumpToolsHandler)
+    IBumpToolsHandler bumpToolsHandler,
+    IToolManifestLocator toolManifestLocator)
     : AsyncCommand<BumpToolsSettings>
 {
     private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
@@ -42,15 +43,18 @@ internal class BumpToolsCommand(
             var nugetConfigPath = !string.IsNullOrWhiteSpace(settings.NuGetConfigPath)
                 ? Path.GetFullPath(settings.NuGetConfigPath)
                 : _defaultNugetConfigPath;
+            var toolManifestPath = toolManifestLocator.Resolve(settings.ToolManifestPath);
 
             logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("Output file : {OutputFile}", outputFile);
             logger.Debug("NuGet config : {NuGetConfig}", nugetConfigPath);
+            logger.Debug("Tools manifest : {ToolManifest}", toolManifestPath);
 
             console.MarkupLine(
-                $"Bumping Tools with settings: type={bumpType}, output: {Markup.Escape(outputFile ?? "none")}, config: {Markup.Escape(nugetConfigPath)}");
+                $"Bumping Tools with settings: type={bumpType}, output: {Markup.Escape(outputFile ?? "none")}, " +
+                $"config: {Markup.Escape(nugetConfigPath)}, manifest: {Markup.Escape(toolManifestPath)}");
 
-            var bumpReport = await bumpToolsHandler.HandleAsync(bumpType, nugetConfigPath);
+            var bumpReport = await bumpToolsHandler.HandleAsync(bumpType, nugetConfigPath, toolManifestPath);
 
             WriteReportToConsole(bumpReport);
 

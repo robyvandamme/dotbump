@@ -22,6 +22,14 @@ public class BumpToolsCommandTests
     {
         private static readonly string s_defaultNugetConfig = "nuget.config";
 
+        private static readonly LocalDirectory s_tempDirectory = new("./temp");
+
+        private static readonly LocalDirectory s_currentDirectory = new("./");
+
+        private static readonly LocalDirectory s_configDirectory = new("./.config");
+
+        private static readonly string s_toolManifestPath = Path.Combine(s_tempDirectory.AbsolutePath, "dotnet-tools.json");
+
         private static readonly JsonSerializerOptions s_serializerOptions = new()
         {
             WriteIndented = true,
@@ -29,10 +37,10 @@ public class BumpToolsCommandTests
         };
 
         [Fact]
-        public async Task With_Missing_Tools_Manifest_Returns_1_And_FileNotFoundException()
+        public async Task With_Missing_Tools_Manifest_Returns_1_And_Reports_Locator_Error()
         {
-            var directory = new LocalDirectory("./.config");
-            directory.EnsureFileDeleted("dotnet-tools.json");
+            s_currentDirectory.EnsureFileDeleted("dotnet-tools.json");
+            s_configDirectory.EnsureFileDeleted("dotnet-tools.json");
 
             var loggerMock = new Mock<ILogger>().Object;
             using var testConsole = new TestConsole();
@@ -43,15 +51,18 @@ public class BumpToolsCommandTests
             var validator = new NuGetConfigValidator(loggerMock);
             var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
-            var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+            var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
             var arguments = new[] { "bump", "tools" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-            var result = await command.ExecuteForTestAsync(context, new BumpToolsSettings(), CancellationToken.None);
+            var result = await command.ExecuteForTestAsync(
+                context,
+                new BumpToolsSettings(),
+                CancellationToken.None);
 
             result.ShouldSatisfyAllConditions(
                 () => result.ShouldBe(1),
-                () => testConsole.Output.ShouldContain("FileNotFoundException: Tool manifest file not found"));
+                () => testConsole.Output.ShouldContain("Could not find a tools manifest"));
         }
 
         [Fact]
@@ -68,13 +79,16 @@ public class BumpToolsCommandTests
             var validator = new NuGetConfigValidator(loggerMock);
             var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
-            var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+            var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
             var arguments = new[] { "bump", "tools" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-            var result = await command.ExecuteForTestAsync(context, new BumpToolsSettings(), CancellationToken.None);
+            var result = await command.ExecuteForTestAsync(
+                context,
+                new BumpToolsSettings() { ToolManifestPath = s_toolManifestPath },
+                CancellationToken.None);
 
-            var updatedManifest = fileService.GetToolsManifest();
+            var updatedManifest = fileService.GetToolsManifest(s_toolManifestPath);
             result.ShouldSatisfyAllConditions(
                 () => result.ShouldBe(0),
                 () => updatedManifest.Tools.First(o => o.Key.Equals("dotnet-sonarscanner")).Value.Version.ShouldBe("10.4.1"),
@@ -96,13 +110,16 @@ public class BumpToolsCommandTests
             var validator = new NuGetConfigValidator(loggerMock);
             var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
-            var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+            var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
             var arguments = new[] { "bump", "tools" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-            var result = await command.ExecuteForTestAsync(context, new BumpToolsSettings() { BumpType = BumpType.Patch }, CancellationToken.None);
+            var result = await command.ExecuteForTestAsync(
+                context,
+                new BumpToolsSettings() { BumpType = BumpType.Patch, ToolManifestPath = s_toolManifestPath },
+                CancellationToken.None);
 
-            var updatedManifest = fileService.GetToolsManifest();
+            var updatedManifest = fileService.GetToolsManifest(s_toolManifestPath);
             result.ShouldSatisfyAllConditions(
                 () => result.ShouldBe(0),
                 () => updatedManifest.Tools.First(o => o.Key.Equals("dotnet-sonarscanner")).Value.Version.ShouldBe("10.1.2"),
@@ -129,13 +146,13 @@ public class BumpToolsCommandTests
                 var validator = new NuGetConfigValidator(loggerMock);
                 var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(clientFactory, releaseService, loggerMock), validator, loggerMock);
 
-                var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+                var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
                 var arguments = new[] { "bump", "tools" };
                 var remainingArguments = new Mock<IRemainingArguments>();
                 var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
                 var result = await command.ExecuteForTestAsync(
                     context,
-                    new BumpToolsSettings() { BumpType = BumpType.Patch, Output = "bump-tools-report.json" },
+                    new BumpToolsSettings() { BumpType = BumpType.Patch, Output = "bump-tools-report.json", ToolManifestPath = s_toolManifestPath },
                     CancellationToken.None);
 
                 resultFile.Refresh();
@@ -188,16 +205,16 @@ public class BumpToolsCommandTests
                     validator,
                     loggerMock);
 
-                var command = new BumpToolsCommand(testConsole, loggerMock, handler);
+                var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
                 var arguments = new[] { "bump", "tools" };
                 var remainingArguments = new Mock<IRemainingArguments>();
                 var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
                 var result = await command.ExecuteForTestAsync(
                     context,
-                    new BumpToolsSettings() { BumpType = BumpType.Patch },
+                    new BumpToolsSettings() { BumpType = BumpType.Patch, ToolManifestPath = s_toolManifestPath },
                     CancellationToken.None);
 
-                var updatedManifest = fileService.GetToolsManifest();
+                var updatedManifest = fileService.GetToolsManifest(s_toolManifestPath);
                 result.ShouldSatisfyAllConditions(
                     () => result.ShouldBe(0),
                     () => updatedManifest.Tools.First(o => o.Key.Equals("dotbump")).Value.Version.ShouldBe("0.1.1-beta.8"));
@@ -214,7 +231,7 @@ public class BumpToolsCommandTests
             using var testConsole = new TestConsole().Width(500);
             var handler = new Mock<IBumpToolsHandler>();
             handler
-                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>()))
+                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new BumpReport(
                     new ToolsManifest
                     {
@@ -223,12 +240,40 @@ public class BumpToolsCommandTests
                         Tools = new Dictionary<string, ToolManifestEntry>(),
                     },
                     BumpType.Minor));
-            var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
+            var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), handler.Object, new ToolManifestLocator(Mock.Of<ILogger>()));
             var context = new CommandContext(["bump", "tools"], new Mock<IRemainingArguments>().Object, "tools", null);
 
             var result = await command.ExecuteForTestAsync(
                 context,
-                new BumpToolsSettings { NuGetConfigPath = "./[draft]/nuget.config" },
+                new BumpToolsSettings { NuGetConfigPath = "./[draft]/nuget.config", ToolManifestPath = s_toolManifestPath },
+                CancellationToken.None);
+
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => testConsole.Output.ShouldContain("[draft]"));
+        }
+
+        [Fact]
+        public async Task With_Markup_Unsafe_Manifest_Path_Returns_0_And_Writes_Literal_Path()
+        {
+            using var testConsole = new TestConsole().Width(500);
+            var handler = new Mock<IBumpToolsHandler>();
+            handler
+                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new BumpReport(
+                    new ToolsManifest
+                    {
+                        Version = 1,
+                        IsRoot = true,
+                        Tools = new Dictionary<string, ToolManifestEntry>(),
+                    },
+                    BumpType.Minor));
+            var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), handler.Object, new ToolManifestLocator(Mock.Of<ILogger>()));
+            var context = new CommandContext(["bump", "tools"], new Mock<IRemainingArguments>().Object, "tools", null);
+
+            var result = await command.ExecuteForTestAsync(
+                context,
+                new BumpToolsSettings { ToolManifestPath = "./[draft]/dotnet-tools.json" },
                 CancellationToken.None);
 
             result.ShouldSatisfyAllConditions(
@@ -246,11 +291,8 @@ public class BumpToolsCommandTests
                 new ToolManifestEntry { Version = "0.1.1-beta.7", RollForward = false, Commands = ["dotbump"], });
 
             var manifest = new ToolsManifest() { Version = 1, IsRoot = true, Tools = tools };
-            var directory = new LocalDirectory("./.config");
-            directory.EnsureFileDeleted("dotnet-tools.json");
-            directory.EnsureFileCreated(
-                "dotnet-tools.json",
-                JsonSerializer.Serialize(manifest, s_serializerOptions));
+            s_tempDirectory.EnsureFileDeleted("dotnet-tools.json");
+            s_tempDirectory.EnsureFileCreated("dotnet-tools.json", JsonSerializer.Serialize(manifest, s_serializerOptions));
         }
 
         private static void ConfigureToolsManifest()
@@ -277,11 +319,8 @@ public class BumpToolsCommandTests
                 new ToolManifestEntry { Version = "4.6.1", RollForward = false, Commands = ["reportgenerator"], });
 
             var manifest = new ToolsManifest() { Version = 1, IsRoot = true, Tools = tools };
-            var directory = new LocalDirectory("./.config");
-            directory.EnsureFileDeleted("dotnet-tools.json");
-            directory.EnsureFileCreated(
-                "dotnet-tools.json",
-                JsonSerializer.Serialize(manifest, s_serializerOptions));
+            s_tempDirectory.EnsureFileDeleted("dotnet-tools.json");
+            s_tempDirectory.EnsureFileCreated("dotnet-tools.json", JsonSerializer.Serialize(manifest, s_serializerOptions));
         }
 
         private static string CreateTempConfigFile(string content)

@@ -16,11 +16,11 @@ internal class BumpToolsHandler(
     INuGetConfigValidator nugetConfigValidator,
     ILogger logger) : IBumpToolsHandler
 {
-    public async Task<BumpReport> HandleAsync(BumpType bumpType, string nugetConfigPath)
+    public async Task<BumpReport> HandleAsync(BumpType bumpType, string nugetConfigPath, string toolManifestPath)
     {
         logger.MethodStart(nameof(BumpToolsHandler), nameof(HandleAsync), bumpType);
 
-        var manifest = toolFileService.GetToolsManifest();
+        var manifest = toolFileService.GetToolsManifest(toolManifestPath);
         var bumpReport = new BumpReport(manifest, bumpType);
 
         var nuGetConfiguration = nugetConfigFileService.GetNuGetConfiguration(nugetConfigPath);
@@ -49,7 +49,7 @@ internal class BumpToolsHandler(
 
         if (bumpReport.HasChanges)
         {
-            toolFileService.SaveToolsManifest(manifest);
+            toolFileService.SaveToolsManifest(manifest, toolManifestPath);
         }
 
         logger.MethodReturn(nameof(BumpToolsHandler), nameof(HandleAsync), bumpReport);
