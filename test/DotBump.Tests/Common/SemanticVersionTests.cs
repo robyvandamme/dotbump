@@ -228,6 +228,31 @@ public class SemanticVersionTests
 
             version.CompareTo(null).ShouldBeGreaterThan(0);
         }
+
+        [Fact]
+        public void With_PreRelease_Differing_Only_In_Casing_Returns_Zero()
+        {
+            var v1 = new SemanticVersion("1.0.0-RC1");
+            var v2 = new SemanticVersion("1.0.0-rc1");
+
+            v1.ShouldSatisfyAllConditions(
+                () => v1.CompareTo(v2).ShouldBe(0),
+                () => (v1 > v2).ShouldBeFalse(),
+                () => (v1 < v2).ShouldBeFalse(),
+                () => v1.ShouldBe(v2),
+                () => v1.GetHashCode().ShouldBe(v2.GetHashCode()));
+        }
+
+        [Fact]
+        public void With_Different_PreRelease_Identifiers_Returns_Expected_Order()
+        {
+            var alpha = new SemanticVersion("1.0.0-ALPHA");
+            var beta = new SemanticVersion("1.0.0-beta");
+
+            alpha.ShouldSatisfyAllConditions(
+                () => alpha.CompareTo(beta).ShouldBeLessThan(0),
+                () => alpha.ShouldNotBe(beta));
+        }
     }
 
     public class GetNewerVersion

@@ -112,6 +112,31 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     }
 
     /// <summary>
+    /// Determines whether this instance is equal to another semantic version.
+    /// Equality is case-insensitive for the pre-release identifiers, matching the ordering
+    /// semantics of <see cref="CompareTo"/> and NuGet's case-insensitive release labels.
+    /// </summary>
+    public virtual bool Equals(SemanticVersion? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
+
+        return CompareTo(other) == 0;
+    }
+
+    /// <inheritdoc />
+    public override int GetHashCode()
+    {
+        var preReleaseHash = PreRelease is null
+            ? 0
+            : StringComparer.OrdinalIgnoreCase.GetHashCode(PreRelease);
+
+        return HashCode.Combine(Major, Minor, Patch, IsPreRelease, preReleaseHash);
+    }
+
+    /// <summary>
     /// Compares this instance with another <see cref="SemanticVersion"/> and returns an integer
     /// that indicates whether this instance precedes, follows, or occurs in the same
     /// position in the sort order as the other instance.
@@ -199,7 +224,14 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     /// <summary>
     /// Compares two pre-release identifiers according to SemVer 2.0.0 rules.
     /// Numeric identifiers are compared numerically.
-    /// Alphabetic or alphanumeric identifiers are compared lexically in ASCII sort order.
+    /// Alphabetic or alphanumeric identifiers are compared lexically in ASCII sort order, but
+    /// case-insensitively: SemVer treats identifiers as case-sensitive (ASCII sort), whereas NuGet
+    /// <c>NuGetVersion</c> uses case-insensitive string comparisons for pre-release components
+    /// (see https://learn.microsoft.com/en-us/nuget/concepts/package-versioning), so versions that
+    /// differ only by casing (for example <c>1.0.0-RC1</c> and <c>1.0.0-rc1</c>) are considered equal.
+    /// This keeps ordering consistent with change detection, which also compares version strings
+    /// case-insensitively. (NuGet has an open proposal to switch to ordinal, NuGet/Home#11621, which
+    /// the team declined as a breaking change.)
     /// </summary>
     private static int ComparePreReleaseIdentifiers(string id1, string id2)
     {
@@ -225,9 +257,9 @@ internal record SemanticVersion : IComparable<SemanticVersion>
             return 1;
         }
 
-        // Otherwise, compare lexically
-        // e.g., "1.0.0-alpha" < "1.0.0-beta"
-        return string.Compare(id1, id2, StringComparison.Ordinal);
+        // Otherwise, compare lexically, ignoring case
+        // e.g., "1.0.0-alpha" < "1.0.0-beta" and "1.0.0-RC1" == "1.0.0-rc1"
+        return string.Compare(id1, id2, StringComparison.OrdinalIgnoreCase);
     }
 
     // Operator overloads for convenience

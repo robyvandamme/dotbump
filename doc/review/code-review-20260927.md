@@ -246,6 +246,25 @@ If step 3 is skipped or reordered, the report silently reports wrong data — no
 
 ### M7. Inconsistent case-sensitivity for versions
 
+> **Status (2026-10-03): resolved — aligned on case-insensitive semantics (NuGet-style).**
+>
+> Chosen direction: a version that differs only by casing is **not** a different version. `SemanticVersion`
+> ordering now compares pre-release identifiers with `OrdinalIgnoreCase` (both numeric identifiers still compare
+> numerically), and `SemanticVersion` equality/`GetHashCode` were overridden so a record-equal comparison agrees
+> with `CompareTo == 0` (e.g. `1.0.0-RC1` equals `1.0.0-rc1`). Change detection was already `OrdinalIgnoreCase`
+> and is left unchanged, so ordering and change detection now agree: a casing-only difference resolves as
+> `CompareTo == 0`, fails the `newVersion > reference` guard, and is correctly reported as "no change" instead of
+> applying then reporting "No package versions were bumped."
+>
+> This is a deliberate deviation from SemVer's "ASCII sort order" wording, and it matches current NuGet
+> behavior, which "uses case insensitive string comparisons for pre-release components" (so `1.0.0-alpha` and
+> `1.0.0-Alpha` are equal), per the
+> [NuGet package versioning reference](https://learn.microsoft.com/en-us/nuget/concepts/package-versioning).
+> A proposal to switch NuGet to ordinal comparison (NuGet/Home#11621) was declined by the NuGet team as a
+> breaking change. Documented at `ComparePreReleaseIdentifiers`. Covered by
+> `With_PreRelease_Differing_Only_In_Casing_Returns_Zero`, `With_Different_PreRelease_Identifiers_Returns_Expected_Order`
+> and `With_Resolved_Version_Differing_Only_In_Casing_Does_Not_Bump_Or_Save`.
+
 **Files:** `PackageManifest.cs:28-29`, `PackageFileService.cs:439`, `BumpResult.cs:25`, `BumpReport.cs:65-66` vs. `Common/SemanticVersion.cs:176-231`
 
 Change detection everywhere uses `StringComparison.OrdinalIgnoreCase`:
