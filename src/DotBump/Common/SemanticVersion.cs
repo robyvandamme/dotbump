@@ -129,11 +129,7 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     /// <inheritdoc />
     public override int GetHashCode()
     {
-        var preReleaseHash = PreRelease is null
-            ? 0
-            : StringComparer.OrdinalIgnoreCase.GetHashCode(PreRelease);
-
-        return HashCode.Combine(Major, Minor, Patch, IsPreRelease, preReleaseHash);
+        return HashCode.Combine(Major, Minor, Patch, IsPreRelease, GetPreReleaseHashCode(PreRelease));
     }
 
     /// <summary>
@@ -260,6 +256,33 @@ internal record SemanticVersion : IComparable<SemanticVersion>
         // Otherwise, compare lexically, ignoring case
         // e.g., "1.0.0-alpha" < "1.0.0-beta" and "1.0.0-RC1" == "1.0.0-rc1"
         return string.Compare(id1, id2, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Computes a hash code for a pre-release label using the same rules as
+    /// <see cref="ComparePreReleaseVersions"/>: numeric identifiers hash by their parsed value (so
+    /// <c>01</c> and <c>1</c> hash equally) and non-numeric identifiers hash case-insensitively.
+    /// This keeps <see cref="GetHashCode"/> consistent with <see cref="Equals(SemanticVersion?)"/>,
+    /// which is defined in terms of <see cref="CompareTo"/>.
+    /// </summary>
+    private static int GetPreReleaseHashCode(string? preRelease)
+    {
+        if (preRelease is null)
+        {
+            return 0;
+        }
+
+        var hash = 17;
+        foreach (var identifier in preRelease.Split('.'))
+        {
+            var identifierHash = int.TryParse(identifier, out var numericIdentifier)
+                ? numericIdentifier
+                : StringComparer.OrdinalIgnoreCase.GetHashCode(identifier);
+
+            hash = (hash * 31) + identifierHash;
+        }
+
+        return hash;
     }
 
     // Operator overloads for convenience

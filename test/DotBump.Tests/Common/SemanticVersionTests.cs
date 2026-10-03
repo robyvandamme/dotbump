@@ -154,6 +154,18 @@ public class SemanticVersionTests
         }
 
         [Fact]
+        public void With_Numeric_Identifier_Leading_Zero_Returns_Zero_And_Same_Hash()
+        {
+            var v1 = new SemanticVersion("1.0.0-beta.01");
+            var v2 = new SemanticVersion("1.0.0-beta.1");
+
+            v1.ShouldSatisfyAllConditions(
+                () => v1.CompareTo(v2).ShouldBe(0),
+                () => v1.ShouldBe(v2),
+                () => v1.GetHashCode().ShouldBe(v2.GetHashCode()));
+        }
+
+        [Fact]
         public void With_Release_Compared_With_PreRelease_Returns_Positive()
         {
             var release = new SemanticVersion("1.0.0");

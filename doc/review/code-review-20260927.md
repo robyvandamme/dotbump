@@ -264,6 +264,14 @@ If step 3 is skipped or reordered, the report silently reports wrong data — no
 > breaking change. Documented at `ComparePreReleaseIdentifiers`. Covered by
 > `With_PreRelease_Differing_Only_In_Casing_Returns_Zero`, `With_Different_PreRelease_Identifiers_Returns_Expected_Order`
 > and `With_Resolved_Version_Differing_Only_In_Casing_Does_Not_Bump_Or_Save`.
+>
+> **Follow-up (2026-10-03): `GetHashCode` aligned with `CompareTo`.** Because `Equals` delegates to
+> `CompareTo == 0`, and `CompareTo` has always compared numeric pre-release identifiers by value, versions such as
+> `1.0.0-beta.01` and `1.0.0-beta.1` are equal but the original hash (case-insensitive over the raw label) produced
+> different hashes — a broken equals/hash contract that would break `HashSet`/`Dictionary` lookups. `GetHashCode`
+> now hashes each identifier using the same rules as `CompareTo` (numeric by parsed value, otherwise
+> case-insensitively). Covered by `With_Numeric_Identifier_Leading_Zero_Returns_Zero_And_Same_Hash`. No production
+> code currently keys a hash collection by `SemanticVersion`, so this was a latent contract fix.
 
 **Files:** `PackageManifest.cs:28-29`, `PackageFileService.cs:439`, `BumpResult.cs:25`, `BumpReport.cs:65-66` vs. `Common/SemanticVersion.cs:176-231`
 
