@@ -381,7 +381,10 @@ Gaps:
 6. **Duplicated test helper.** Resolved: `CreateManifest` is now a single factory on `TestPackageManifestFactory`
    (`test/DotBump.Tests/TestHelpers/`), imported with `using static` in `BumpPackagesCommandTests` and
    `BumpPackagesHandlerTests`; the two copy-pasted private methods were removed.
-7. **Shared static service.** `PackageFileServiceTests` uses a single `static readonly s_service`; safe under xUnit's per-class sequential execution, but an instance-per-test field would remove the implicit coupling.
+7. **Shared static service.** Resolved: the shared `static readonly s_service` was replaced with per-test inline
+   construction (`var packageFileService = new PackageFileService(new Mock<ILogger>().Object);`), matching the
+   `ToolFileServiceTests` style and removing the implicit coupling. The BOM test helper moved into the
+   `SavePackageManifest` group accordingly.
 8. **Save-time skip is not surfaced.** Resolved: `ApplyChanges` records the skipped bump via `manifest.AddWarning`, the handler propagates warnings to the report after saving, and `With_Unapplied_Span_Surfaces_Warning` passes (state is kept, the failure is reported).
 
 ---

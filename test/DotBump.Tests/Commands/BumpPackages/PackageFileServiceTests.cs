@@ -17,8 +17,6 @@ public class PackageFileServiceTests
 {
     private const string FixtureDirectory = "Data/Packages";
 
-    private static readonly PackageFileService s_service = new(new Mock<ILogger>().Object);
-
     public class GetPackageManifest
     {
         [Fact]
@@ -26,8 +24,9 @@ public class PackageFileServiceTests
         {
             ResetTempDirectory();
             CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.ShouldSatisfyAllConditions(
                 () => manifest.Packages.Count.ShouldBe(3),
@@ -51,8 +50,9 @@ public class PackageFileServiceTests
         {
             ResetTempDirectory();
             CopyFixture("Directory.Packages.props", TempPath("Directory.Packages.props"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.ShouldSatisfyAllConditions(
                 () => manifest.Packages.Count.ShouldBe(3),
@@ -77,8 +77,9 @@ public class PackageFileServiceTests
             ResetTempDirectory();
             CopyFixture("Directory.Build.props", TempPath("Directory.Build.props"));
             CopyFixture("Directory.Build.targets", TempPath("Directory.Build.targets"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.ShouldSatisfyAllConditions(
                 () => manifest.Packages.Count.ShouldBe(2),
@@ -98,8 +99,9 @@ public class PackageFileServiceTests
             ResetTempDirectory();
             CopyFixture("Directory.Build.props", TempPath("Directory.Build.props"));
             CopyFixture("Sample.csproj", TempPath("src", "App", "Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.GetPackageIds().ShouldSatisfyAllConditions(
                 () => manifest.GetPackageIds().ShouldContain("Roslynator.Analyzers"),
@@ -128,8 +130,9 @@ public class PackageFileServiceTests
         {
             ResetTempDirectory();
             CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.GetPackageIds().ShouldSatisfyAllConditions(
                 () => manifest.GetPackageIds().ShouldNotContain("Moq"),
@@ -142,8 +145,9 @@ public class PackageFileServiceTests
             ResetTempDirectory();
             CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
             CopyFixture("Directory.Packages.props", TempPath("Directory.Packages.props"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.Count(package => package.PackageId == "Newtonsoft.Json").ShouldBe(2);
         }
@@ -153,8 +157,9 @@ public class PackageFileServiceTests
         {
             ResetTempDirectory();
             CopyFixture("Sample.csproj", TempPath("obj", "Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.ShouldBeEmpty();
         }
@@ -170,7 +175,9 @@ public class PackageFileServiceTests
                 return;
             }
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.ShouldBeEmpty();
         }
@@ -186,7 +193,9 @@ public class PackageFileServiceTests
                 return;
             }
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.ShouldSatisfyAllConditions(
                 () => manifest.Packages.Count(package => package.PackageId == "Newtonsoft.Json").ShouldBe(1),
@@ -205,7 +214,9 @@ public class PackageFileServiceTests
                 return;
             }
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.ShouldBeEmpty();
         }
@@ -217,8 +228,9 @@ public class PackageFileServiceTests
             var content =
                 "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\">\n      <Version>\n        3.0.0\n      </Version>\n    </PackageReference>\n  </ItemGroup>\n</Project>\n";
             File.WriteAllText(TempPath("WhitespaceVersion.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.ShouldContain(package =>
                 package.PackageId == "Newtonsoft.Json" && package.Version == "3.0.0");
@@ -231,8 +243,9 @@ public class PackageFileServiceTests
             var content =
                 "<Project>\n  <ItemGroup>\n    <PackageReference Update=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
             File.WriteAllText(TempPath("Update.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.ShouldContain(package =>
                 package.PackageId == "Newtonsoft.Json"
@@ -247,8 +260,9 @@ public class PackageFileServiceTests
             var content =
                 "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13&#46;0&#46;1\" />\n  </ItemGroup>\n</Project>\n";
             File.WriteAllText(TempPath("Entities.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.Packages.ShouldContain(package =>
                 package.PackageId == "Newtonsoft.Json"
@@ -279,20 +293,25 @@ public class PackageFileServiceTests
         public void With_Missing_Directory_Throws_DotBumpException()
         {
             ResetTempDirectory();
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            Should.Throw<DotBumpException>(() => s_service.GetPackageManifest(TempPath("does-not-exist")));
+            Should.Throw<DotBumpException>(() => packageFileService.GetPackageManifest(TempPath("does-not-exist")));
         }
 
         [Fact]
         public void With_Null_Path_Throws_ArgumentNullException()
         {
-            Should.Throw<ArgumentNullException>(() => s_service.GetPackageManifest(null!));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            Should.Throw<ArgumentNullException>(() => packageFileService.GetPackageManifest(null!));
         }
 
         [Fact]
         public void With_Whitespace_Path_Throws_ArgumentException()
         {
-            Should.Throw<ArgumentException>(() => s_service.GetPackageManifest(" "));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            Should.Throw<ArgumentException>(() => packageFileService.GetPackageManifest(" "));
         }
     }
 
@@ -301,7 +320,9 @@ public class PackageFileServiceTests
         [Fact]
         public void With_Null_Manifest_Throws_ArgumentNullException()
         {
-            Should.Throw<ArgumentNullException>(() => s_service.SavePackageManifest(null!));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            Should.Throw<ArgumentNullException>(() => packageFileService.SavePackageManifest(null!));
         }
 
         [Fact]
@@ -310,10 +331,11 @@ public class PackageFileServiceTests
             ResetTempDirectory();
             CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
             CopyFixture("Directory.Packages.props", TempPath("Directory.Packages.props"));
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.3");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             var projectContents = File.ReadAllText(TempPath("Sample.csproj"));
             var centralContents = File.ReadAllText(TempPath("Directory.Packages.props"));
@@ -336,12 +358,13 @@ public class PackageFileServiceTests
             var lowerPath = TempPath("Lower.csproj");
             File.WriteAllText(upperPath, upperContent);
             File.WriteAllText(lowerPath, lowerContent);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
             manifest.GetPackageIds().ShouldBe(["Newtonsoft.Json"]);
 
             manifest.SetVersion("NEWTONSOFT.JSON", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             var upperResult = File.ReadAllText(upperPath);
             var lowerResult = File.ReadAllText(lowerPath);
@@ -354,10 +377,11 @@ public class PackageFileServiceTests
         {
             ResetTempDirectory();
             CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Serilog", "3.1.0");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllText(TempPath("Sample.csproj")).ShouldContain("<Version>3.1.0</Version>");
         }
@@ -368,9 +392,10 @@ public class PackageFileServiceTests
             ResetTempDirectory();
             CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
             var originalBytes = File.ReadAllBytes(TempPath("Sample.csproj"));
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllBytes(TempPath("Sample.csproj")).ShouldBe(originalBytes);
         }
@@ -405,10 +430,11 @@ public class PackageFileServiceTests
             ResetTempDirectory();
             CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
             var originalContents = File.ReadAllText(TempPath("Sample.csproj"));
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             var expectedContents = originalContents.Replace("13.0.1", "13.0.2", StringComparison.Ordinal);
             File.ReadAllText(TempPath("Sample.csproj")).ShouldBe(expectedContents);
@@ -419,10 +445,11 @@ public class PackageFileServiceTests
         {
             ResetTempDirectory();
             CopyFixture("Directory.Build.props", TempPath("Directory.Build.props"));
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Roslynator.Analyzers", "4.17.0");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             var contents = File.ReadAllText(TempPath("Directory.Build.props"));
             contents.ShouldSatisfyAllConditions(
@@ -435,7 +462,8 @@ public class PackageFileServiceTests
         {
             ResetTempDirectory();
             CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.HasChanges.ShouldBeFalse();
 
@@ -452,10 +480,11 @@ public class PackageFileServiceTests
                 "<Project>\n  <ItemGroup>\n    <PackageReference\n        Include=\"Newtonsoft.Json\"\n        Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
             var path = TempPath("Multi.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
         }
@@ -468,10 +497,11 @@ public class PackageFileServiceTests
                 "<Project>\n  <ItemGroup>\n    <PackageReference Include='Newtonsoft.Json' Version='13.0.1' />\n  </ItemGroup>\n</Project>\n";
             var path = TempPath("Single.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
         }
@@ -484,10 +514,11 @@ public class PackageFileServiceTests
                 "<Project>\n  <PropertyGroup></PropertyGroup>\n  <ItemGroup Condition=\"'$(X)' &gt;= '1.0'\">\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
             var path = TempPath("Entities.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
         }
@@ -500,10 +531,11 @@ public class PackageFileServiceTests
                 "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13&#46;0&#46;1\" />\n  </ItemGroup>\n</Project>\n";
             var path = TempPath("EntityVersion.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllText(path).ShouldBe(content.Replace("13&#46;0&#46;1", "13.0.2", StringComparison.Ordinal));
         }
@@ -516,10 +548,11 @@ public class PackageFileServiceTests
                 "<Project>\r\n  <ItemGroup>\r\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\r\n  </ItemGroup>\r\n</Project>\r\n";
             var path = TempPath("CrLf.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
         }
@@ -532,10 +565,11 @@ public class PackageFileServiceTests
                 "<Project>\r  <ItemGroup>\r    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\r  </ItemGroup>\r</Project>\r";
             var path = TempPath("CarriageReturn.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllText(path).ShouldBe(content.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
         }
@@ -548,10 +582,11 @@ public class PackageFileServiceTests
                 "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"PackageA\" Version=\"1.0.0\" />\n    <PackageReference Include=\"PackageB\" Version=\"1.0.0\" />\n  </ItemGroup>\n</Project>\n";
             var path = TempPath("Repeated.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("PackageB", "2.0.0");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             var expected = content.Replace(
                 "Include=\"PackageB\" Version=\"1.0.0\"",
@@ -568,10 +603,11 @@ public class PackageFileServiceTests
                 "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\">\n      <Version Condition=\"'$(UseV1)' == '13.0.1'\">13.0.1</Version>\n    </PackageReference>\n  </ItemGroup>\n</Project>\n";
             var path = TempPath("ChildCondition.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             var expected = content.Replace(">13.0.1<", ">13.0.2<", StringComparison.Ordinal);
             File.ReadAllText(path).ShouldBe(expected);
@@ -585,10 +621,11 @@ public class PackageFileServiceTests
                 "<Project>\n  <ItemGroup>\n    <PackageReference Condition=\"'$(UseV1)' == '13.0.1'\" Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
             var path = TempPath("AttributeCondition.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             var expected = content.Replace("Version=\"13.0.1\"", "Version=\"13.0.2\"", StringComparison.Ordinal);
             File.ReadAllText(path).ShouldBe(expected);
@@ -602,10 +639,11 @@ public class PackageFileServiceTests
                 "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\">\n      <Version>\n        3.0.0\n      </Version>\n    </PackageReference>\n  </ItemGroup>\n</Project>\n";
             var path = TempPath("WhitespaceVersion.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "3.0.1");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllText(path).ShouldBe(content.Replace("3.0.0", "3.0.1", StringComparison.Ordinal));
         }
@@ -618,10 +656,11 @@ public class PackageFileServiceTests
                 "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\" 3.0.0 \" />\n  </ItemGroup>\n</Project>\n";
             var path = TempPath("WhitespaceAttribute.csproj");
             File.WriteAllText(path, content);
-            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
 
             manifest.SetVersion("Newtonsoft.Json", "3.0.1");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllText(path).ShouldBe(content.Replace(" 3.0.0 ", " 3.0.1 ", StringComparison.Ordinal));
         }
@@ -669,6 +708,7 @@ public class PackageFileServiceTests
             var path = TempPath("UnappliedSpan.csproj");
             File.WriteAllText(path, content);
             var originalBytes = File.ReadAllBytes(path);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
             var manifest = new PackageManifest();
             manifest.Add(
                 new PackageVersionEntry
@@ -685,12 +725,52 @@ public class PackageFileServiceTests
             manifest.RegisterFileText(path, content);
 
             manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-            s_service.SavePackageManifest(manifest);
+            packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllBytes(path).ShouldBe(originalBytes);
             manifest.HasChanges.ShouldBeTrue();
             manifest.Warnings.ShouldContain(warning =>
                 warning.Contains("recorded span is invalid", StringComparison.Ordinal));
+        }
+
+        /// <summary>
+        /// Writes a minimal project file with the supplied encoding, applies a version bump via
+        /// <see cref="PackageFileService"/>, and asserts the file is written back with the same
+        /// preamble (byte order mark) and encoding, exercising the read/detect/write path.
+        /// </summary>
+        private static void AssertBomPreserved_On_Modification(Encoding encoding, string fileName)
+        {
+            ResetTempDirectory();
+            var path = TempPath(fileName);
+            const string content =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            WriteEncodedFile(path, content, encoding);
+
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+            manifest.SetVersion("Newtonsoft.Json", "13.0.2");
+            packageFileService.SavePackageManifest(manifest);
+
+            var bytes = File.ReadAllBytes(path);
+            var expectedPreamble = encoding.GetPreamble();
+
+            bytes.Take(expectedPreamble.Length).ShouldBe(expectedPreamble);
+
+            var decoded = encoding.GetString(bytes, expectedPreamble.Length, bytes.Length - expectedPreamble.Length);
+            decoded.ShouldSatisfyAllConditions(
+                () => decoded.ShouldContain("13.0.2"),
+                () => decoded.ShouldNotContain("13.0.1"));
+        }
+
+        private static void WriteEncodedFile(string path, string content, Encoding encoding)
+        {
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllText(path, content, encoding);
         }
     }
 
@@ -767,45 +847,6 @@ public class PackageFileServiceTests
 
             text.Substring(start, length).ShouldBe("13.0.1");
         }
-    }
-
-    /// <summary>
-    /// Writes a minimal project file with the supplied encoding, applies a version bump via
-    /// <see cref="PackageFileService"/>, and asserts the file is written back with the same
-    /// preamble (byte order mark) and encoding, exercising the read/detect/write path.
-    /// </summary>
-    private static void AssertBomPreserved_On_Modification(Encoding encoding, string fileName)
-    {
-        ResetTempDirectory();
-        var path = TempPath(fileName);
-        const string content =
-            "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
-        WriteEncodedFile(path, content, encoding);
-
-        var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
-        manifest.SetVersion("Newtonsoft.Json", "13.0.2");
-        s_service.SavePackageManifest(manifest);
-
-        var bytes = File.ReadAllBytes(path);
-        var expectedPreamble = encoding.GetPreamble();
-
-        bytes.Take(expectedPreamble.Length).ShouldBe(expectedPreamble);
-
-        var decoded = encoding.GetString(bytes, expectedPreamble.Length, bytes.Length - expectedPreamble.Length);
-        decoded.ShouldSatisfyAllConditions(
-            () => decoded.ShouldContain("13.0.2"),
-            () => decoded.ShouldNotContain("13.0.1"));
-    }
-
-    private static void WriteEncodedFile(string path, string content, Encoding encoding)
-    {
-        var directory = Path.GetDirectoryName(path);
-        if (!string.IsNullOrEmpty(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        File.WriteAllText(path, content, encoding);
     }
 
     private static LocalDirectory TempDirectory => new("./temp/packages");
