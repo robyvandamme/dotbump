@@ -325,6 +325,31 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Ids_Differing_Only_By_Case_Bumps_All_Occurrences_To_One_Target()
+        {
+            ResetTempDirectory();
+            var upperContent =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            var lowerContent =
+                "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"newtonsoft.json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            var upperPath = TempPath("Upper.csproj");
+            var lowerPath = TempPath("Lower.csproj");
+            File.WriteAllText(upperPath, upperContent);
+            File.WriteAllText(lowerPath, lowerContent);
+
+            var manifest = s_service.GetPackageManifest(TempDirectory.AbsolutePath);
+            manifest.GetPackageIds().ShouldBe(["Newtonsoft.Json"]);
+
+            manifest.SetVersion("NEWTONSOFT.JSON", "13.0.2");
+            s_service.SavePackageManifest(manifest);
+
+            var upperResult = File.ReadAllText(upperPath);
+            var lowerResult = File.ReadAllText(lowerPath);
+            upperResult.ShouldBe(upperContent.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
+            lowerResult.ShouldBe(lowerContent.Replace("13.0.1", "13.0.2", StringComparison.Ordinal));
+        }
+
+        [Fact]
         public void With_Child_Element_Version_Updates_Value()
         {
             ResetTempDirectory();

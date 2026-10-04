@@ -371,7 +371,10 @@ Gaps:
    `With_Utf16_Be_Bom_File_Modified_Preserves_Bom_And_Encoding` and
    `With_No_Bom_File_Modified_Does_Not_Add_Bom` write an encoded file with a real version bump and assert the preamble,
    encoding and content survive (`DetectEncoding` + `WriteText` path).
-2. **Case-insensitive id unification end-to-end.** `PackageManifestTests` checks `GetPackageIds` casing, but nothing verifies that `Newtonsoft.json` in one file and `Newtonsoft.Json` in another are both bumped to one target via `SetVersion`/`ApplyChanges`.
+2. **Case-insensitive id unification.** Resolved at the service integration level: `With_Ids_Differing_Only_By_Case_Bumps_All_Occurrences_To_One_Target`
+   (in `PackageFileServiceTests`) writes two `.csproj` files whose ids differ only by casing (`Newtonsoft.Json` /
+   `newtonsoft.json`), asserts `GetPackageIds()` yields a single id, then bumps via `SetVersion` with yet another casing
+   and asserts both files are rewritten to the single target version.
 3. **Warnings not asserted as surfaced.** Resolved: warnings are asserted through to the report (`With_Read_Warnings_Reports_Warnings`, `With_Validation_Errors_Still_Reports_Read_Warnings`, `BumpReportTests`) and `With_Unsupported_Versions_Skips_And_Warns` now also asserts `LogEventLevel.Warning` output. No console assertion — the report is the intended surface (see M3).
 4. **Markup-unsafe paths.** Resolved: `[draft]`-style markup-unsafe paths are exercised for all three commands (finding H1 resolved above).
 5. **Span-mismatch guard.** The `ApplyChanges` invalid-span warning path is now covered by `With_Out_Of_Bounds_Span_Skips_And_Warns`; the span-content check itself is deliberately not added (see the H2 disposition above), so no content-mismatch test is warranted.
