@@ -12,6 +12,25 @@ The feature is well built overall. Notable strengths: the span-based, in-place r
 
 Findings below are ordered by severity. No critical (data-loss/security-breach) issues were found, but two high-severity items deserve attention before broader adoption.
 
+### Skipped / deferred
+
+The following findings were deliberately **not** actioned in this pass. The per-finding sections below remain the
+authoritative detail.
+
+- **Performance / scale:** M1 (CancellationToken not propagated to handler/resolver/HTTP), M2 (sequential resolution
+  with all-or-nothing failure), M5 (duplicated "highest valid version" logic, O(ids × occurrences)), L6
+  (`SemanticVersion` re-parsed on every property access).
+- **Structural refactors:** M6 (`BumpReport` temporal coupling and mixed responsibilities — expected to resurface with
+  the planned markdown report output), L7 (`PackageFileService` doing too much).
+- **Cosmetic / defense-in-depth:** L3 (hardcoded command name), L4 (per-instance default path fields), L5 (dictionary
+  comparers), L8 (handler validates `repositoryPath` but not `nugetConfigPath`), and the three Nits (`DotBumpException`
+  display, `NuGetClient._disposed` field ordering, double `Errors.Any()`).
+
+**Rationale:** resolved items were correctness- or security-adjacent (H1, H2-part2, M3, M4, M7, L1, L2); the deferred
+items are performance/scale concerns, structural refactors, or cosmetic/defense-in-depth, deferred because DotBump
+currently runs on relatively small codebases, so they do not pay off yet. The separate **markdown report output**
+feature is also still open and tracked outside this review.
+
 | # | Severity | Finding |
 |---|----------|---------|
 | H1 | High | Unescaped Spectre markup in console output can fail the command on paths containing `[`/`]` — resolved, see H1 |
