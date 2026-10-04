@@ -13,6 +13,7 @@ using DotBump.NuGet.DataModel.NuGetConfiguration;
 using DotBump.NuGet.DataModel.NuGetService;
 using DotBump.NuGet.Interfaces;
 using DotBump.Reports;
+using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
 using Shouldly;
@@ -200,7 +201,7 @@ public class BumpPackagesCommandTests
             var fileService = new Mock<IPackageFileService>();
             fileService
                 .Setup(s => s.GetPackageManifest(It.IsAny<string>()))
-                .Returns(CreateManifest(("MyPackage", "1.0.0")));
+                .Returns(TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0")));
 
             var configFileService = new Mock<INuGetConfigFileService>();
             configFileService
@@ -243,38 +244,15 @@ public class BumpPackagesCommandTests
 
         private static BumpReport CreateReport(params (string Id, string Version)[] packages)
         {
-            return new BumpReport(CreateManifest(packages), BumpType.Minor);
+            return new BumpReport(TestPackageManifestFactory.CreateManifest(packages), BumpType.Minor);
         }
 
         private static PackageManifest CreateBumpedManifest(params (string Id, string Version)[] packages)
         {
-            var manifest = CreateManifest(packages);
+            var manifest = TestPackageManifestFactory.CreateManifest(packages);
             foreach (var (id, version) in packages)
             {
                 manifest.SetVersion(id, version);
-            }
-
-            return manifest;
-        }
-
-        private static PackageManifest CreateManifest(params (string Id, string Version)[] packages)
-        {
-            var manifest = new PackageManifest();
-
-            foreach (var (id, version) in packages)
-            {
-                manifest.Add(
-                    new PackageVersionEntry
-                    {
-                        PackageId = id,
-                        OriginalVersion = version,
-                        Version = version,
-                        FilePath = $"{id}.csproj",
-                        SourceKind = PackageSourceKind.Project,
-                        ElementName = "PackageReference",
-                        VersionStart = 0,
-                        VersionLength = version.Length,
-                    });
             }
 
             return manifest;

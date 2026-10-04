@@ -378,7 +378,9 @@ Gaps:
 3. **Warnings not asserted as surfaced.** Resolved: warnings are asserted through to the report (`With_Read_Warnings_Reports_Warnings`, `With_Validation_Errors_Still_Reports_Read_Warnings`, `BumpReportTests`) and `With_Unsupported_Versions_Skips_And_Warns` now also asserts `LogEventLevel.Warning` output. No console assertion — the report is the intended surface (see M3).
 4. **Markup-unsafe paths.** Resolved: `[draft]`-style markup-unsafe paths are exercised for all three commands (finding H1 resolved above).
 5. **Span-mismatch guard.** The `ApplyChanges` invalid-span warning path is now covered by `With_Out_Of_Bounds_Span_Skips_And_Warns`; the span-content check itself is deliberately not added (see the H2 disposition above), so no content-mismatch test is warranted.
-6. **Duplicated test helper.** `CreateManifest` is copy-pasted verbatim in `BumpPackagesCommandTests` and `BumpPackagesHandlerTests`. Extract a shared factory (the test `AGENTS.md` favors shared helpers).
+6. **Duplicated test helper.** Resolved: `CreateManifest` is now a single factory on `TestPackageManifestFactory`
+   (`test/DotBump.Tests/TestHelpers/`), imported with `using static` in `BumpPackagesCommandTests` and
+   `BumpPackagesHandlerTests`; the two copy-pasted private methods were removed.
 7. **Shared static service.** `PackageFileServiceTests` uses a single `static readonly s_service`; safe under xUnit's per-class sequential execution, but an instance-per-test field would remove the implicit coupling.
 8. **Save-time skip is not surfaced.** Resolved: `ApplyChanges` records the skipped bump via `manifest.AddWarning`, the handler propagates warnings to the report after saving, and `With_Unapplied_Span_Surfaces_Warning` passes (state is kept, the failure is reported).
 
