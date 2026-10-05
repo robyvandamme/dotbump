@@ -187,7 +187,10 @@ internal record SemanticVersion : IComparable<SemanticVersion>
             return 0;
         }
 
-        // Both are pre-releases, compare the pre-release identifiers
+        // Both are pre-releases, compare the pre-release identifiers.
+        // The null-forgiving operators are safe here: the constructor only sets
+        // IsPreRelease to true when PreRelease is assigned, so IsPreRelease implies PreRelease
+        // is non-null. The compiler cannot infer that invariant between the two properties.
         return ComparePreReleaseVersions(PreRelease!, other.PreRelease!);
     }
 
