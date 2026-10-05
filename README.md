@@ -51,7 +51,7 @@ All three commands accept `--output` to write a report. The format is inferred f
 
 ### Warnings
 
-- Skipping 'Floating.Package' because version '1.2.*' is not supported.
+- Skipping 'Floating.Package' because version '1.2.\*' is not supported.
 ```
 
 ## Features

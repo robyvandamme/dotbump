@@ -105,7 +105,7 @@ public class MarkdownReportFormatterTests
                 "\n" +
                 "### Warnings\n" +
                 "\n" +
-                "- Skipping 'Floating.Package' because version '1.2.*' is not supported.\n" +
+                "- Skipping 'Floating.Package' because version '1.2.\\*' is not supported.\n" +
                 "\n");
         }
 
@@ -123,6 +123,60 @@ public class MarkdownReportFormatterTests
                 "### Errors\n" +
                 "\n" +
                 "- The file ./nuget.config does not exist.\n" +
+                "\n");
+        }
+
+        [Fact]
+        public void With_Id_Containing_Underscores_Escapes_Underscores()
+        {
+            var manifest = CreateManifest(("Company._Core_.Helpers", "1.0.0"));
+            manifest.SetVersion("Company._Core_.Helpers", "2.0.0");
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+
+            var markdown = MarkdownReportFormatter.Format(report);
+
+            markdown.ShouldBe(
+                "## Packages\n" +
+                "\n" +
+                "- Company.\\_Core\\_.Helpers: 1.0.0 → 2.0.0\n" +
+                "\n");
+        }
+
+        [Fact]
+        public void With_Warning_Containing_Markdown_Metacharacters_Escapes_Them()
+        {
+            var report = new BumpReport(CreateManifest(), BumpType.Minor);
+            report.ReportWarnings(
+            [
+                "Skipping 'Package' because version '[1.0.0, 2.0.0)' and `floating` are not supported."
+            ]);
+
+            var markdown = MarkdownReportFormatter.Format(report);
+
+            markdown.ShouldBe(
+                "## Packages\n" +
+                "\n" +
+                "### Warnings\n" +
+                "\n" +
+                "- Skipping 'Package' because version '\\[1.0.0, 2.0.0)' and \\`floating\\` are not supported.\n" +
+                "\n");
+        }
+
+        [Fact]
+        public void With_Warning_Containing_Line_Breaks_Returns_Single_Bullet_Line()
+        {
+            var report = new BumpReport(CreateManifest(), BumpType.Minor);
+            report.ReportWarnings(["first line\n\n## Injected heading\nsecond line"]);
+
+            var markdown = MarkdownReportFormatter.Format(report);
+
+            markdown.ShouldBe(
+                "## Packages\n" +
+                "\n" +
+                "### Warnings\n" +
+                "\n" +
+                "- first line ## Injected heading second line\n" +
                 "\n");
         }
 

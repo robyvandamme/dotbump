@@ -71,8 +71,8 @@ internal static class MarkdownReportFormatter
     private static string FormatResult(BumpResult result, bool includeId)
     {
         return includeId
-            ? $"{result.Id}: {result.OldVersion} → {result.NewVersion}"
-            : $"{result.OldVersion} → {result.NewVersion}";
+            ? $"{EscapeInline(result.Id)}: {EscapeInline(result.OldVersion)} → {EscapeInline(result.NewVersion)}"
+            : $"{EscapeInline(result.OldVersion)} → {EscapeInline(result.NewVersion)}";
     }
 
     private static void AppendSection(StringBuilder builder, string heading, IReadOnlyCollection<string> lines)
@@ -87,9 +87,30 @@ internal static class MarkdownReportFormatter
 
         foreach (var line in lines)
         {
-            builder.Append("- ").AppendLine(line);
+            builder.Append("- ").AppendLine(EscapeInline(line));
         }
 
         builder.AppendLine();
+    }
+
+    private static string EscapeInline(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        // Collapse embedded line breaks (and other whitespace runs) so a diagnostic cannot inject a
+        // block (for example a heading), then escape the inline constructs that would otherwise
+        // change how identifiers, versions and diagnostics render.
+        var singleLine = string.Join(' ', value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+        return singleLine
+            .Replace(@"\", @"\\", StringComparison.Ordinal)
+            .Replace("`", @"\`", StringComparison.Ordinal)
+            .Replace("*", @"\*", StringComparison.Ordinal)
+            .Replace("_", @"\_", StringComparison.Ordinal)
+            .Replace("[", @"\[", StringComparison.Ordinal)
+            .Replace("]", @"\]", StringComparison.Ordinal);
     }
 }
