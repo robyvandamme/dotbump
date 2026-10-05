@@ -328,25 +328,13 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
     private static bool IsExcludedDirectory(string directory, HashSet<string> excludedPaths)
     {
-        if (excludedPaths.Count == 0)
-        {
-            return false;
-        }
-
         var normalizedDirectory = Path.TrimEndingDirectorySeparator(directory);
 
-        foreach (var excludedPath in excludedPaths)
-        {
-            if (string.Equals(normalizedDirectory, excludedPath, StringComparison.OrdinalIgnoreCase)
-                || normalizedDirectory.StartsWith(
-                    excludedPath + Path.DirectorySeparatorChar,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return excludedPaths.Any(excludedPath =>
+            string.Equals(normalizedDirectory, excludedPath, StringComparison.OrdinalIgnoreCase)
+            || normalizedDirectory.StartsWith(
+                excludedPath + Path.DirectorySeparatorChar,
+                StringComparison.OrdinalIgnoreCase));
     }
 
     private IEnumerable<string> EnumerateCandidateFiles(string rootPath, HashSet<string> excludedPaths)
