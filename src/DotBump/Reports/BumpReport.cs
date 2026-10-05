@@ -15,6 +15,20 @@ namespace DotBump.Reports;
 
 internal class BumpReport
 {
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+
+        // Keeps readable characters such as apostrophes (') as-is instead of the default
+        // JavaScriptEncoder.Default escaping them to \u0027. The report is consumed as JSON,
+        // not injected into HTML, so relaxed escaping is safe here.
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+    };
+
+    private static readonly UTF8Encoding s_utf8NoBom = new();
+
     private readonly List<BumpResult> _results = new();
     private readonly List<string> _errors = new();
     private readonly List<string> _warnings = new();
@@ -146,38 +160,23 @@ internal class BumpReport
             return;
         }
 
-        if (ReportFormatResolver.Resolve(outputFile) == ReportFormat.Markdown)
+        var content = ReportFormatResolver.Resolve(outputFile) == ReportFormat.Markdown
+            ? MarkdownReportFormatter.Format(this)
+            : JsonSerializer.Serialize(this, s_jsonOptions);
+
+        if (content is null)
         {
-            var markdown = MarkdownReportFormatter.Format(this);
-            if (markdown != null)
+            // Nothing to report: remove any report left over from a previous run so a reused
+            // output path never yields stale content.
+            if (File.Exists(outputFile))
             {
-                await File.WriteAllTextAsync(outputFile, markdown, new UTF8Encoding());
-            }
-            else if (File.Exists(outputFile))
-            {
-                // Nothing to report: remove any report left over from a previous run so a reused
-                // output path never yields stale content.
                 File.Delete(outputFile);
             }
 
             return;
         }
 
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-
-            // Keeps readable characters such as apostrophes (') as-is instead of the default
-            // JavaScriptEncoder.Default escaping them to \u0027. The report is consumed as JSON,
-            // not injected into HTML, so relaxed escaping is safe here.
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
-        };
-        await File.WriteAllTextAsync(
-            outputFile,
-            JsonSerializer.Serialize(this, options),
-            new UTF8Encoding());
+        await File.WriteAllTextAsync(outputFile, content, s_utf8NoBom);
     }
 
     /// <summary>

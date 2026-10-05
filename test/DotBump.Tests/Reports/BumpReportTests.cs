@@ -183,6 +183,55 @@ public class BumpReportTests
                 File.Delete(path);
             }
         }
+
+        [Fact]
+        public async Task With_Json_Output_Does_Not_Write_Bom()
+        {
+            var report = CreateReport();
+            report.ReportWarnings(["Skipping 'Other.Package' because version '1.0.*' is not supported."]);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "no-bom-report.json");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                HasUtf8Bom(await File.ReadAllBytesAsync(path)).ShouldBeFalse();
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task With_Markdown_Output_Does_Not_Write_Bom()
+        {
+            var manifest = CreateManifest(("Newtonsoft.Json", "12.0.1"));
+            manifest.SetVersion("Newtonsoft.Json", "13.0.3");
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "no-bom-report.md");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                HasUtf8Bom(await File.ReadAllBytesAsync(path)).ShouldBeFalse();
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    private static bool HasUtf8Bom(byte[] bytes)
+    {
+        return bytes is [0xEF, 0xBB, 0xBF, ..];
     }
 
     private static BumpReport CreateReport()
