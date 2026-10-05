@@ -1,7 +1,6 @@
 // Copyright © Roby Van Damme.
 
 using System.ComponentModel;
-using DotBump.Common;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -34,53 +33,23 @@ internal class BumpPackagesSettings : BumpSettings
 
     public override ValidationResult Validate()
     {
-        // If a config file is passed, verify it exists before passing it on.
-        if (!string.IsNullOrWhiteSpace(NuGetConfigPath))
-        {
-            if (!PathValidation.TryGetFullPath(NuGetConfigPath, out var normalizedConfigPath))
-            {
-                return ValidationResult.Error($"The file {NuGetConfigPath} is not a valid path.");
-            }
+        return ValidateFileExists(NuGetConfigPath)
+            ?? ValidateDirectoryExists(RepositoryPath)
+            ?? ValidateExcludedDirectories(Exclude)
+            ?? ValidationResult.Success();
+    }
 
-            if (!File.Exists(normalizedConfigPath))
+    private static ValidationResult? ValidateExcludedDirectories(IEnumerable<string>? excludedPaths)
+    {
+        foreach (var excludePath in excludedPaths ?? [])
+        {
+            var result = ValidateDirectoryExists(excludePath);
+            if (result != null)
             {
-                return ValidationResult.Error($"The file {NuGetConfigPath} does not exist.");
+                return result;
             }
         }
 
-        // If a root path is passed, verify the directory exists before passing it on.
-        if (!string.IsNullOrWhiteSpace(RepositoryPath))
-        {
-            if (!PathValidation.TryGetFullPath(RepositoryPath, out var normalizedRepositoryPath))
-            {
-                return ValidationResult.Error($"The directory {RepositoryPath} is not a valid path.");
-            }
-
-            if (!Directory.Exists(normalizedRepositoryPath))
-            {
-                return ValidationResult.Error($"The directory {RepositoryPath} does not exist.");
-            }
-        }
-
-        // If excluded directories are passed, verify each one exists before passing them on.
-        foreach (var excludePath in Exclude ?? [])
-        {
-            if (string.IsNullOrWhiteSpace(excludePath))
-            {
-                continue;
-            }
-
-            if (!PathValidation.TryGetFullPath(excludePath, out var normalizedExcludePath))
-            {
-                return ValidationResult.Error($"The directory {excludePath} is not a valid path.");
-            }
-
-            if (!Directory.Exists(normalizedExcludePath))
-            {
-                return ValidationResult.Error($"The directory {excludePath} does not exist.");
-            }
-        }
-
-        return ValidationResult.Success();
+        return null;
     }
 }
