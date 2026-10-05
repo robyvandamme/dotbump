@@ -317,13 +317,13 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
     {
         if (excludedPaths == null)
         {
-            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            return new HashSet<string>(StringComparer.Ordinal);
         }
 
         return excludedPaths
             .Where(path => !string.IsNullOrWhiteSpace(path))
             .Select(path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet(StringComparer.Ordinal);
     }
 
     private static bool IsExcludedDirectory(string directory, HashSet<string> excludedPaths)
@@ -331,10 +331,10 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         var normalizedDirectory = Path.TrimEndingDirectorySeparator(directory);
 
         return excludedPaths.Any(excludedPath =>
-            string.Equals(normalizedDirectory, excludedPath, StringComparison.OrdinalIgnoreCase)
+            string.Equals(normalizedDirectory, excludedPath, StringComparison.Ordinal)
             || normalizedDirectory.StartsWith(
                 excludedPath + Path.DirectorySeparatorChar,
-                StringComparison.OrdinalIgnoreCase));
+                StringComparison.Ordinal));
     }
 
     private IEnumerable<string> EnumerateCandidateFiles(string rootPath, HashSet<string> excludedPaths)

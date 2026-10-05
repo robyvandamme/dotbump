@@ -211,6 +211,34 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Case_Sensitive_File_System_Excludes_Only_The_Exact_Cased_Directory()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("packages", "Sample.csproj"));
+            CopyFixture("Sample.csproj", TempPath("Packages", "Sample.csproj"));
+
+            var siblingCount = Directory.GetDirectories(TempDirectory.AbsolutePath)
+                .Count(directory => string.Equals(
+                    Path.GetFileName(directory),
+                    "packages",
+                    StringComparison.OrdinalIgnoreCase));
+            if (siblingCount < 2)
+            {
+                // Case-insensitive filesystem: both names collapse to the same directory.
+                return;
+            }
+
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath, [TempPath("packages")]);
+
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Count.ShouldBe(3),
+                () => manifest.Packages.ShouldAllBe(package =>
+                    package.FilePath.StartsWith(TempPath("Packages"), StringComparison.Ordinal)));
+        }
+
+        [Fact]
         public void With_Symlinked_File_Outside_Root_Is_Skipped()
         {
             ResetTempDirectory();

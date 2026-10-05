@@ -206,7 +206,9 @@ read from a `Version` attribute, a `<Version>` child element or a `VersionOverri
 
 Directories named `bin`, `obj`, `.git`, `.vs` and `node_modules` are skipped. Additional directories can be
 skipped with `--exclude` (repeatable), for example to avoid scanning test data:
-`dotnet dotbump packages --exclude ./test/DotBump.Tests/Data`.
+`dotnet dotbump packages --exclude ./test/DotBump.Tests/Data`. Path matching is case-sensitive: on a
+case-insensitive filesystem the directory must be passed with its exact on-disk casing, otherwise it is not
+excluded.
 
 ```text
 DESCRIPTION:
