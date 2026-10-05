@@ -44,12 +44,12 @@ internal class NuGetConfigValidator(ILogger logger) : INuGetConfigValidator
         }
 
         // Validate Credentials
-        foreach (var (key, credential) in config.Credentials)
+        foreach (var (_, credential) in config.Credentials)
         {
             foreach (var cred in credential.Credentials)
             {
                 // Validate that Value starts and ends with '%'
-                if (!cred.Value.StartsWith("%") || !cred.Value.EndsWith("%"))
+                if (!cred.Value.StartsWith('%') || !cred.Value.EndsWith('%'))
                 {
                     logger.Error(
                         "Credential value for {Key} for source {Source} should start and end with %",
