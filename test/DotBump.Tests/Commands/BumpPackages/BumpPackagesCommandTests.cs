@@ -1,6 +1,5 @@
 // Copyright © Roby Van Damme.
 
-using System.ComponentModel.DataAnnotations;
 using System.Net;
 using DotBump.Commands;
 using DotBump.Commands.BumpPackages;
@@ -17,8 +16,10 @@ using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
 using Shouldly;
+using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Testing;
+using ValidationResult = System.ComponentModel.DataAnnotations.ValidationResult;
 
 namespace DotBump.Tests.Commands.BumpPackages;
 
@@ -279,6 +280,68 @@ public class BumpPackagesCommandTests
             }
 
             return manifest;
+        }
+    }
+
+    public class ExcludeOption
+    {
+        [Fact]
+        public async Task With_Repeated_Exclude_Options_Forwards_Each_Directory()
+        {
+            var tempRoot = new LocalDirectory("./temp/exclude-option");
+            tempRoot.EnsureDirectoryDeleted();
+            var first = new LocalDirectory("./temp/exclude-option/first");
+            var second = new LocalDirectory("./temp/exclude-option/second");
+            first.EnsureDirectoryCreated();
+            second.EnsureDirectoryCreated();
+
+            try
+            {
+                using var testConsole = new TestConsole();
+                var handler = new Mock<IBumpPackagesHandler>();
+                handler
+                    .Setup(h => h.HandleAsync(
+                        It.IsAny<BumpType>(),
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        It.IsAny<IReadOnlyCollection<string>>()))
+                    .ReturnsAsync(new BumpReport(
+                        TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0")),
+                        BumpType.Minor));
+
+                IAnsiConsole console = testConsole;
+                var logger = Mock.Of<ILogger>();
+                var bumpPackagesHandler = handler.Object;
+
+                var app = new CommandApp();
+                app.Configure(config =>
+                {
+                    config.PropagateExceptions();
+                    config.Settings.Registrar.RegisterInstance(console);
+                    config.Settings.Registrar.RegisterInstance(logger);
+                    config.Settings.Registrar.RegisterInstance(bumpPackagesHandler);
+                    config.AddCommand<BumpPackagesCommand>("packages");
+                });
+
+                var exitCode = await app.RunAsync(
+                    ["packages", "--exclude", first.AbsolutePath, "--exclude", second.AbsolutePath]);
+
+                exitCode.ShouldBe(0);
+                handler.Verify(
+                    h => h.HandleAsync(
+                        It.IsAny<BumpType>(),
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        It.Is<IReadOnlyCollection<string>>(paths =>
+                            paths.Count == 2
+                            && paths.Contains(first.AbsolutePath)
+                            && paths.Contains(second.AbsolutePath))),
+                    Times.Once);
+            }
+            finally
+            {
+                tempRoot.EnsureDirectoryDeleted();
+            }
         }
     }
 }
