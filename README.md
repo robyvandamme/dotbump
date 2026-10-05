@@ -33,6 +33,27 @@ OPTIONS:
     -v, --version    Prints version information
 ```
 
+## Report formats
+
+All three commands accept `--output` to write a report. The format is inferred from the file extension:
+
+* `.json` — the full, machine-readable report, including every scanned entry, its old and new version, and the
+  `warnings` and `errors` arrays. This is the default for any other extension.
+* `.md` (or `.markdown`) — a concise markdown report intended as the content for an automated dependency-update pull
+  request. It lists only what changed, plus any warnings and errors; no file is written when there is nothing to
+  report.
+
+```markdown
+## Packages
+
+- Newtonsoft.Json: 12.0.1 → 13.0.3
+- Serilog: 3.0.0 → 3.0.1
+
+### Warnings
+
+- Skipping 'Floating.Package' because version '1.2.*' is not supported.
+```
+
 ## Features
 
 ### Bump the .NET SDK version
@@ -66,7 +87,8 @@ OPTIONS:
     -f, --file             The global.json file to update. Defaults to          
                            `./global.json`                                      
     -o, --output           Output file name. The name of the file to write the  
-                           result to. The output format is json                 
+                           result to. The output format is inferred from the    
+                           file extension: `.json` or `.md`                     
     -s, --security-only    Only bump the version if the new release is a        
                            security release. Defaults to false      
 
@@ -97,7 +119,9 @@ OPTIONS:
         --debug      Enable debug logging for troubleshooting. Includes response data                        
         --logfile    The file to send the log output to                                                      
     -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`           
-    -o, --output     Output file name. The name of the file to write the result to. The output format is json
+    -o, --output     Output file name. The name of the file to write the result
+                     to. The output format is inferred from the file extension:
+                     `.json` or `.md`
     -c, --config     The nuget config file to use. Defaults to `./nuget.config`                             
     -m, --manifest   The tools manifest file to update. Defaults to                                        
                      `./dotnet-tools.json`, falling back to `./.config/dotnet-tools.json`                   
@@ -203,13 +227,16 @@ OPTIONS:
         --debug      Enable debug logging for troubleshooting. Includes response data
         --logfile    The file to send the log output to
     -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`
-    -o, --output     Output file name. The name of the file to write the result to. The output format is json
+    -o, --output     Output file name. The name of the file to write the result
+                     to. The output format is inferred from the file extension:
+                     `.json` or `.md`
     -c, --config     The nuget config file to use. Defaults to `./nuget.config`
     -p, --path       The root directory to scan. Defaults to the current directory
 ```
 
-The output file (`--output`) uses the same JSON report format as the `sdk` and `tools` commands, and the command
-returns exit code `1` when an error occurs (for example an invalid NuGet configuration).
+The output file (`--output`) uses the same report formats as the `sdk` and `tools` commands (see
+[Report formats](#report-formats)), and the command returns exit code `1` when an error occurs (for example an invalid
+NuGet configuration).
 
 #### How versions are bumped
 

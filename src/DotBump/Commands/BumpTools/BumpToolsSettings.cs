@@ -16,7 +16,7 @@ internal class BumpToolsSettings : BumpSettings
     [CommandOption("-t|--type")]
     public BumpType? BumpType { get; init; }
 
-    [Description("Output file name. The name of the file to write the result to. The output format is json.")]
+    [Description("Output file name. The name of the file to write the result to. The output format is inferred from the file extension: `.json` or `.md`.")]
     [CommandOption("-o|--output")]
     public string? Output { get; init; }
 

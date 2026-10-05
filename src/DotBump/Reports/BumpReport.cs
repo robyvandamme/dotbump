@@ -141,24 +141,37 @@ internal class BumpReport
 
     public async Task WriteToFileAsync(string? outputFile)
     {
-        if (!string.IsNullOrWhiteSpace(outputFile))
+        if (string.IsNullOrWhiteSpace(outputFile))
         {
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-
-                // Keeps readable characters such as apostrophes (') as-is instead of the default
-                // JavaScriptEncoder.Default escaping them to \u0027. The report is consumed as JSON,
-                // not injected into HTML, so relaxed escaping is safe here.
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
-            };
-            await File.WriteAllTextAsync(
-                outputFile,
-                JsonSerializer.Serialize(this, options),
-                new UTF8Encoding());
+            return;
         }
+
+        if (ReportFormatResolver.Resolve(outputFile) == ReportFormat.Markdown)
+        {
+            var markdown = MarkdownReportFormatter.Format(this);
+            if (markdown != null)
+            {
+                await File.WriteAllTextAsync(outputFile, markdown, new UTF8Encoding());
+            }
+
+            return;
+        }
+
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+
+            // Keeps readable characters such as apostrophes (') as-is instead of the default
+            // JavaScriptEncoder.Default escaping them to \u0027. The report is consumed as JSON,
+            // not injected into HTML, so relaxed escaping is safe here.
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        };
+        await File.WriteAllTextAsync(
+            outputFile,
+            JsonSerializer.Serialize(this, options),
+            new UTF8Encoding());
     }
 
     /// <summary>
