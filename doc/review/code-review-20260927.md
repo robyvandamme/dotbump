@@ -12,6 +12,25 @@ The feature is well built overall. Notable strengths: the span-based, in-place r
 
 Findings below are ordered by severity. No critical (data-loss/security-breach) issues were found, but two high-severity items deserve attention before broader adoption.
 
+### Skipped / deferred
+
+The following findings were deliberately **not** actioned in this pass. The per-finding sections below remain the
+authoritative detail.
+
+- **Performance / scale:** M1 (CancellationToken not propagated to handler/resolver/HTTP), M2 (sequential resolution
+  with all-or-nothing failure), M5 (duplicated "highest valid version" logic, O(ids × occurrences)), L6
+  (`SemanticVersion` re-parsed on every property access).
+- **Structural refactors:** M6 (`BumpReport` temporal coupling and mixed responsibilities — expected to resurface with
+  the planned markdown report output), L7 (`PackageFileService` doing too much).
+- **Cosmetic / defense-in-depth:** L3 (hardcoded command name), L4 (per-instance default path fields), L5 (dictionary
+  comparers), L8 (handler validates `repositoryPath` but not `nugetConfigPath`), and the three Nits (`DotBumpException`
+  display, `NuGetClient._disposed` field ordering, double `Errors.Any()`).
+
+**Rationale:** resolved items were correctness- or security-adjacent (H1, H2-part2, M3, M4, M7, L1, L2); the deferred
+items are performance/scale concerns, structural refactors, or cosmetic/defense-in-depth, deferred because DotBump
+currently runs on relatively small codebases, so they do not pay off yet. The separate **markdown report output**
+feature is also still open and tracked outside this review.
+
 | # | Severity | Finding |
 |---|----------|---------|
 | H1 | High | Unescaped Spectre markup in console output can fail the command on paths containing `[`/`]` — resolved, see H1 |
@@ -246,6 +265,33 @@ If step 3 is skipped or reordered, the report silently reports wrong data — no
 
 ### M7. Inconsistent case-sensitivity for versions
 
+> **Status (2026-10-03): resolved — aligned on case-insensitive semantics (NuGet-style).**
+>
+> Chosen direction: a version that differs only by casing is **not** a different version. `SemanticVersion`
+> ordering now compares pre-release identifiers with `OrdinalIgnoreCase` (both numeric identifiers still compare
+> numerically), and `SemanticVersion` equality/`GetHashCode` were overridden so a record-equal comparison agrees
+> with `CompareTo == 0` (e.g. `1.0.0-RC1` equals `1.0.0-rc1`). Change detection was already `OrdinalIgnoreCase`
+> and is left unchanged, so ordering and change detection now agree: a casing-only difference resolves as
+> `CompareTo == 0`, fails the `newVersion > reference` guard, and is correctly reported as "no change" instead of
+> applying then reporting "No package versions were bumped."
+>
+> This is a deliberate deviation from SemVer's "ASCII sort order" wording, and it matches current NuGet
+> behavior, which "uses case insensitive string comparisons for pre-release components" (so `1.0.0-alpha` and
+> `1.0.0-Alpha` are equal), per the
+> [NuGet package versioning reference](https://learn.microsoft.com/en-us/nuget/concepts/package-versioning).
+> A proposal to switch NuGet to ordinal comparison (NuGet/Home#11621) was declined by the NuGet team as a
+> breaking change. Documented at `ComparePreReleaseIdentifiers`. Covered by
+> `With_PreRelease_Differing_Only_In_Casing_Returns_Zero`, `With_Different_PreRelease_Identifiers_Returns_Expected_Order`
+> and `With_Resolved_Version_Differing_Only_In_Casing_Does_Not_Bump_Or_Save`.
+>
+> **Follow-up (2026-10-03): `GetHashCode` aligned with `CompareTo`.** Because `Equals` delegates to
+> `CompareTo == 0`, and `CompareTo` has always compared numeric pre-release identifiers by value, versions such as
+> `1.0.0-beta.01` and `1.0.0-beta.1` are equal but the original hash (case-insensitive over the raw label) produced
+> different hashes — a broken equals/hash contract that would break `HashSet`/`Dictionary` lookups. `GetHashCode`
+> now hashes each identifier using the same rules as `CompareTo` (numeric by parsed value, otherwise
+> case-insensitively). Covered by `With_Numeric_Identifier_Leading_Zero_Returns_Zero_And_Same_Hash`. No production
+> code currently keys a hash collection by `SemanticVersion`, so this was a latent contract fix.
+
 **Files:** `PackageManifest.cs:28-29`, `PackageFileService.cs:439`, `BumpResult.cs:25`, `BumpReport.cs:65-66` vs. `Common/SemanticVersion.cs:176-231`
 
 Change detection everywhere uses `StringComparison.OrdinalIgnoreCase`:
@@ -265,6 +311,12 @@ public bool HasChanges => _packages.Any(package =>
 
 ### L1. Validator credential-key casing is inconsistent with the resolver
 
+> **Status (2026-10-03): resolved.**
+>
+> `NuGetConfigValidator` now compares `ClearTextPassword` with `StringComparison.OrdinalIgnoreCase`, matching the
+> resolver's `NuGetClientConfig` lookup, so a key such as `cleartextPASSWORD` is accepted by both. Covered by
+> `With_Mixed_Case_Credential_Keys_Returns_Empty_List`.
+
 `NuGetConfigValidator.cs:64-65`:
 
 ```csharp
@@ -275,6 +327,14 @@ if (!cred.Key.Equals("UserName", StringComparison.OrdinalIgnoreCase) &&
 `NuGetClientConfig` looks up both keys with `OrdinalIgnoreCase`. So `key="cleartextpassword"` is *accepted* by the resolver but *rejected* by the validator — contradictory errors. Use `OrdinalIgnoreCase` for both comparisons.
 
 ### L2. `BumpPackagesSettings.Validate` can throw instead of returning an error
+
+> **Status (2026-10-03): resolved.**
+>
+> Added `Common/PathValidation.TryGetFullPath`, which wraps `Path.GetFullPath` and returns `false` for invalid input
+> (`ArgumentException`, `NotSupportedException`, `PathTooLongException`) instead of throwing. Both
+> `BumpPackagesSettings` (`--config`, `--path`) and `BumpToolsSettings` (`--config`, `--manifest`) now return a
+> `ValidationResult.Error` (`"The file/directory {path} is not a valid path."`). Covered by the invalid-path cases in
+> `BumpPackagesSettingsTests` and `BumpToolsSettingsTests`.
 
 `BumpPackagesSettings.cs:35`, `:45` — `Path.GetFullPath(...)` throws `ArgumentException` for invalid path characters rather than yielding a friendly `ValidationResult.Error`. Wrap in try/catch and convert to a validation message.
 
@@ -325,13 +385,25 @@ Overall the test suite is a strong point: `PackageFileServiceTests` covers byte-
 
 Gaps:
 
-1. **BOM preservation on actual change.** `With_Unchanged_Manifest_Leaves_File_Byte_For_Byte` proves the untouched case, but there is no test where a UTF-8-BOM (or UTF-16) file *is* modified and the BOM is asserted to survive (`DetectEncoding` + `WriteText` path).
-2. **Case-insensitive id unification end-to-end.** `PackageManifestTests` checks `GetPackageIds` casing, but nothing verifies that `Newtonsoft.json` in one file and `Newtonsoft.Json` in another are both bumped to one target via `SetVersion`/`ApplyChanges`.
+1. **BOM preservation on actual change.** Resolved: `With_Utf8_Bom_File_Modified_Preserves_Bom_And_Encoding`,
+   `With_Utf16_Le_Bom_File_Modified_Preserves_Bom_And_Encoding`,
+   `With_Utf16_Be_Bom_File_Modified_Preserves_Bom_And_Encoding` and
+   `With_No_Bom_File_Modified_Does_Not_Add_Bom` write an encoded file with a real version bump and assert the preamble,
+   encoding and content survive (`DetectEncoding` + `WriteText` path).
+2. **Case-insensitive id unification.** Resolved at the service integration level: `With_Ids_Differing_Only_By_Case_Bumps_All_Occurrences_To_One_Target`
+   (in `PackageFileServiceTests`) writes two `.csproj` files whose ids differ only by casing (`Newtonsoft.Json` /
+   `newtonsoft.json`), asserts `GetPackageIds()` yields a single id, then bumps via `SetVersion` with yet another casing
+   and asserts both files are rewritten to the single target version.
 3. **Warnings not asserted as surfaced.** Resolved: warnings are asserted through to the report (`With_Read_Warnings_Reports_Warnings`, `With_Validation_Errors_Still_Reports_Read_Warnings`, `BumpReportTests`) and `With_Unsupported_Versions_Skips_And_Warns` now also asserts `LogEventLevel.Warning` output. No console assertion — the report is the intended surface (see M3).
 4. **Markup-unsafe paths.** Resolved: `[draft]`-style markup-unsafe paths are exercised for all three commands (finding H1 resolved above).
 5. **Span-mismatch guard.** The `ApplyChanges` invalid-span warning path is now covered by `With_Out_Of_Bounds_Span_Skips_And_Warns`; the span-content check itself is deliberately not added (see the H2 disposition above), so no content-mismatch test is warranted.
-6. **Duplicated test helper.** `CreateManifest` is copy-pasted verbatim in `BumpPackagesCommandTests` and `BumpPackagesHandlerTests`. Extract a shared factory (the test `AGENTS.md` favors shared helpers).
-7. **Shared static service.** `PackageFileServiceTests` uses a single `static readonly s_service`; safe under xUnit's per-class sequential execution, but an instance-per-test field would remove the implicit coupling.
+6. **Duplicated test helper.** Resolved: `CreateManifest` is now a single factory on `TestPackageManifestFactory`
+   (`test/DotBump.Tests/TestHelpers/`), imported with `using static` in `BumpPackagesCommandTests` and
+   `BumpPackagesHandlerTests`; the two copy-pasted private methods were removed.
+7. **Shared static service.** Resolved: the shared `static readonly s_service` was replaced with per-test inline
+   construction (`var packageFileService = new PackageFileService(new Mock<ILogger>().Object);`), matching the
+   `ToolFileServiceTests` style and removing the implicit coupling. The BOM test helper moved into the
+   `SavePackageManifest` group accordingly.
 8. **Save-time skip is not surfaced.** Resolved: `ApplyChanges` records the skipped bump via `manifest.AddWarning`, the handler propagates warnings to the report after saving, and `With_Unapplied_Span_Surfaces_Warning` passes (state is kept, the failure is reported).
 
 ---

@@ -9,6 +9,7 @@ using DotBump.Common;
 using DotBump.NuGet.DataModel.NuGetConfiguration;
 using DotBump.NuGet.DataModel.PackageResolution;
 using DotBump.NuGet.Interfaces;
+using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
 using Shouldly;
@@ -22,7 +23,7 @@ public class BumpPackagesHandlerTests
         [Fact]
         public async Task With_Resolved_Version_Updates_All_Occurrences_And_Saves()
         {
-            var manifest = CreateManifest(("MyPackage", "1.0.0"), ("MyPackage", "1.2.0"));
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"), ("MyPackage", "1.2.0"));
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver(("MyPackage", "1.3.0"));
             var handler = CreateHandler(fileService, resolver);
@@ -37,7 +38,7 @@ public class BumpPackagesHandlerTests
         [Fact]
         public async Task With_Occurrences_At_Different_Versions_Uses_Highest_As_Reference()
         {
-            var manifest = CreateManifest(("MyPackage", "1.0.0"), ("MyPackage", "1.2.0"));
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"), ("MyPackage", "1.2.0"));
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver(("MyPackage", "1.3.0"));
             var handler = CreateHandler(fileService, resolver);
@@ -58,7 +59,7 @@ public class BumpPackagesHandlerTests
         [Fact]
         public async Task With_Resolved_Version_Lower_Than_An_Occurrence_Does_Not_Downgrade()
         {
-            var manifest = CreateManifest(("MyPackage", "1.0.0"), ("MyPackage", "1.2.0"));
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"), ("MyPackage", "1.2.0"));
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver(("MyPackage", "1.0.4"));
             var handler = CreateHandler(fileService, resolver);
@@ -73,9 +74,24 @@ public class BumpPackagesHandlerTests
         }
 
         [Fact]
+        public async Task With_Resolved_Version_Differing_Only_In_Casing_Does_Not_Bump_Or_Save()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0-RC1"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(("MyPackage", "1.0.0-rc1"));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Patch, "./repo", "nuget.config");
+
+            report.HasChanges.ShouldBeFalse();
+            manifest.Packages.Single().Version.ShouldBe("1.0.0-RC1");
+            fileService.Verify(s => s.SavePackageManifest(It.IsAny<PackageManifest>()), Times.Never);
+        }
+
+        [Fact]
         public async Task With_No_Resolved_Version_Does_Not_Save()
         {
-            var manifest = CreateManifest(("MyPackage", "1.0.0"));
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"));
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver();
             var handler = CreateHandler(fileService, resolver);
@@ -89,7 +105,7 @@ public class BumpPackagesHandlerTests
         [Fact]
         public async Task With_Validation_Errors_Reports_Errors_And_Does_Not_Resolve_Or_Save()
         {
-            var manifest = CreateManifest(("MyPackage", "1.0.0"));
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"));
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver();
             var handler = CreateHandler(fileService, resolver, [new ValidationResult("bad config")]);
@@ -109,7 +125,7 @@ public class BumpPackagesHandlerTests
         [Fact]
         public async Task With_Invalid_Semantic_Version_Skips_And_Reports_Warning()
         {
-            var manifest = CreateManifest(("MyPackage", "1.2.3.4"));
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.2.3.4"));
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver();
             var handler = CreateHandler(fileService, resolver);
@@ -132,7 +148,7 @@ public class BumpPackagesHandlerTests
         {
             const string readWarning =
                 "Skipping 'Other.Package' in 'Other.csproj' because version '1.0.*' is not supported.";
-            var manifest = CreateManifest(("MyPackage", "1.0.0"));
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"));
             manifest.AddWarning(readWarning);
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver(("MyPackage", "1.1.0"));
@@ -148,7 +164,7 @@ public class BumpPackagesHandlerTests
         {
             const string readWarning =
                 "Skipping 'Other.Package' in 'Other.csproj' because version '1.0.*' is not supported.";
-            var manifest = CreateManifest(("MyPackage", "1.0.0"));
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"));
             manifest.AddWarning(readWarning);
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver();
@@ -159,29 +175,6 @@ public class BumpPackagesHandlerTests
             report.ShouldSatisfyAllConditions(
                 () => report.Errors.ShouldContain("bad config"),
                 () => report.Warnings.ShouldContain(readWarning));
-        }
-
-        private static PackageManifest CreateManifest(params (string Id, string Version)[] packages)
-        {
-            var manifest = new PackageManifest();
-
-            foreach (var (id, version) in packages)
-            {
-                manifest.Add(
-                    new PackageVersionEntry
-                    {
-                        PackageId = id,
-                        OriginalVersion = version,
-                        Version = version,
-                        FilePath = $"{id}.csproj",
-                        SourceKind = PackageSourceKind.Project,
-                        ElementName = "PackageReference",
-                        VersionStart = 0,
-                        VersionLength = version.Length,
-                    });
-            }
-
-            return manifest;
         }
 
         private static Mock<IPackageFileService> CreateFileService(PackageManifest manifest)

@@ -62,7 +62,7 @@ internal class NuGetConfigValidator(ILogger logger) : INuGetConfigValidator
                 }
 
                 if (!cred.Key.Equals("UserName", StringComparison.OrdinalIgnoreCase) &&
-                    !cred.Key.Equals("ClearTextPassword"))
+                    !cred.Key.Equals("ClearTextPassword", StringComparison.OrdinalIgnoreCase))
                 {
                     logger.Error(
                         "Credential key for source {Source} should be UserName or ClearTextPassword",

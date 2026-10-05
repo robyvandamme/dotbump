@@ -1,6 +1,7 @@
 // Copyright © Roby Van Damme.
 
 using System.ComponentModel;
+using DotBump.Common;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -32,8 +33,12 @@ internal class BumpPackagesSettings : BumpSettings
         // If a config file is passed, verify it exists before passing it on.
         if (!string.IsNullOrWhiteSpace(NuGetConfigPath))
         {
-            var normalizedPath = Path.GetFullPath(NuGetConfigPath);
-            if (!File.Exists(normalizedPath))
+            if (!PathValidation.TryGetFullPath(NuGetConfigPath, out var normalizedConfigPath))
+            {
+                return ValidationResult.Error($"The file {NuGetConfigPath} is not a valid path.");
+            }
+
+            if (!File.Exists(normalizedConfigPath))
             {
                 return ValidationResult.Error($"The file {NuGetConfigPath} does not exist.");
             }
@@ -42,8 +47,12 @@ internal class BumpPackagesSettings : BumpSettings
         // If a root path is passed, verify the directory exists before passing it on.
         if (!string.IsNullOrWhiteSpace(RepositoryPath))
         {
-            var normalizedPath = Path.GetFullPath(RepositoryPath);
-            if (!Directory.Exists(normalizedPath))
+            if (!PathValidation.TryGetFullPath(RepositoryPath, out var normalizedRepositoryPath))
+            {
+                return ValidationResult.Error($"The directory {RepositoryPath} is not a valid path.");
+            }
+
+            if (!Directory.Exists(normalizedRepositoryPath))
             {
                 return ValidationResult.Error($"The directory {RepositoryPath} does not exist.");
             }
