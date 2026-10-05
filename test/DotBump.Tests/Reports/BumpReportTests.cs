@@ -6,6 +6,7 @@ using DotBump.Commands.BumpPackages.DataModel;
 using DotBump.Reports;
 using DotBump.Tests.TestHelpers;
 using Shouldly;
+using static DotBump.Tests.TestHelpers.TestPackageManifestFactory;
 
 namespace DotBump.Tests.Reports;
 
@@ -93,6 +94,188 @@ public class BumpReportTests
                 File.Delete(path);
             }
         }
+
+        [Fact]
+        public async Task With_Markdown_Output_And_Content_Writes_Markdown_Report()
+        {
+            var manifest = CreateManifest(("Newtonsoft.Json", "12.0.1"));
+            manifest.SetVersion("Newtonsoft.Json", "13.0.3");
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "report.md");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                File.Exists(path).ShouldBeTrue();
+                var markdown = await File.ReadAllTextAsync(path);
+                markdown.ShouldBe(
+                    "## Packages\n" +
+                    "\n" +
+                    "- Newtonsoft.Json: 12.0.1 → 13.0.3\n" +
+                    "\n");
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task With_Markdown_Output_And_No_Content_Does_Not_Write_File()
+        {
+            var report = new BumpReport(CreateManifest(("Unchanged.Package", "1.0.0")), BumpType.Minor);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "empty-report.md");
+            File.Delete(path);
+
+            await report.WriteToFileAsync(path);
+
+            File.Exists(path).ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task With_Markdown_Output_And_No_Content_Deletes_Existing_File()
+        {
+            var report = new BumpReport(CreateManifest(("Unchanged.Package", "1.0.0")), BumpType.Minor);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "stale-report.md");
+            await File.WriteAllTextAsync(path, "report left over from a previous run");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                File.Exists(path).ShouldBeFalse();
+            }
+            finally
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task With_Unknown_Extension_Writes_Json()
+        {
+            var report = CreateReport();
+            report.ReportWarnings(["Skipping 'Other.Package' because version '1.0.*' is not supported."]);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "report.txt");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                using var document = JsonDocument.Parse(await File.ReadAllTextAsync(path));
+                document.RootElement.TryGetProperty("warnings", out _).ShouldBeTrue();
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task With_Json_Output_Does_Not_Write_Bom()
+        {
+            var report = CreateReport();
+            report.ReportWarnings(["Skipping 'Other.Package' because version '1.0.*' is not supported."]);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "no-bom-report.json");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                HasUtf8Bom(await File.ReadAllBytesAsync(path)).ShouldBeFalse();
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task With_Markdown_Output_Does_Not_Write_Bom()
+        {
+            var manifest = CreateManifest(("Newtonsoft.Json", "12.0.1"));
+            manifest.SetVersion("Newtonsoft.Json", "13.0.3");
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "no-bom-report.md");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                HasUtf8Bom(await File.ReadAllBytesAsync(path)).ShouldBeFalse();
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task With_Json_Output_Does_Not_Contain_Carriage_Returns()
+        {
+            var report = CreateReport();
+            report.ReportWarnings(["Skipping 'Other.Package' because version '1.0.*' is not supported."]);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "lf-report.json");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                (await File.ReadAllTextAsync(path)).ShouldNotContain('\r');
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task With_Markdown_Output_Does_Not_Contain_Carriage_Returns()
+        {
+            var manifest = CreateManifest(("Newtonsoft.Json", "12.0.1"));
+            manifest.SetVersion("Newtonsoft.Json", "13.0.3");
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "lf-report.md");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                (await File.ReadAllTextAsync(path)).ShouldNotContain('\r');
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    private static bool HasUtf8Bom(byte[] bytes)
+    {
+        return bytes is [0xEF, 0xBB, 0xBF, ..];
     }
 
     private static BumpReport CreateReport()

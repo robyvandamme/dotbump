@@ -11,6 +11,13 @@ namespace DotBump.Commands;
 internal abstract class BumpSettings : CommandSettings
 {
     /// <summary>
+    /// The shared description for the <c>--output</c> option, used by all bump commands.
+    /// </summary>
+    internal const string OutputOptionDescription =
+        "Output file name. The name of the file to write the result to. " +
+        "The output format is inferred from the file extension: `.json` or `.md`.";
+
+    /// <summary>
     /// Gets or sets a value indicating whether debug logging is enabled.
     /// Note that this particular Spectre command setting is required primarily for documentation purposes and example
     /// validation. The argument is handled by the <see cref="ArgumentHandler"/> when the application is starting up .

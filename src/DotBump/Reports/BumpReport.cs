@@ -15,6 +15,20 @@ namespace DotBump.Reports;
 
 internal class BumpReport
 {
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+
+        // Keeps readable characters such as apostrophes (') as-is instead of the default
+        // JavaScriptEncoder.Default escaping them to \u0027. The report is consumed as JSON,
+        // not injected into HTML, so relaxed escaping is safe here.
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+    };
+
+    private static readonly UTF8Encoding s_utf8NoBom = new();
+
     private readonly List<BumpResult> _results = new();
     private readonly List<string> _errors = new();
     private readonly List<string> _warnings = new();
@@ -141,24 +155,30 @@ internal class BumpReport
 
     public async Task WriteToFileAsync(string? outputFile)
     {
-        if (!string.IsNullOrWhiteSpace(outputFile))
+        if (string.IsNullOrWhiteSpace(outputFile))
         {
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-
-                // Keeps readable characters such as apostrophes (') as-is instead of the default
-                // JavaScriptEncoder.Default escaping them to \u0027. The report is consumed as JSON,
-                // not injected into HTML, so relaxed escaping is safe here.
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
-            };
-            await File.WriteAllTextAsync(
-                outputFile,
-                JsonSerializer.Serialize(this, options),
-                new UTF8Encoding());
+            return;
         }
+
+        // System.Text.Json indents with Environment.NewLine; normalize to LF so the JSON report is
+        // byte-identical on every platform.
+        var content = ReportFormatResolver.Resolve(outputFile) == ReportFormat.Markdown
+            ? MarkdownReportFormatter.Format(this)
+            : JsonSerializer.Serialize(this, s_jsonOptions).Replace(Environment.NewLine, "\n", StringComparison.Ordinal);
+
+        if (content is null)
+        {
+            // Nothing to report: remove any report left over from a previous run so a reused
+            // output path never yields stale content.
+            if (File.Exists(outputFile))
+            {
+                File.Delete(outputFile);
+            }
+
+            return;
+        }
+
+        await File.WriteAllTextAsync(outputFile, content, s_utf8NoBom);
     }
 
     /// <summary>

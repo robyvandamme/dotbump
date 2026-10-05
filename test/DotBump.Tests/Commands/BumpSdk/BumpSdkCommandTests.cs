@@ -157,6 +157,60 @@ public class BumpSdkCommandTests
         }
 
         [Fact]
+        public async Task With_Markdown_Output_Parameter_Writes_Markdown_Returns_0()
+        {
+            var json = new GlobalJson(new Sdk("8.0.405", "disable"));
+            var directory = new LocalDirectory("./temp");
+            directory.EnsureFileDeleted("global.json");
+            directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
+
+            var resultFile = new FileInfo("./temp/bump-sdk.result.md");
+            resultFile.Delete();
+
+            try
+            {
+                var loggerMock = new Mock<ILogger>().Object;
+                using var testConsole = new TestConsole();
+                var sdkFileService = new SdkFileService(loggerMock);
+                var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
+                var releaseFinder = new ReleaseFinder(loggerMock);
+                var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+
+                var command = new BumpSdkCommand(testConsole, loggerMock, handler);
+                var arguments = new[] { "bump", "sdk" };
+                var remainingArguments = new Mock<IRemainingArguments>();
+                var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
+                var result = await command.ExecuteForTestAsync(
+                    context,
+                    new BumpSdkSettings
+                    {
+                        GlobalJsonPath = "./temp/global.json",
+                        Output = "./temp/bump-sdk.result.md",
+                    },
+                    CancellationToken.None);
+
+                resultFile.Refresh();
+                var markdown = await File.ReadAllTextAsync(resultFile.FullName);
+
+                result.ShouldSatisfyAllConditions(
+                    () => result.ShouldBe(0),
+                    () => resultFile.Exists.ShouldBeTrue(),
+                    () => markdown.ShouldBe(
+                        "## SDK\n" +
+                        "\n" +
+                        "- 8.0.405 → 8.0.406\n" +
+                        "\n"));
+            }
+            finally
+            {
+                if (resultFile.Exists)
+                {
+                    resultFile.Delete();
+                }
+            }
+        }
+
+        [Fact]
         public async Task With_SecurityOnly_True_And_Non_Security_Releases_Returns_0()
         {
             // The SDK version in the release index (8.0.406) is not a security update.
