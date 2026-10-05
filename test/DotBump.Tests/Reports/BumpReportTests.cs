@@ -227,6 +227,50 @@ public class BumpReportTests
                 File.Delete(path);
             }
         }
+
+        [Fact]
+        public async Task With_Json_Output_Does_Not_Contain_Carriage_Returns()
+        {
+            var report = CreateReport();
+            report.ReportWarnings(["Skipping 'Other.Package' because version '1.0.*' is not supported."]);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "lf-report.json");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                (await File.ReadAllTextAsync(path)).ShouldNotContain('\r');
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task With_Markdown_Output_Does_Not_Contain_Carriage_Returns()
+        {
+            var manifest = CreateManifest(("Newtonsoft.Json", "12.0.1"));
+            manifest.SetVersion("Newtonsoft.Json", "13.0.3");
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "lf-report.md");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                (await File.ReadAllTextAsync(path)).ShouldNotContain('\r');
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
     }
 
     private static bool HasUtf8Bom(byte[] bytes)

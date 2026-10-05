@@ -135,6 +135,20 @@ public class MarkdownReportFormatterTests
         }
 
         [Fact]
+        public void With_Changes_Returns_Lf_Only_Line_Endings()
+        {
+            var manifest = CreateManifest(("Newtonsoft.Json", "12.0.1"));
+            manifest.SetVersion("Newtonsoft.Json", "13.0.3");
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+
+            var markdown = MarkdownReportFormatter.Format(report);
+
+            markdown.ShouldNotBeNull();
+            markdown.ShouldNotContain('\r');
+        }
+
+        [Fact]
         public void With_Null_Report_Throws_ArgumentNullException()
         {
             Should.Throw<ArgumentNullException>(() => MarkdownReportFormatter.Format(null!));

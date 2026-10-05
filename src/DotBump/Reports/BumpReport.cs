@@ -160,9 +160,11 @@ internal class BumpReport
             return;
         }
 
+        // System.Text.Json indents with Environment.NewLine; normalize to LF so the JSON report is
+        // byte-identical on every platform.
         var content = ReportFormatResolver.Resolve(outputFile) == ReportFormat.Markdown
             ? MarkdownReportFormatter.Format(this)
-            : JsonSerializer.Serialize(this, s_jsonOptions);
+            : JsonSerializer.Serialize(this, s_jsonOptions).Replace(Environment.NewLine, "\n", StringComparison.Ordinal);
 
         if (content is null)
         {

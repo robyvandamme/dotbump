@@ -53,7 +53,9 @@ internal static class MarkdownReportFormatter
         AppendSection(builder, "Warnings", report.Warnings);
         AppendSection(builder, "Errors", report.Errors);
 
-        return builder.ToString();
+        // AppendLine uses Environment.NewLine (CRLF on Windows); normalize to LF so the report is
+        // byte-identical on every platform.
+        return builder.ToString().Replace(Environment.NewLine, "\n", StringComparison.Ordinal);
     }
 
     private static (string DisplayName, bool IncludeId) GetCommandPresentation(string commandName)
