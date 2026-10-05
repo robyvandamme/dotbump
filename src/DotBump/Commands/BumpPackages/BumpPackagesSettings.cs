@@ -41,15 +41,8 @@ internal class BumpPackagesSettings : BumpSettings
 
     private static ValidationResult? ValidateExcludedDirectories(IEnumerable<string>? excludedPaths)
     {
-        foreach (var excludePath in excludedPaths ?? [])
-        {
-            var result = ValidateDirectoryExists(excludePath);
-            if (result != null)
-            {
-                return result;
-            }
-        }
-
-        return null;
+        return (excludedPaths ?? [])
+            .Select(ValidateDirectoryExists)
+            .FirstOrDefault(result => result != null);
     }
 }
