@@ -28,7 +28,7 @@ internal record NuGetClientConfig
     /// <summary>
     /// Gets the URL string from the config for the specified packageSourceName.
     /// </summary>
-    private string GetUrlFromConfig(string packageSourceName, NuGetConfig nuGetConfig)
+    private static string GetUrlFromConfig(string packageSourceName, NuGetConfig nuGetConfig)
     {
         var packageSource = nuGetConfig.PackageSources.FirstOrDefault(o => o.Key.Equals(packageSourceName));
         if (packageSource == null)
@@ -48,6 +48,11 @@ internal record NuGetClientConfig
         }
 
         return packageSource.Value;
+    }
+
+    private static bool HasPercentBoundaries(string input)
+    {
+        return !string.IsNullOrEmpty(input) && input.StartsWith('%') && input.EndsWith('%');
     }
 
     /// <summary>
@@ -113,10 +118,5 @@ internal record NuGetClientConfig
         }
 
         return null;
-    }
-
-    private bool HasPercentBoundaries(string input)
-    {
-        return !string.IsNullOrEmpty(input) && input.StartsWith('%') && input.EndsWith('%');
     }
 }
