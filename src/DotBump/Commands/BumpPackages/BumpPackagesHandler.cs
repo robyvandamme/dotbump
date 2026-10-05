@@ -17,13 +17,17 @@ internal class BumpPackagesHandler(
     INuGetConfigValidator nugetConfigValidator,
     ILogger logger) : IBumpPackagesHandler
 {
-    public async Task<BumpReport> HandleAsync(BumpType bumpType, string repositoryPath, string nugetConfigPath)
+    public async Task<BumpReport> HandleAsync(
+        BumpType bumpType,
+        string repositoryPath,
+        string nugetConfigPath,
+        IReadOnlyCollection<string>? excludedPaths = null)
     {
         logger.MethodStart(nameof(BumpPackagesHandler), nameof(HandleAsync), bumpType);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(repositoryPath);
 
-        var manifest = packageFileService.GetPackageManifest(repositoryPath);
+        var manifest = packageFileService.GetPackageManifest(repositoryPath, excludedPaths);
         var bumpReport = new BumpReport(manifest, bumpType);
 
         var nuGetConfiguration = nugetConfigFileService.GetNuGetConfiguration(nugetConfigPath);

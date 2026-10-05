@@ -6,5 +6,9 @@ namespace DotBump.Commands.BumpPackages.Interfaces;
 
 internal interface IBumpPackagesHandler
 {
-    Task<BumpReport> HandleAsync(BumpType bumpType, string repositoryPath, string nugetConfigPath);
+    Task<BumpReport> HandleAsync(
+        BumpType bumpType,
+        string repositoryPath,
+        string nugetConfigPath,
+        IReadOnlyCollection<string>? excludedPaths = null);
 }

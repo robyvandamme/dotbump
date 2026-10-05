@@ -6,7 +6,9 @@ namespace DotBump.Commands.BumpPackages.Interfaces;
 
 internal interface IPackageFileService
 {
-    PackageManifest GetPackageManifest(string repositoryPath);
+    PackageManifest GetPackageManifest(
+        string repositoryPath,
+        IReadOnlyCollection<string>? excludedPaths = null);
 
     void SavePackageManifest(PackageManifest manifest);
 }

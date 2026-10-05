@@ -177,10 +177,30 @@ public class BumpPackagesHandlerTests
                 () => report.Warnings.ShouldContain(readWarning));
         }
 
+        [Fact]
+        public async Task With_Excluded_Paths_Forwards_Them_To_The_File_Service()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(("MyPackage", "1.1.0"));
+            var handler = CreateHandler(fileService, resolver);
+            string[] excludedPaths = ["./excluded"];
+
+            await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config", excludedPaths);
+
+            fileService.Verify(
+                s => s.GetPackageManifest(
+                    "./repo",
+                    It.Is<IReadOnlyCollection<string>>(paths => paths.Contains("./excluded"))),
+                Times.Once);
+        }
+
         private static Mock<IPackageFileService> CreateFileService(PackageManifest manifest)
         {
             var fileService = new Mock<IPackageFileService>();
-            fileService.Setup(s => s.GetPackageManifest(It.IsAny<string>())).Returns(manifest);
+            fileService
+                .Setup(s => s.GetPackageManifest(It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .Returns(manifest);
             return fileService;
         }
 

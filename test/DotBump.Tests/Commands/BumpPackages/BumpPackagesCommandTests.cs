@@ -102,7 +102,7 @@ public class BumpPackagesCommandTests
             using var testConsole = new TestConsole();
             var handler = new Mock<IBumpPackagesHandler>();
             handler
-                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>()))
                 .ThrowsAsync(new InvalidOperationException("boom"));
             var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
 
@@ -180,6 +180,29 @@ public class BumpPackagesCommandTests
                 CancellationToken.None));
         }
 
+        [Fact]
+        public async Task With_Excluded_Directories_Forwards_Them_To_The_Handler()
+        {
+            using var testConsole = new TestConsole();
+            var handler = CreateHandler(CreateReport(("MyPackage", "1.0.0")));
+            var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
+            var excludedPath = Path.GetFullPath("./excluded");
+
+            var result = await command.ExecuteForTestAsync(
+                CreateContext("packages"),
+                new BumpPackagesSettings { Exclude = ["./excluded"] },
+                CancellationToken.None);
+
+            result.ShouldBe(0);
+            handler.Verify(
+                h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.Is<IReadOnlyCollection<string>>(paths => paths.Contains(excludedPath))),
+                Times.Once);
+        }
+
         private static CommandContext CreateContext(string commandName)
         {
             var remainingArguments = new Mock<IRemainingArguments>();
@@ -190,7 +213,7 @@ public class BumpPackagesCommandTests
         {
             var handler = new Mock<IBumpPackagesHandler>();
             handler
-                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>()))
                 .ReturnsAsync(report);
             return handler;
         }
@@ -200,7 +223,7 @@ public class BumpPackagesCommandTests
         {
             var fileService = new Mock<IPackageFileService>();
             fileService
-                .Setup(s => s.GetPackageManifest(It.IsAny<string>()))
+                .Setup(s => s.GetPackageManifest(It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>()))
                 .Returns(TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0")));
 
             var configFileService = new Mock<INuGetConfigFileService>();

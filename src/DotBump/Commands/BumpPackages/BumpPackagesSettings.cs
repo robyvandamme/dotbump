@@ -28,6 +28,10 @@ internal class BumpPackagesSettings : BumpSettings
     [CommandOption("-p|--path")]
     public string? RepositoryPath { get; init; }
 
+    [Description("A directory to exclude from the scan. Can be specified multiple times.")]
+    [CommandOption("-e|--exclude")]
+    public string[]? Exclude { get; init; }
+
     public override ValidationResult Validate()
     {
         // If a config file is passed, verify it exists before passing it on.
@@ -55,6 +59,25 @@ internal class BumpPackagesSettings : BumpSettings
             if (!Directory.Exists(normalizedRepositoryPath))
             {
                 return ValidationResult.Error($"The directory {RepositoryPath} does not exist.");
+            }
+        }
+
+        // If excluded directories are passed, verify each one exists before passing them on.
+        foreach (var excludePath in Exclude ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(excludePath))
+            {
+                continue;
+            }
+
+            if (!PathValidation.TryGetFullPath(excludePath, out var normalizedExcludePath))
+            {
+                return ValidationResult.Error($"The directory {excludePath} is not a valid path.");
+            }
+
+            if (!Directory.Exists(normalizedExcludePath))
+            {
+                return ValidationResult.Error($"The directory {excludePath} does not exist.");
             }
         }
 

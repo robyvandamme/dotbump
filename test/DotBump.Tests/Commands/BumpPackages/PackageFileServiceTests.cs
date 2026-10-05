@@ -165,6 +165,52 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Excluded_Directory_Skips_Packages_In_It()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            CopyFixture("Sample.csproj", TempPath("Excluded", "Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath, [TempPath("Excluded")]);
+
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Count.ShouldBe(3),
+                () => manifest.Packages.ShouldAllBe(package =>
+                    !package.FilePath.Contains("Excluded", StringComparison.Ordinal)));
+        }
+
+        [Fact]
+        public void With_Relative_Excluded_Directory_Skips_Packages_In_It()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            CopyFixture("Sample.csproj", TempPath("Excluded", "Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var relativeExcludedPath = Path.Combine(TempDirectory.RelativePath, "Excluded");
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath, [relativeExcludedPath]);
+
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Count.ShouldBe(3),
+                () => manifest.Packages.ShouldAllBe(package =>
+                    !package.FilePath.Contains("Excluded", StringComparison.Ordinal)));
+        }
+
+        [Fact]
+        public void With_Non_Matching_Excluded_Directory_Reads_All_Packages()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            CopyFixture("Sample.csproj", TempPath("Other", "Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath, [TempPath("Excluded")]);
+
+            manifest.Packages.Count.ShouldBe(6);
+        }
+
+        [Fact]
         public void With_Symlinked_File_Outside_Root_Is_Skipped()
         {
             ResetTempDirectory();

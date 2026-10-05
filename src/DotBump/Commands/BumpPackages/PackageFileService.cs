@@ -22,7 +22,9 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
     private static readonly string[] s_packageElementNames =
         ["PackageReference", "PackageVersion", "GlobalPackageReference"];
 
-    public PackageManifest GetPackageManifest(string repositoryPath)
+    public PackageManifest GetPackageManifest(
+        string repositoryPath,
+        IReadOnlyCollection<string>? excludedPaths = null)
     {
         logger.MethodStart(nameof(PackageFileService), nameof(GetPackageManifest), repositoryPath);
 
@@ -34,9 +36,10 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             throw new DotBumpException($"Repository directory '{rootPath}' does not exist.");
         }
 
+        var normalizedExcludedPaths = NormalizeExcludedPaths(excludedPaths);
         var manifest = new PackageManifest();
 
-        foreach (var filePath in EnumerateCandidateFiles(rootPath))
+        foreach (var filePath in EnumerateCandidateFiles(rootPath, normalizedExcludedPaths))
         {
             ReadPackageVersions(filePath, manifest);
         }
@@ -310,7 +313,43 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         return end > start ? (start, end - start) : (-1, 0);
     }
 
-    private IEnumerable<string> EnumerateCandidateFiles(string rootPath)
+    private static HashSet<string> NormalizeExcludedPaths(IReadOnlyCollection<string>? excludedPaths)
+    {
+        if (excludedPaths == null)
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        return excludedPaths
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool IsExcludedDirectory(string directory, HashSet<string> excludedPaths)
+    {
+        if (excludedPaths.Count == 0)
+        {
+            return false;
+        }
+
+        var normalizedDirectory = Path.TrimEndingDirectorySeparator(directory);
+
+        foreach (var excludedPath in excludedPaths)
+        {
+            if (string.Equals(normalizedDirectory, excludedPath, StringComparison.OrdinalIgnoreCase)
+                || normalizedDirectory.StartsWith(
+                    excludedPath + Path.DirectorySeparatorChar,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private IEnumerable<string> EnumerateCandidateFiles(string rootPath, HashSet<string> excludedPaths)
     {
         var pendingDirectories = new Stack<string>();
         pendingDirectories.Push(rootPath);
@@ -322,6 +361,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             foreach (var subDirectory in Directory.EnumerateDirectories(directory))
             {
                 if (s_excludedDirectories.Contains(Path.GetFileName(subDirectory), StringComparer.OrdinalIgnoreCase)
+                    || IsExcludedDirectory(subDirectory, excludedPaths)
                     || IsReparsePoint(subDirectory))
                 {
                     continue;

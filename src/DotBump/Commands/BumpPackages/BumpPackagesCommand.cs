@@ -49,16 +49,25 @@ internal class BumpPackagesCommand(
             var nugetConfigPath = !string.IsNullOrWhiteSpace(settings.NuGetConfigPath)
                 ? Path.GetFullPath(settings.NuGetConfigPath)
                 : _defaultNugetConfigPath;
+            var excludedPaths = settings.Exclude?
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Select(Path.GetFullPath)
+                .ToArray();
 
             logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("Repository path : {RepositoryPath}", repositoryPath);
             logger.Debug("Output file : {OutputFile}", outputFile);
             logger.Debug("NuGet config : {NuGetConfig}", nugetConfigPath);
+            logger.Debug("Excluded paths : {ExcludedPaths}", excludedPaths ?? []);
 
             console.MarkupLine(
                 $"Bumping Packages with settings: type={bumpType}, path={Markup.Escape(repositoryPath)}, output: {Markup.Escape(outputFile ?? "none")}, config: {Markup.Escape(nugetConfigPath)}");
 
-            var bumpReport = await bumpPackagesHandler.HandleAsync(bumpType, repositoryPath, nugetConfigPath);
+            var bumpReport = await bumpPackagesHandler.HandleAsync(
+                bumpType,
+                repositoryPath,
+                nugetConfigPath,
+                excludedPaths);
 
             WriteReportToConsole(bumpReport);
 
