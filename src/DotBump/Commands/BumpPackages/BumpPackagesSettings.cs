@@ -16,7 +16,7 @@ internal class BumpPackagesSettings : BumpSettings
     [CommandOption("-t|--type")]
     public BumpType? BumpType { get; init; }
 
-    [Description("Output file name. The name of the file to write the result to. The output format is inferred from the file extension: `.json` or `.md`.")]
+    [Description(OutputOptionDescription)]
     [CommandOption("-o|--output")]
     public string? Output { get; init; }
 
