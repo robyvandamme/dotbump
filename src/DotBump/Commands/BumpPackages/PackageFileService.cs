@@ -341,6 +341,11 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
     private IEnumerable<string> EnumerateCandidateFiles(string rootPath, HashSet<string> excludedPaths)
     {
+        if (IsExcludedDirectory(rootPath, excludedPaths))
+        {
+            yield break;
+        }
+
         var pendingDirectories = new Stack<string>();
         pendingDirectories.Push(rootPath);
 

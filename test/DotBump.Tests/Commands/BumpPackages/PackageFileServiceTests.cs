@@ -239,6 +239,34 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Excluded_Scan_Root_Returns_Empty_Manifest()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(
+                TempDirectory.AbsolutePath,
+                [TempDirectory.AbsolutePath]);
+
+            manifest.Packages.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void With_Scan_Root_Inside_Excluded_Ancestor_Returns_Empty_Manifest()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("child", "Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(
+                TempPath("child"),
+                [TempDirectory.AbsolutePath]);
+
+            manifest.Packages.ShouldBeEmpty();
+        }
+
+        [Fact]
         public void With_Symlinked_File_Outside_Root_Is_Skipped()
         {
             ResetTempDirectory();
