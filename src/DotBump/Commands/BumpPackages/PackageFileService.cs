@@ -92,6 +92,19 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         };
     }
 
+    internal static bool IsExcludedDirectory(string directory, HashSet<string> excludedPaths)
+    {
+        var normalizedDirectory = Path.TrimEndingDirectorySeparator(directory);
+
+        return excludedPaths.Any(excludedPath =>
+            string.Equals(normalizedDirectory, excludedPath, StringComparison.Ordinal)
+            || normalizedDirectory.StartsWith(
+                Path.EndsInDirectorySeparator(excludedPath)
+                    ? excludedPath
+                    : excludedPath + Path.DirectorySeparatorChar,
+                StringComparison.Ordinal));
+    }
+
     private static bool IsCandidateFile(string filePath)
     {
         var fileName = Path.GetFileName(filePath);
@@ -324,17 +337,6 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             .Where(path => !string.IsNullOrWhiteSpace(path))
             .Select(path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
             .ToHashSet(StringComparer.Ordinal);
-    }
-
-    private static bool IsExcludedDirectory(string directory, HashSet<string> excludedPaths)
-    {
-        var normalizedDirectory = Path.TrimEndingDirectorySeparator(directory);
-
-        return excludedPaths.Any(excludedPath =>
-            string.Equals(normalizedDirectory, excludedPath, StringComparison.Ordinal)
-            || normalizedDirectory.StartsWith(
-                excludedPath + Path.DirectorySeparatorChar,
-                StringComparison.Ordinal));
     }
 
     private IEnumerable<string> EnumerateCandidateFiles(string rootPath, HashSet<string> excludedPaths)

@@ -923,6 +923,49 @@ public class PackageFileServiceTests
         }
     }
 
+    public class IsExcludedDirectory
+    {
+        [Fact]
+        public void With_Filesystem_Root_Excluded_Excludes_Descendant()
+        {
+            var root = Path.GetPathRoot(Path.GetFullPath(Environment.CurrentDirectory));
+            root.ShouldNotBeNullOrEmpty();
+            var descendant = Path.Combine(root!, "some", "nested", "directory");
+
+            var isExcluded = PackageFileService.IsExcludedDirectory(
+                descendant,
+                new HashSet<string>(StringComparer.Ordinal) { root! });
+
+            isExcluded.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Directory_Under_Excluded_Path_Returns_True()
+        {
+            var excludedPath = Path.DirectorySeparatorChar + "parent";
+            var directory = excludedPath + Path.DirectorySeparatorChar + "child";
+
+            var isExcluded = PackageFileService.IsExcludedDirectory(
+                directory,
+                new HashSet<string>(StringComparer.Ordinal) { excludedPath });
+
+            isExcluded.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Directory_Not_Under_Excluded_Path_Returns_False()
+        {
+            var excludedPath = Path.DirectorySeparatorChar + "parent";
+            var directory = Path.DirectorySeparatorChar + "other";
+
+            var isExcluded = PackageFileService.IsExcludedDirectory(
+                directory,
+                new HashSet<string>(StringComparer.Ordinal) { excludedPath });
+
+            isExcluded.ShouldBeFalse();
+        }
+    }
+
     private static LocalDirectory TempDirectory => new("./temp/packages");
 
     private static LocalDirectory OutsideDirectory => new("./temp/outside");
