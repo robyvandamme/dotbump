@@ -139,5 +139,19 @@ public class MarkdownReportFormatterTests
         {
             Should.Throw<ArgumentNullException>(() => MarkdownReportFormatter.Format(null!));
         }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData(null)]
+        public void With_Empty_CommandName_Throws_ArgumentException(string? commandName)
+        {
+            var report = new BumpReport(CreateManifest(("Newtonsoft.Json", "12.0.1")), BumpType.Minor)
+            {
+                CommandName = commandName!,
+            };
+
+            Should.Throw<ArgumentException>(() => MarkdownReportFormatter.Format(report));
+        }
     }
 }

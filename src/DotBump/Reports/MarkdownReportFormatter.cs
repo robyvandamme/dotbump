@@ -22,6 +22,7 @@ internal static class MarkdownReportFormatter
     public static string? Format(BumpReport report)
     {
         ArgumentNullException.ThrowIfNull(report);
+        ArgumentException.ThrowIfNullOrWhiteSpace(report.CommandName);
 
         var changedResults = report.Results
             .Where(result => result.WasBumped)
@@ -33,13 +34,15 @@ internal static class MarkdownReportFormatter
             return null;
         }
 
+        var (displayName, includeId) = GetCommandPresentation(report.CommandName);
+
         var builder = new StringBuilder();
-        builder.Append("## ").AppendLine(GetDisplayName(report.CommandName));
+        builder.Append("## ").AppendLine(displayName);
         builder.AppendLine();
 
         foreach (var result in changedResults)
         {
-            builder.Append("- ").AppendLine(FormatResult(report.CommandName, result));
+            builder.Append("- ").AppendLine(FormatResult(result, includeId));
         }
 
         if (changedResults.Count > 0)
@@ -53,20 +56,21 @@ internal static class MarkdownReportFormatter
         return builder.ToString();
     }
 
-    private static string GetDisplayName(string commandName)
+    private static (string DisplayName, bool IncludeId) GetCommandPresentation(string commandName)
     {
-        return commandName switch
+        if (string.Equals(commandName, "sdk", StringComparison.OrdinalIgnoreCase))
         {
-            "sdk" => "SDK",
-            _ => char.ToUpperInvariant(commandName[0]) + commandName[1..],
-        };
+            return ("SDK", false);
+        }
+
+        return (char.ToUpperInvariant(commandName[0]) + commandName[1..], true);
     }
 
-    private static string FormatResult(string commandName, BumpResult result)
+    private static string FormatResult(BumpResult result, bool includeId)
     {
-        return string.Equals(commandName, "sdk", StringComparison.OrdinalIgnoreCase)
-            ? $"{result.OldVersion} → {result.NewVersion}"
-            : $"{result.Id}: {result.OldVersion} → {result.NewVersion}";
+        return includeId
+            ? $"{result.Id}: {result.OldVersion} → {result.NewVersion}"
+            : $"{result.OldVersion} → {result.NewVersion}";
     }
 
     private static void AppendSection(StringBuilder builder, string heading, IReadOnlyCollection<string> lines)
