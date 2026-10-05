@@ -153,6 +153,12 @@ internal class BumpReport
             {
                 await File.WriteAllTextAsync(outputFile, markdown, new UTF8Encoding());
             }
+            else if (File.Exists(outputFile))
+            {
+                // Nothing to report: remove any report left over from a previous run so a reused
+                // output path never yields stale content.
+                File.Delete(outputFile);
+            }
 
             return;
         }

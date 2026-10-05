@@ -40,8 +40,8 @@ All three commands accept `--output` to write a report. The format is inferred f
 * `.json` — the full, machine-readable report, including every scanned entry, its old and new version, and the
   `warnings` and `errors` arrays. This is the default for any other extension.
 * `.md` (or `.markdown`) — a concise markdown report intended as the content for an automated dependency-update pull
-  request. It lists only what changed, plus any warnings and errors; no file is written when there is nothing to
-  report.
+  request. It lists only what changed, plus any warnings and errors. When there is nothing to report, an existing
+  markdown report at that path is removed, so a reused output path never yields stale content.
 
 ```markdown
 ## Packages

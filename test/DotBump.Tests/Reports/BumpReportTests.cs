@@ -139,6 +139,30 @@ public class BumpReportTests
         }
 
         [Fact]
+        public async Task With_Markdown_Output_And_No_Content_Deletes_Existing_File()
+        {
+            var report = new BumpReport(CreateManifest(("Unchanged.Package", "1.0.0")), BumpType.Minor);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "stale-report.md");
+            await File.WriteAllTextAsync(path, "report left over from a previous run");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                File.Exists(path).ShouldBeFalse();
+            }
+            finally
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+        }
+
+        [Fact]
         public async Task With_Unknown_Extension_Writes_Json()
         {
             var report = CreateReport();
