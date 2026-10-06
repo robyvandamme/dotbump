@@ -49,6 +49,22 @@ public class SemanticVersionTests
         }
 
         [Fact]
+        public void With_Four_Part_Version_Returns_Expected_Components()
+        {
+            var version = new SemanticVersion("1.2.0.556");
+
+            version.ShouldSatisfyAllConditions(
+                () => version.Major.ShouldBe(1),
+                () => version.Minor.ShouldBe(2),
+                () => version.Patch.ShouldBe(0),
+                () => version.Revision.ShouldBe(556),
+                () => version.HasRevision.ShouldBeTrue(),
+                () => version.IsValid.ShouldBeTrue(),
+                () => version.IsPreRelease.ShouldBeFalse(),
+                () => version.PreRelease.ShouldBeNull());
+        }
+
+        [Fact]
         public void With_Null_Version_Throws_ArgumentException()
         {
             Should.Throw<ArgumentException>(() => new SemanticVersion(null!));
@@ -68,7 +84,7 @@ public class SemanticVersionTests
 
         [Theory]
         [InlineData("1.2")]
-        [InlineData("1.2.3.4")]
+        [InlineData("1.2.3.4.5")]
         [InlineData("1.2.3.beta")]
         [InlineData("version1")]
         [InlineData("a.b.c")]
@@ -104,6 +120,26 @@ public class SemanticVersionTests
             var result = version.ToString();
 
             result.ShouldBe("1.2.3-beta.4");
+        }
+
+        [Fact]
+        public void Four_Part_Version_Returns_Correct_String()
+        {
+            var version = new SemanticVersion("1.2.0.556");
+
+            var result = version.ToString();
+
+            result.ShouldBe("1.2.0.556");
+        }
+
+        [Fact]
+        public void Four_Part_PreRelease_Version_Returns_Correct_String()
+        {
+            var version = new SemanticVersion("1.2.0.556-beta.1");
+
+            var result = version.ToString();
+
+            result.ShouldBe("1.2.0.556-beta.1");
         }
     }
 
@@ -264,6 +300,39 @@ public class SemanticVersionTests
             alpha.ShouldSatisfyAllConditions(
                 () => alpha.CompareTo(beta).ShouldBeLessThan(0),
                 () => alpha.ShouldNotBe(beta));
+        }
+
+        [Fact]
+        public void With_Four_Part_And_Three_Part_Versions_Returns_Expected_Order()
+        {
+            var threePart = new SemanticVersion("1.2.0");
+            var fourPart = new SemanticVersion("1.2.0.556");
+
+            fourPart.ShouldSatisfyAllConditions(
+                () => fourPart.CompareTo(threePart).ShouldBeGreaterThan(0),
+                () => threePart.CompareTo(fourPart).ShouldBeLessThan(0));
+        }
+
+        [Fact]
+        public void With_Different_Revisions_Returns_Expected_Order()
+        {
+            var lower = new SemanticVersion("1.2.0.555");
+            var higher = new SemanticVersion("1.2.0.556");
+
+            higher.ShouldSatisfyAllConditions(
+                () => higher.CompareTo(lower).ShouldBeGreaterThan(0),
+                () => (higher > lower).ShouldBeTrue());
+        }
+
+        [Fact]
+        public void With_Higher_Patch_Than_Revision_Returns_Positive()
+        {
+            var revision = new SemanticVersion("1.2.0.556");
+            var nextPatch = new SemanticVersion("1.2.1");
+
+            nextPatch.ShouldSatisfyAllConditions(
+                () => nextPatch.CompareTo(revision).ShouldBeGreaterThan(0),
+                () => (nextPatch > revision).ShouldBeTrue());
         }
     }
 

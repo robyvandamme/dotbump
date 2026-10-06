@@ -125,7 +125,7 @@ public class BumpPackagesHandlerTests
         [Fact]
         public async Task With_Invalid_Semantic_Version_Skips_And_Reports_Warning()
         {
-            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.2.3.4"));
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.2.3.beta"));
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver();
             var handler = CreateHandler(fileService, resolver);
@@ -140,7 +140,23 @@ public class BumpPackagesHandlerTests
                 Times.Once);
             report.Warnings.ShouldContain(warning =>
                 warning.Contains("MyPackage", StringComparison.Ordinal)
-                && warning.Contains("1.2.3.4", StringComparison.Ordinal));
+                && warning.Contains("1.2.3.beta", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public async Task With_Four_Part_Version_Resolves_And_Bumps()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.2.0.556"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(("MyPackage", "1.2.0.586"));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+
+            report.HasChanges.ShouldBeTrue();
+            manifest.Packages.Single().Version.ShouldBe("1.2.0.586");
+            report.Warnings.ShouldNotContain(warning =>
+                warning.Contains("cannot be parsed", StringComparison.Ordinal));
         }
 
         [Fact]
