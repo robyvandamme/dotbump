@@ -204,7 +204,11 @@ following files into account:
 The package id is read from the `Include` attribute, or, for override entries, the `Update` attribute. The version is
 read from a `Version` attribute, a `<Version>` child element or a `VersionOverride` attribute.
 
-Directories named `bin`, `obj`, `.git`, `.vs` and `node_modules` are skipped.
+Directories named `bin`, `obj`, `.git`, `.vs` and `node_modules` are skipped. Additional directories can be
+skipped with `--exclude` (repeatable), for example to avoid scanning test data:
+`dotnet dotbump packages --exclude ./test/DotBump.Tests/Data`. Like `--path`, each `--exclude` path is resolved
+relative to the current working directory, not to `--path`. Path matching is case-sensitive: on a case-insensitive
+filesystem the directory must be passed with its exact on-disk casing, otherwise it is not excluded.
 
 ```text
 DESCRIPTION:
@@ -220,6 +224,7 @@ EXAMPLES:
     dotnet dotbump packages
     dotnet dotbump packages --type patch
     dotnet dotbump packages --path ./src --config ./custom-nuget.config --output bump-packages-report.json
+    dotnet dotbump packages --exclude ./test/DotBump.Tests/Data
     dotnet dotbump packages --debug true --logfile bump-packages-log.txt
 
 OPTIONS:
@@ -232,6 +237,8 @@ OPTIONS:
                      `.json` or `.md`
     -c, --config     The nuget config file to use. Defaults to `./nuget.config`
     -p, --path       The root directory to scan. Defaults to the current directory
+    -e, --exclude    A directory to exclude from the scan. Can be specified
+                     multiple times
 ```
 
 The output file (`--output`) uses the same report formats as the `sdk` and `tools` commands (see

@@ -165,6 +165,108 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Excluded_Directory_Skips_Packages_In_It()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            CopyFixture("Sample.csproj", TempPath("Excluded", "Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath, [TempPath("Excluded")]);
+
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Count.ShouldBe(3),
+                () => manifest.Packages.ShouldAllBe(package =>
+                    !package.FilePath.Contains("Excluded", StringComparison.Ordinal)));
+        }
+
+        [Fact]
+        public void With_Relative_Excluded_Directory_Skips_Packages_In_It()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            CopyFixture("Sample.csproj", TempPath("Excluded", "Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var relativeExcludedPath = Path.Combine(TempDirectory.RelativePath, "Excluded");
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath, [relativeExcludedPath]);
+
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Count.ShouldBe(3),
+                () => manifest.Packages.ShouldAllBe(package =>
+                    !package.FilePath.Contains("Excluded", StringComparison.Ordinal)));
+        }
+
+        [Fact]
+        public void With_Non_Matching_Excluded_Directory_Reads_All_Packages()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            CopyFixture("Sample.csproj", TempPath("Other", "Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath, [TempPath("Excluded")]);
+
+            manifest.Packages.Count.ShouldBe(6);
+        }
+
+        [Fact]
+        public void With_Case_Sensitive_File_System_Excludes_Only_The_Exact_Cased_Directory()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("packages", "Sample.csproj"));
+            CopyFixture("Sample.csproj", TempPath("Packages", "Sample.csproj"));
+
+            var siblingCount = Directory.GetDirectories(TempDirectory.AbsolutePath)
+                .Count(directory => string.Equals(
+                    Path.GetFileName(directory),
+                    "packages",
+                    StringComparison.OrdinalIgnoreCase));
+            if (siblingCount < 2)
+            {
+                // Case-insensitive filesystem: both names collapse to the same directory.
+                return;
+            }
+
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath, [TempPath("packages")]);
+
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Count.ShouldBe(3),
+                () => manifest.Packages.ShouldAllBe(package =>
+                    package.FilePath.StartsWith(TempPath("Packages"), StringComparison.Ordinal)));
+        }
+
+        [Fact]
+        public void With_Excluded_Scan_Root_Returns_Empty_Manifest()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(
+                TempDirectory.AbsolutePath,
+                [TempDirectory.AbsolutePath]);
+
+            manifest.Packages.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void With_Scan_Root_Inside_Excluded_Ancestor_Returns_Empty_Manifest()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("child", "Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(
+                TempPath("child"),
+                [TempDirectory.AbsolutePath]);
+
+            manifest.Packages.ShouldBeEmpty();
+        }
+
+        [Fact]
         public void With_Symlinked_File_Outside_Root_Is_Skipped()
         {
             ResetTempDirectory();
@@ -846,6 +948,49 @@ public class PackageFileServiceTests
             var (start, length) = PackageFileService.GetVersionSpan(text, [0], attribute);
 
             text.Substring(start, length).ShouldBe("13.0.1");
+        }
+    }
+
+    public class IsExcludedDirectory
+    {
+        [Fact]
+        public void With_Filesystem_Root_Excluded_Excludes_Descendant()
+        {
+            var root = Path.GetPathRoot(Path.GetFullPath(Environment.CurrentDirectory));
+            root.ShouldNotBeNullOrEmpty();
+            var descendant = Path.Combine(root!, "some", "nested", "directory");
+
+            var isExcluded = PackageFileService.IsExcludedDirectory(
+                descendant,
+                new HashSet<string>(StringComparer.Ordinal) { root! });
+
+            isExcluded.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Directory_Under_Excluded_Path_Returns_True()
+        {
+            var excludedPath = Path.DirectorySeparatorChar + "parent";
+            var directory = excludedPath + Path.DirectorySeparatorChar + "child";
+
+            var isExcluded = PackageFileService.IsExcludedDirectory(
+                directory,
+                new HashSet<string>(StringComparer.Ordinal) { excludedPath });
+
+            isExcluded.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Directory_Not_Under_Excluded_Path_Returns_False()
+        {
+            var excludedPath = Path.DirectorySeparatorChar + "parent";
+            var directory = Path.DirectorySeparatorChar + "other";
+
+            var isExcluded = PackageFileService.IsExcludedDirectory(
+                directory,
+                new HashSet<string>(StringComparer.Ordinal) { excludedPath });
+
+            isExcluded.ShouldBeFalse();
         }
     }
 

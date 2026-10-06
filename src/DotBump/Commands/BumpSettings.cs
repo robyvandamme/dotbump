@@ -1,6 +1,8 @@
 // Copyright © Roby Van Damme.
 
 using System.ComponentModel;
+using DotBump.Common;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace DotBump.Commands;
@@ -41,4 +43,54 @@ internal abstract class BumpSettings : CommandSettings
     [Description("The file to send the log output to.")]
     [CommandOption("--logfile")]
     public string? LogFile { get; set; }
+
+    /// <summary>
+    /// Validates that the supplied file path, when provided, can be resolved and exists.
+    /// </summary>
+    /// <param name="path">The file path to validate.</param>
+    /// <returns>A <see cref="ValidationResult"/> describing the failure, or <see langword="null"/> when the path is valid.</returns>
+    protected static ValidationResult? ValidateFileExists(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        if (!PathValidation.TryGetFullPath(path, out var normalizedPath))
+        {
+            return ValidationResult.Error($"The file {path} is not a valid path.");
+        }
+
+        if (!File.Exists(normalizedPath))
+        {
+            return ValidationResult.Error($"The file {path} does not exist.");
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Validates that the supplied directory path, when provided, can be resolved and exists.
+    /// </summary>
+    /// <param name="path">The directory path to validate.</param>
+    /// <returns>A <see cref="ValidationResult"/> describing the failure, or <see langword="null"/> when the path is valid.</returns>
+    protected static ValidationResult? ValidateDirectoryExists(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        if (!PathValidation.TryGetFullPath(path, out var normalizedPath))
+        {
+            return ValidationResult.Error($"The directory {path} is not a valid path.");
+        }
+
+        if (!Directory.Exists(normalizedPath))
+        {
+            return ValidationResult.Error($"The directory {path} does not exist.");
+        }
+
+        return null;
+    }
 }
