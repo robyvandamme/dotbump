@@ -43,6 +43,27 @@ public class BumpReportTests
     public class WriteToFileAsync
     {
         [Fact]
+        public async Task With_Missing_Output_Directory_Creates_It()
+        {
+            var report = CreateReport();
+            report.ReportWarnings(["Skipping 'Other.Package' because version '1.0.*' is not supported."]);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            outputDirectory.EnsureDirectoryDeleted();
+            var path = Path.Combine(outputDirectory.AbsolutePath, "nested", "report.json");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                File.Exists(path).ShouldBeTrue();
+            }
+            finally
+            {
+                outputDirectory.EnsureDirectoryDeleted();
+            }
+        }
+
+        [Fact]
         public async Task With_Warnings_Serializes_Warnings_Array()
         {
             const string warning =

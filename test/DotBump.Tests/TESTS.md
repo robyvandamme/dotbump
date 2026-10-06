@@ -16,6 +16,16 @@ tests are not flaky. `NuGetClient` itself is covered offline with a fake `HttpMe
 validate the real feed integration. If a pinned package ever moves, update this list and the expectations in
 `BumpToolsCommandTests` together rather than removing the test.
 
+## bumpPackages Command Test
+
+`BumpPackagesCommandTests.With_Mixed_Case_Package_Id_Bumps_From_Live_NuGet_Feed` runs the packages command end to end
+against the real nuget.org feed. It intentionally uses a package id with mixed casing, `Newtonsoft.Json` `12.0.1`,
+which must bump to `12.0.3` (the latest listed `12.x` release). This covers the fact that NuGet registration URLs use
+the lowercased package id (`{id-lower}`); a mixed-case id that is not lowercased 404s and is silently skipped.
+
+If `Newtonsoft.Json 12.0.3` ever becomes unlisted or a newer `12.x` is published, update the expectation here and in
+the test together rather than removing the test.
+
 ## Release Finder Tests
 
 For the different NuGet test cases I have added example json result files to be able to easily test the logic to 

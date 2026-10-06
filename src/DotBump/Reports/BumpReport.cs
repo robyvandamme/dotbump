@@ -178,6 +178,12 @@ internal class BumpReport
             return;
         }
 
+        var outputDirectory = Path.GetDirectoryName(outputFile);
+        if (!string.IsNullOrEmpty(outputDirectory))
+        {
+            Directory.CreateDirectory(outputDirectory);
+        }
+
         await File.WriteAllTextAsync(outputFile, content, s_utf8NoBom);
     }
 
