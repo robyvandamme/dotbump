@@ -7,13 +7,14 @@ using static System.TimeSpan;
 namespace DotBump.Common;
 
 /// <summary>
-/// Represents a semantic version according to Semantic Versioning 2.0.0 (https://semver.org/).
+/// Represents a semantic version according to Semantic Versioning 2.0.0 (https://semver.org/), with the
+/// optional fourth numeric component (<c>major.minor.patch.revision</c>) that NuGet also allows.
 /// Supports pre-release versions like alpha, beta, rc, preview, etc.
 /// </summary>
 internal record SemanticVersion : IComparable<SemanticVersion>
 {
     private static readonly Regex s_versionPattern = new(
-        @"^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:-(?<prerelease>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$",
+        @"^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:\.(?<revision>\d+))?(?:-(?<prerelease>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$",
         RegexOptions.Compiled,
         FromMilliseconds(100));
 
@@ -22,11 +23,12 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     /// Creates a new semantic version from a version string.
     /// </summary>
     /// <param name="version">
-    /// Version string in format x.y.z or x.y.z-prerelease
-    /// where prerelease can be any combination of alphanumerics and hyphens separated by dots
-    /// (e.g., "1.0.0-alpha", "1.0.0-beta.2", "1.0.0-rc.1", "1.0.0-preview.1.25080.5", etc.)
-    /// When the version parameter does not match the sematic version pattern the semantic version is set to 0.0.0 and
-    /// the <see cref="IsValid"/> property is set to false.
+    /// Version string in format x.y.z or x.y.z.revision, optionally followed by a pre-release suffix
+    /// (x.y.z-prerelease / x.y.z.revision-prerelease). The revision is the optional fourth numeric
+    /// component NuGet allows. The prerelease can be any combination of alphanumerics and hyphens
+    /// separated by dots (e.g., "1.0.0-alpha", "1.0.0-beta.2", "1.0.0-rc.1", "1.0.0-preview.1.25080.5",
+    /// "1.2.0.556", etc.). When the version parameter does not match the semantic version pattern the
+    /// semantic version is set to 0.0.0 and the <see cref="IsValid"/> property is set to false.
     /// </param>
     /// <exception cref="ArgumentException">When the version parameter is null.</exception>
     public SemanticVersion(string version)
@@ -40,7 +42,7 @@ internal record SemanticVersion : IComparable<SemanticVersion>
             var match = s_versionPattern.Match(version);
             if (!match.Success)
             {
-                Major = Minor = Patch = 0;
+                Major = Minor = Patch = Revision = 0;
                 IsValid = false;
             }
             else
@@ -49,6 +51,12 @@ internal record SemanticVersion : IComparable<SemanticVersion>
                 Minor = int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture);
                 Patch = int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture);
                 IsValid = true;
+
+                if (match.Groups["revision"].Success)
+                {
+                    Revision = int.Parse(match.Groups["revision"].Value, CultureInfo.InvariantCulture);
+                    HasRevision = true;
+                }
 
                 if (match.Groups["prerelease"].Success)
                 {
@@ -60,7 +68,7 @@ internal record SemanticVersion : IComparable<SemanticVersion>
         catch (RegexMatchTimeoutException)
         {
             // Assuming that if this occurs the input string was invalid.
-            Major = Minor = Patch = 0;
+            Major = Minor = Patch = Revision = 0;
             IsValid = false;
         }
     }
@@ -91,6 +99,16 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     public int Patch { get; }
 
     /// <summary>
+    /// Gets the optional fourth version component (NuGet revision), or 0 when it is not present.
+    /// </summary>
+    public int Revision { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the version string included a fourth numeric component.
+    /// </summary>
+    public bool HasRevision { get; }
+
+    /// <summary>
     /// Gets the pre-release version string, e.g., "alpha.1", "beta.23", "preview.1.25080.5".
     /// Null if this is not a pre-release version.
     /// </summary>
@@ -106,9 +124,11 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     /// </summary>
     public override string ToString()
     {
-        return IsPreRelease
-            ? $"{Major}.{Minor}.{Patch}-{PreRelease}"
+        var core = HasRevision
+            ? $"{Major}.{Minor}.{Patch}.{Revision}"
             : $"{Major}.{Minor}.{Patch}";
+
+        return IsPreRelease ? $"{core}-{PreRelease}" : core;
     }
 
     /// <summary>
@@ -129,7 +149,7 @@ internal record SemanticVersion : IComparable<SemanticVersion>
     /// <inheritdoc />
     public override int GetHashCode()
     {
-        return HashCode.Combine(Major, Minor, Patch, IsPreRelease, GetPreReleaseHashCode(PreRelease));
+        return HashCode.Combine(Major, Minor, Patch, Revision, IsPreRelease, GetPreReleaseHashCode(PreRelease));
     }
 
     /// <summary>
@@ -166,6 +186,13 @@ internal record SemanticVersion : IComparable<SemanticVersion>
 
         // Compare patch version
         result = Patch.CompareTo(other.Patch);
+        if (result != 0)
+        {
+            return result;
+        }
+
+        // Compare the optional fourth (NuGet revision) component
+        result = Revision.CompareTo(other.Revision);
         if (result != 0)
         {
             return result;
