@@ -1,7 +1,7 @@
 name: Compile and Test
 
 env:
-  PRIVATE_GITHUB_FEED_USER: ${{ secrets.PRIVATE_NUGET_FEED_USER }}
+  PRIVATE_GITHUB_FEED_USER: ${{ github.actor }}
   PRIVATE_GITHUB_FEED_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
 on:
@@ -44,9 +44,6 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('**/global.json', '**/*.csproj', '**/Directory.Packages.props') }}
       - name: 'Run: Compile'
         run: ./build.cmd Compile
-        env:
-          PRIVATE_GITHUB_FEED_USER: ${{ secrets.PRIVATE_NUGET_FEED_USER }}
-          PRIVATE_GITHUB_FEED_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
       - name: 'Save test reports'
         uses: actions/upload-artifact@v7
         with:
