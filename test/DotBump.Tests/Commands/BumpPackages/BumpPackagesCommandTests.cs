@@ -204,6 +204,44 @@ public class BumpPackagesCommandTests
                 Times.Once);
         }
 
+        [Fact]
+        public async Task With_Mixed_Case_Package_Id_Bumps_From_Live_NuGet_Feed()
+        {
+            var tempDirectory = new LocalDirectory("./temp/live-packages");
+            tempDirectory.EnsureDirectoryDeleted();
+            tempDirectory.EnsureDirectoryCreated();
+            var projectPath = Path.Combine(tempDirectory.AbsolutePath, "App.csproj");
+            var outputPath = Path.Combine(tempDirectory.AbsolutePath, "packages.md");
+            await File.WriteAllTextAsync(
+                projectPath,
+                "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"12.0.1\" />\n  </ItemGroup>\n</Project>\n");
+
+            try
+            {
+                var logger = new Mock<ILogger>().Object;
+                using var testConsole = new TestConsole();
+                var handler = new BumpPackagesHandler(
+                    new PackageFileService(logger),
+                    new NuGetConfigFileService(logger),
+                    new PackageVersionResolver(new NuGetClientFactory(logger), new NuGetReleaseFinder(logger), logger),
+                    new NuGetConfigValidator(logger),
+                    logger);
+                var command = new BumpPackagesCommand(testConsole, logger, handler);
+
+                var result = await command.ExecuteForTestAsync(
+                    CreateContext("packages"),
+                    new BumpPackagesSettings { RepositoryPath = tempDirectory.AbsolutePath, Output = outputPath },
+                    CancellationToken.None);
+
+                result.ShouldBe(0);
+                (await File.ReadAllTextAsync(projectPath)).ShouldContain("Version=\"12.0.3\"");
+            }
+            finally
+            {
+                tempDirectory.EnsureDirectoryDeleted();
+            }
+        }
+
         private static CommandContext CreateContext(string commandName)
         {
             var remainingArguments = new Mock<IRemainingArguments>();

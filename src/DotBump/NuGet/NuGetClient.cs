@@ -63,7 +63,10 @@ internal sealed class NuGetClient(HttpClient httpClient, ILogger logger) : INuGe
 
         var builder = new UriBuilder(registrationBaseUrl);
         var basePath = builder.Path.TrimEnd('/');
-        builder.Path = $"{basePath}/{packageId}/index.json";
+
+        // NuGet's registration (and flat-container) URLs use the lowercased package id; the backing
+        // storage is case-sensitive, so the original mixed-case id would 404 (e.g. "Moq" vs "moq").
+        builder.Path = $"{basePath}/{packageId.ToLowerInvariant()}/index.json";
 
         logger.Debug("Package url {PackageUrl}", builder.Uri);
 

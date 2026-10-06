@@ -78,6 +78,21 @@ public class NuGetClientTests
         }
 
         [Fact]
+        public async Task With_Mixed_Case_Package_Id_Requests_Lowercased_Url()
+        {
+            Uri? requestedUri = null;
+            var client = CreateClient(request =>
+            {
+                requestedUri = request.RequestUri;
+                return JsonResponse("{\"count\":0,\"items\":[]}");
+            });
+
+            await client.GetPackageInformationAsync("https://example.com/reg", "MyPackage");
+
+            requestedUri.ShouldBe(new Uri("https://example.com/reg/mypackage/index.json"));
+        }
+
+        [Fact]
         public async Task With_Not_Found_Response_Returns_Null_Without_Error()
         {
             var (client, sink) = CreateClientWithSink(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
