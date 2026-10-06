@@ -5,7 +5,7 @@ name: Update .NET Dependencies
 # For the PR: check what has changed and use the relevant commit/ PR message.
 
 env:
-  PRIVATE_GITHUB_FEED_USER: ${{ secrets.PRIVATE_NUGET_FEED_USER }}
+  PRIVATE_GITHUB_FEED_USER: ${{ github.actor }}
   PRIVATE_GITHUB_FEED_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
 on:
