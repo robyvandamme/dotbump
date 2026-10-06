@@ -26,7 +26,7 @@ jobs:
         uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          app-id: ${{ secrets.PULL_REQUEST_APP_ID }}
+          client-id: ${{ secrets.PULL_REQUEST_CLIENT_ID }}
           private-key: ${{ secrets.PULL_REQUEST_PRIVATE_KEY }}
       - name: Create artifacts/results directory
         run: mkdir -p artifacts/results
