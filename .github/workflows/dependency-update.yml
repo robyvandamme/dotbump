@@ -32,6 +32,16 @@ jobs:
         run: mkdir -p artifacts/results
       - name: Restore tools
         run: dotnet tool restore
+      - name: Bump SDK
+        run: |
+          dotnet dotbump sdk -o ./artifacts/results/bump-sdk-report.md
+      - name: Refresh .NET SDK after update
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: ./global.json
+      - name: Bump Tools
+        run: |
+          dotnet dotbump tools -o ./artifacts/results/bump-tools-report.md
       - name: Bump NuGet packages
         run: |
           # Exclusions must be existing directories, so only pass this repo's test data when present.
@@ -45,16 +55,6 @@ jobs:
             --type minor \
             "${exclude_args[@]}" \
             --output ./artifacts/results/bump-packages-report.md
-      - name: Bump SDK
-        run: |
-          dotnet dotbump sdk -o ./artifacts/results/bump-sdk-report.md
-      - name: Refresh .NET SDK after update
-        uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: ./global.json
-      - name: Bump Tools
-        run: |
-          dotnet dotbump tools -o ./artifacts/results/bump-tools-report.md
       - name: Check for changes
         id: changes
         run: |
@@ -91,37 +91,50 @@ jobs:
           # Default values
           pr_title=""
           pr_commit=""
+          pr_summary=""
 
-          # packages, sdk and tools updated
+          # sdk, tools and packages updated
           if [ "$packages" = "true" ] && [ "$globaljson" = "true" ] && [ "$tools" = "true" ]; then
-            pr_title="dep: bump .NET SDK, Tools and NuGet package versions"
-            pr_commit="dep: bump .NET SDK, Tools and NuGet package versions"
+            pr_title="dep: bump .NET SDK, tools and NuGet package versions"
+            pr_commit="dep: bump .NET SDK, tools and NuGet package versions"
+            pr_summary="Update the .NET SDK, local tools, and NuGet packages."
           elif [ "$packages" = "true" ] && [ "$globaljson" = "true" ]; then
             pr_title="dep: bump .NET SDK and NuGet package versions"
             pr_commit="dep: bump .NET SDK and NuGet package versions"
+            pr_summary="Update the .NET SDK and NuGet packages."
           elif [ "$globaljson" = "true" ] && [ "$tools" = "true" ]; then
-            pr_title="dep: bump .NET SDK and Tools versions"
-            pr_commit="dep: bump .NET SDK and Tools versions"
+            pr_title="dep: bump .NET SDK and tools versions"
+            pr_commit="dep: bump .NET SDK and tools versions"
+            pr_summary="Update the .NET SDK and local tools."
           elif [ "$packages" = "true" ] && [ "$tools" = "true" ]; then
-            pr_title="dep: bump .NET Tools and NuGet package versions"
-            pr_commit="dep: bump .NET Tools and NuGet package versions"
+            pr_title="dep: bump .NET tools and NuGet package versions"
+            pr_commit="dep: bump .NET tools and NuGet package versions"
+            pr_summary="Update the local tools and NuGet packages."
           elif [ "$packages" = "true" ]; then
             pr_title="dep: bump NuGet package versions"
             pr_commit="dep: bump NuGet package versions"
+            pr_summary="Update the NuGet packages."
           elif [ "$globaljson" = "true" ]; then
             pr_title="dep: bump .NET SDK version"
             pr_commit="dep: bump .NET SDK version"
+            pr_summary="Update the .NET SDK."
           elif [ "$tools" = "true" ]; then
-            pr_title="dep: bump .NET Tools versions"
-            pr_commit="dep: bump .NET Tools versions"
+            pr_title="dep: bump .NET tools versions"
+            pr_commit="dep: bump .NET tools versions"
+            pr_summary="Update the local tools."
           fi
 
           echo "title=${pr_title}" >> "$GITHUB_OUTPUT"
           echo "commit=${pr_commit}" >> "$GITHUB_OUTPUT"
+          echo "summary=${pr_summary}" >> "$GITHUB_OUTPUT"
 
       - name: Compose pull request body
         run: |
           : > artifacts/results/pr-body.md
+          summary="${{ steps.pr-meta.outputs.summary }}"
+          if [ -n "$summary" ]; then
+            printf '%s\n\n' "$summary" >> artifacts/results/pr-body.md
+          fi
           for report in bump-sdk-report bump-tools-report bump-packages-report; do
             file="artifacts/results/${report}.md"
             if [ -f "$file" ]; then
