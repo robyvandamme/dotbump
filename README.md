@@ -53,6 +53,11 @@ All three commands accept `--output` to write a report. The format is inferred f
 
 - Skipping 'Floating.Package' because version '1.2.\*' is not supported.
 ```
+## Automated dependency updates
+
+See the
+[dependency-update workflow](https://github.com/robyvandamme/dotbump/blob/main/.github/workflows/dependency-update.yml)
+for an end-to-end example that bumps the SDK, tools and NuGet packages and opens a pull request from the markdown reports.
 
 ## Features
 
