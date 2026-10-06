@@ -44,16 +44,10 @@ jobs:
           dotnet dotbump tools -o ./artifacts/results/bump-tools-report.md
       - name: Bump NuGet packages
         run: |
-          # Exclusions must be existing directories, so only pass this repo's test data when present.
-          exclude_args=()
-          if [ -d ./test/DotBump.Tests/Data ]; then
-            exclude_args+=(--exclude ./test/DotBump.Tests/Data)
-          fi
-
           dotnet dotbump packages \
             --path . \
             --type minor \
-            "${exclude_args[@]}" \
+            --exclude ./test/DotBump.Tests/Data \
             --output ./artifacts/results/bump-packages-report.md
       - name: Check for changes
         id: changes
