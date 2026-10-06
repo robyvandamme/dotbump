@@ -14,13 +14,13 @@ jobs:
   update-dependencies:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: ./global.json
       - name: Get app token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         id: app-token
         with:
           app-id: ${{ secrets.PULL_REQUEST_APP_ID }}
@@ -47,7 +47,7 @@ jobs:
         run: |
           dotnet dotbump sdk -o ./artifacts/results/bump-sdk-report.json
       - name: Refresh .NET SDK after update
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: ./global.json
       - name: Bump Tools
@@ -127,7 +127,7 @@ jobs:
 
       - name: Create pull request
         if: steps.changes.outputs.csproj_changed == 'true' || steps.changes.outputs.globaljson_changed == 'true' || steps.changes.outputs.dotnettools_changed == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.app-token.outputs.token }}
           commit-message: ${{ steps.pr-meta.outputs.commit }}
@@ -138,7 +138,7 @@ jobs:
           assignees: robyvandamme
 
       - name: 'Save results'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: results
           path: artifacts/results
