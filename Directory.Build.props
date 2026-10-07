@@ -15,5 +15,9 @@
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <RestoreLockedMode>true</RestoreLockedMode>
+  </PropertyGroup>
+
 </Project>
