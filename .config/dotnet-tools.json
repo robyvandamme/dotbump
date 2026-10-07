@@ -24,16 +24,9 @@
       "rollForward": false
     },
     "dotbump": {
-      "version": "0.2.1",
+      "version": "0.3.0-beta.26",
       "commands": [
         "dotbump"
-      ],
-      "rollForward": false
-    },
-    "dotnet-outdated-tool": {
-      "version": "4.8.1",
-      "commands": [
-        "dotnet-outdated"
       ],
       "rollForward": false
     }

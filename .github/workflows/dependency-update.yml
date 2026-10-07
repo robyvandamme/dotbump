@@ -1,7 +1,7 @@
 name: Update .NET Dependencies
 
-# Updates dependencies in a .NET solution.
-# Only run the packages step when a solution file is available in the root directory.
+# Updates .NET dependencies (SDK, tools and NuGet packages) and opens a pull request with a report.
+# The packages step scans the repository for project and props files; no solution file is required.
 # For the PR: check what has changed and use the relevant commit/ PR message.
 
 env:
@@ -10,6 +10,9 @@ env:
 
 on:
   workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
 jobs:
   update-dependencies:
     runs-on: ubuntu-latest
@@ -23,59 +26,50 @@ jobs:
         uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          app-id: ${{ secrets.PULL_REQUEST_APP_ID }}
+          client-id: ${{ secrets.PULL_REQUEST_CLIENT_ID }}
           private-key: ${{ secrets.PULL_REQUEST_PRIVATE_KEY }}
       - name: Create artifacts/results directory
         run: mkdir -p artifacts/results
       - name: Restore tools
         run: dotnet tool restore
-      - name: Check for solution file
-        id: check-sln
-        run: |
-          if ls ./*.sln 1> /dev/null 2>&1; then
-            echo "found=true" >> $GITHUB_OUTPUT
-            echo "Solution file exists"
-          else
-            echo "found=false" >> $GITHUB_OUTPUT
-            echo "No solution file found"
-          fi
-      - name: Bump NuGet packages
-        if: steps.check-sln.outputs.found == 'true'
-        run: |
-          dotnet dotnet-outdated -vl Major -u -o ./artifacts/results/bump-nuget-result.json
       - name: Bump SDK
         run: |
-          dotnet dotbump sdk -o ./artifacts/results/bump-sdk-report.json
+          dotnet dotbump sdk -o ./artifacts/results/bump-sdk-report.md
       - name: Refresh .NET SDK after update
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: ./global.json
       - name: Bump Tools
         run: |
-          dotnet dotbump tools -o ./artifacts/results/bump-tools-report.json          
+          dotnet dotbump tools -o ./artifacts/results/bump-tools-report.md
+      - name: Bump NuGet packages
+        run: |
+          dotnet dotbump packages \
+            --path . \
+            --type minor \
+            --exclude ./test/DotBump.Tests/Data \
+            --output ./artifacts/results/bump-packages-report.md
       - name: Check for changes
         id: changes
         run: |
-          BASE_REF=${{ github.base_ref }}
-          if [ -z "$BASE_REF" ]; then BASE_REF="main"; fi
-          git fetch origin "$BASE_REF" --depth=1
-          git diff --name-only "origin/$BASE_REF" > changed_files.txt
-          echo "csproj_changed=false" >> $GITHUB_OUTPUT
+          # Compare against the checked-out ref so only the bump changes are detected.
+          git diff --name-only HEAD > changed_files.txt
+          echo "packages_changed=false" >> $GITHUB_OUTPUT
           echo "globaljson_changed=false" >> $GITHUB_OUTPUT
           echo "dotnettools_changed=false" >> $GITHUB_OUTPUT
-          
-          if grep -qE '\.csproj$' changed_files.txt; then
-            echo "csproj_changed=true" >> $GITHUB_OUTPUT
+
+          if grep -qE '\.(csproj|fsproj|vbproj)$|(^|/)Directory\.(Packages|Build)\.(props|targets)$' changed_files.txt; then
+            echo "packages_changed=true" >> $GITHUB_OUTPUT
           fi
-          
+
           if grep -q '^global\.json$' changed_files.txt; then
             echo "globaljson_changed=true" >> $GITHUB_OUTPUT
           fi
-          
+
           if grep -q 'dotnet-tools\.json$' changed_files.txt; then
             echo "dotnettools_changed=true" >> $GITHUB_OUTPUT
           fi
-          
+
           if [ -f changed_files.txt ]; then
             rm changed_files.txt
             echo "Cleaned up changed_files.txt"
@@ -84,55 +78,72 @@ jobs:
       - name: Prepare pull request metadata
         id: pr-meta
         run: |
-          csproj="${{ steps.changes.outputs.csproj_changed }}"
+          packages="${{ steps.changes.outputs.packages_changed }}"
           globaljson="${{ steps.changes.outputs.globaljson_changed }}"
           tools="${{ steps.changes.outputs.dotnettools_changed }}"
-          
+
           # Default values
           pr_title=""
           pr_commit=""
-          pr_body="Automated dependency update."
+          pr_summary=""
 
-          # packages, sdk and tools updated
-          if [ "$csproj" = "true" ] && [ "$globaljson" = "true" ] && [ "$tools" = "true" ]; then
-            # packages, sdk and tools updated
-            pr_title="dep: bump .NET SDK, Tools and NuGet package versions"
-            pr_commit="dep: bump .NET SDK, Tools and NuGet package versions"
-          elif [ "$csproj" = "true" ] && [ "$globaljson" = "true" ]; then
-            # packages and sdk updated
+          # sdk, tools and packages updated
+          if [ "$packages" = "true" ] && [ "$globaljson" = "true" ] && [ "$tools" = "true" ]; then
+            pr_title="dep: bump .NET SDK, tools and NuGet package versions"
+            pr_commit="dep: bump .NET SDK, tools and NuGet package versions"
+            pr_summary="Update the .NET SDK, local tools, and NuGet packages."
+          elif [ "$packages" = "true" ] && [ "$globaljson" = "true" ]; then
             pr_title="dep: bump .NET SDK and NuGet package versions"
             pr_commit="dep: bump .NET SDK and NuGet package versions"
+            pr_summary="Update the .NET SDK and NuGet packages."
           elif [ "$globaljson" = "true" ] && [ "$tools" = "true" ]; then
-            # sdk and tools updated
-            pr_title="dep: bump .NET SDK and Tools versions" 
-            pr_commit="dep: bump .NET SDK and Tools versions"
-          elif [ "$csproj" = "true" ] && [ "$tools" = "true" ]; then
-            # packages and tools updated
-              pr_title="dep: bump .NET Tools and NuGet package versions"
-              pr_commit="dep: bump .NET Tools and NuGet package versions"
-          elif [ "$csproj" = "true" ]; then
+            pr_title="dep: bump .NET SDK and tools versions"
+            pr_commit="dep: bump .NET SDK and tools versions"
+            pr_summary="Update the .NET SDK and local tools."
+          elif [ "$packages" = "true" ] && [ "$tools" = "true" ]; then
+            pr_title="dep: bump .NET tools and NuGet package versions"
+            pr_commit="dep: bump .NET tools and NuGet package versions"
+            pr_summary="Update the local tools and NuGet packages."
+          elif [ "$packages" = "true" ]; then
             pr_title="dep: bump NuGet package versions"
             pr_commit="dep: bump NuGet package versions"
+            pr_summary="Update the NuGet packages."
           elif [ "$globaljson" = "true" ]; then
             pr_title="dep: bump .NET SDK version"
             pr_commit="dep: bump .NET SDK version"
-           elif [ "$tools" = "true" ]; then
-            pr_title="dep: bump .NET Tools versions"
-            pr_commit="dep: bump .NET Tools versions"
+            pr_summary="Update the .NET SDK."
+          elif [ "$tools" = "true" ]; then
+            pr_title="dep: bump .NET tools versions"
+            pr_commit="dep: bump .NET tools versions"
+            pr_summary="Update the local tools."
           fi
 
           echo "title=${pr_title}" >> "$GITHUB_OUTPUT"
           echo "commit=${pr_commit}" >> "$GITHUB_OUTPUT"
-          echo "body=${pr_body}" >> "$GITHUB_OUTPUT"
+          echo "summary=${pr_summary}" >> "$GITHUB_OUTPUT"
+
+      - name: Compose pull request body
+        run: |
+          : > artifacts/results/pr-body.md
+          summary="${{ steps.pr-meta.outputs.summary }}"
+          if [ -n "$summary" ]; then
+            printf '%s\n\n' "$summary" >> artifacts/results/pr-body.md
+          fi
+          for report in bump-sdk-report bump-tools-report bump-packages-report; do
+            file="artifacts/results/${report}.md"
+            if [ -f "$file" ]; then
+              cat "$file" >> artifacts/results/pr-body.md
+            fi
+          done
 
       - name: Create pull request
-        if: steps.changes.outputs.csproj_changed == 'true' || steps.changes.outputs.globaljson_changed == 'true' || steps.changes.outputs.dotnettools_changed == 'true'
+        if: steps.changes.outputs.packages_changed == 'true' || steps.changes.outputs.globaljson_changed == 'true' || steps.changes.outputs.dotnettools_changed == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.app-token.outputs.token }}
           commit-message: ${{ steps.pr-meta.outputs.commit }}
           title: ${{ steps.pr-meta.outputs.title }}
-          body: ${{ steps.pr-meta.outputs.body }}
+          body-path: artifacts/results/pr-body.md
           branch: dependency-update
           delete-branch: 'true'
           assignees: robyvandamme
