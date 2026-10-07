@@ -1,7 +1,7 @@
 name: Update .NET Dependencies
 
 # Updates .NET dependencies (SDK, tools and NuGet packages) and opens a pull request with a report.
-# The packages step scans the repository for project and props files; no solution file is required.
+# The packages step scans the repository for project and props files; a solution is only needed for the restore step that regenerates packages.lock.json.
 # For the PR: check what has changed and use the relevant commit/ PR message.
 
 env:
@@ -49,6 +49,8 @@ jobs:
             --type minor \
             --exclude ./test/DotBump.Tests/Data \
             --output ./artifacts/results/bump-packages-report.md
+      - name: Restore packages (regenerate lock files)
+        run: dotnet restore -p:RestoreLockedMode=false
       - name: Check for changes
         id: changes
         run: |
