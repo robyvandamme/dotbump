@@ -26,8 +26,8 @@ jobs:
         uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          client-id: ${{ secrets.PULL_REQUEST_CLIENT_ID }}
-          private-key: ${{ secrets.PULL_REQUEST_PRIVATE_KEY }}
+          client-id: ${{ secrets.WORKFLOW_APP_CLIENT_ID }}
+          private-key: ${{ secrets.WORKFLOW_APP_PRIVATE_KEY }}
       - name: Create artifacts/results directory
         run: mkdir -p artifacts/results
       - name: Restore tools
