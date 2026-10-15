@@ -18,13 +18,7 @@ internal class BumpPackagesCommand(
     private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
     private readonly string _defaultRepositoryPath = Directory.GetCurrentDirectory();
 
-    internal Task<int> ExecuteForTestAsync(
-        CommandContext context,
-        BumpPackagesSettings settings,
-        CancellationToken cancellationToken)
-        => ExecuteAsync(context, settings, cancellationToken);
-
-    protected override async Task<int> ExecuteAsync(
+    public override async Task<int> ExecuteAsync(
         CommandContext context,
         BumpPackagesSettings settings,
         CancellationToken cancellationToken)

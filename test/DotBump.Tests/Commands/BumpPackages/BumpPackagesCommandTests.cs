@@ -25,7 +25,7 @@ namespace DotBump.Tests.Commands.BumpPackages;
 
 public class BumpPackagesCommandTests
 {
-    public class ExecuteForTestAsync
+    public class ExecuteAsync
     {
         [Fact]
         public async Task With_Valid_Settings_Returns_0()
@@ -34,7 +34,7 @@ public class BumpPackagesCommandTests
             var handler = CreateHandler(CreateReport(("MyPackage", "1.0.0")));
             var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
 
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 CreateContext("packages"),
                 new BumpPackagesSettings(),
                 CancellationToken.None);
@@ -51,7 +51,7 @@ public class BumpPackagesCommandTests
             var handler = CreateHandler(report);
             var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
 
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 CreateContext("packages"),
                 new BumpPackagesSettings(),
                 CancellationToken.None);
@@ -68,7 +68,7 @@ public class BumpPackagesCommandTests
             var handler = CreateHandler(CreateReport(("MyPackage", "1.0.0")));
             var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
 
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 CreateContext("packages"),
                 new BumpPackagesSettings { RepositoryPath = "./[draft]/app" },
                 CancellationToken.None);
@@ -87,7 +87,7 @@ public class BumpPackagesCommandTests
             var handler = CreateHandler(report);
             var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
 
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 CreateContext("packages"),
                 new BumpPackagesSettings(),
                 CancellationToken.None);
@@ -107,7 +107,7 @@ public class BumpPackagesCommandTests
                 .ThrowsAsync(new InvalidOperationException("boom"));
             var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
 
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 CreateContext("packages"),
                 new BumpPackagesSettings(),
                 CancellationToken.None);
@@ -125,7 +125,7 @@ public class BumpPackagesCommandTests
                 .ThrowsAsync(new HttpRequestException("connection refused"));
             var (command, fileService, commandLogger) = CreateCommandWithClient(testConsole, client.Object);
 
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 CreateContext("packages"),
                 new BumpPackagesSettings(),
                 CancellationToken.None);
@@ -155,7 +155,7 @@ public class BumpPackagesCommandTests
                 .ThrowsAsync(new HttpRequestException("server error", null, HttpStatusCode.InternalServerError));
             var (command, fileService, commandLogger) = CreateCommandWithClient(testConsole, client.Object);
 
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 CreateContext("packages"),
                 new BumpPackagesSettings(),
                 CancellationToken.None);
@@ -175,7 +175,7 @@ public class BumpPackagesCommandTests
             var handler = CreateHandler(CreateReport(("MyPackage", "1.0.0")));
             var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
 
-            await Should.ThrowAsync<DotBumpException>(() => command.ExecuteForTestAsync(
+            await Should.ThrowAsync<DotBumpException>(() => command.ExecuteAsync(
                 CreateContext("tools"),
                 new BumpPackagesSettings(),
                 CancellationToken.None));
@@ -189,7 +189,7 @@ public class BumpPackagesCommandTests
             var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
             var excludedPath = Path.GetFullPath("./excluded");
 
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 CreateContext("packages"),
                 new BumpPackagesSettings { Exclude = ["./excluded"] },
                 CancellationToken.None);
@@ -228,7 +228,7 @@ public class BumpPackagesCommandTests
                     logger);
                 var command = new BumpPackagesCommand(testConsole, logger, handler);
 
-                var result = await command.ExecuteForTestAsync(
+                var result = await command.ExecuteAsync(
                     CreateContext("packages"),
                     new BumpPackagesSettings { RepositoryPath = tempDirectory.AbsolutePath, Output = outputPath },
                     CancellationToken.None);

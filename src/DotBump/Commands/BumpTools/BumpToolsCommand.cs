@@ -18,13 +18,7 @@ internal class BumpToolsCommand(
 {
     private readonly string _defaultNugetConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "nuget.config");
 
-    internal Task<int> ExecuteForTestAsync(
-        CommandContext context,
-        BumpToolsSettings settings,
-        CancellationToken cancellationToken)
-        => ExecuteAsync(context, settings, cancellationToken);
-
-    protected override async Task<int> ExecuteAsync(CommandContext context, BumpToolsSettings settings, CancellationToken cancellationToken)
+    public override async Task<int> ExecuteAsync(CommandContext context, BumpToolsSettings settings, CancellationToken cancellationToken)
     {
         logger.MethodStart(nameof(BumpToolsCommand), nameof(ExecuteAsync));
 

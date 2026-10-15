@@ -12,13 +12,7 @@ namespace DotBump.Commands.BumpSdk;
 internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHandler bumpSdkHandler)
     : AsyncCommand<BumpSdkSettings>()
 {
-    internal Task<int> ExecuteForTestAsync(
-        CommandContext context,
-        BumpSdkSettings settings,
-        CancellationToken cancellationToken)
-        => ExecuteAsync(context, settings, cancellationToken);
-
-    protected override async Task<int> ExecuteAsync(
+    public override async Task<int> ExecuteAsync(
         CommandContext context,
         BumpSdkSettings settings,
         CancellationToken cancellationToken)
