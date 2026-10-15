@@ -18,7 +18,7 @@ namespace DotBump.Tests.Commands.BumpTools;
 
 public class BumpToolsCommandTests
 {
-    public class ExecuteForTestAsync
+    public class ExecuteAsync
     {
         private static readonly string s_defaultNugetConfig = "nuget.config";
 
@@ -55,7 +55,7 @@ public class BumpToolsCommandTests
             var arguments = new[] { "bump", "tools" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 context,
                 new BumpToolsSettings(),
                 CancellationToken.None);
@@ -83,7 +83,7 @@ public class BumpToolsCommandTests
             var arguments = new[] { "bump", "tools" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 context,
                 new BumpToolsSettings() { ToolManifestPath = s_toolManifestPath },
                 CancellationToken.None);
@@ -114,7 +114,7 @@ public class BumpToolsCommandTests
             var arguments = new[] { "bump", "tools" };
             var remainingArguments = new Mock<IRemainingArguments>();
             var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 context,
                 new BumpToolsSettings() { BumpType = BumpType.Patch, ToolManifestPath = s_toolManifestPath },
                 CancellationToken.None);
@@ -150,7 +150,7 @@ public class BumpToolsCommandTests
                 var arguments = new[] { "bump", "tools" };
                 var remainingArguments = new Mock<IRemainingArguments>();
                 var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-                var result = await command.ExecuteForTestAsync(
+                var result = await command.ExecuteAsync(
                     context,
                     new BumpToolsSettings() { BumpType = BumpType.Patch, Output = "bump-tools-report.json", ToolManifestPath = s_toolManifestPath },
                     CancellationToken.None);
@@ -209,7 +209,7 @@ public class BumpToolsCommandTests
                 var arguments = new[] { "bump", "tools" };
                 var remainingArguments = new Mock<IRemainingArguments>();
                 var context = new CommandContext(arguments, remainingArguments.Object, "tools", null);
-                var result = await command.ExecuteForTestAsync(
+                var result = await command.ExecuteAsync(
                     context,
                     new BumpToolsSettings() { BumpType = BumpType.Patch, ToolManifestPath = s_toolManifestPath },
                     CancellationToken.None);
@@ -243,7 +243,7 @@ public class BumpToolsCommandTests
             var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), handler.Object, new ToolManifestLocator(Mock.Of<ILogger>()));
             var context = new CommandContext(["bump", "tools"], new Mock<IRemainingArguments>().Object, "tools", null);
 
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 context,
                 new BumpToolsSettings { NuGetConfigPath = "./[draft]/nuget.config", ToolManifestPath = s_toolManifestPath },
                 CancellationToken.None);
@@ -271,7 +271,7 @@ public class BumpToolsCommandTests
             var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), handler.Object, new ToolManifestLocator(Mock.Of<ILogger>()));
             var context = new CommandContext(["bump", "tools"], new Mock<IRemainingArguments>().Object, "tools", null);
 
-            var result = await command.ExecuteForTestAsync(
+            var result = await command.ExecuteAsync(
                 context,
                 new BumpToolsSettings { ToolManifestPath = "./[draft]/dotnet-tools.json" },
                 CancellationToken.None);

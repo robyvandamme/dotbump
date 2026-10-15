@@ -24,7 +24,7 @@ xUnit v2, Shouldly, Moq (Loose), Spectre.Console.Testing
 * Do not use the terms `SUT` or `ACT` in code. Instead, use descriptive names that do not need comments to explain their
   purpose.
 * One logical outcome per test method.
-* CLI & Command Testing: Test commands via `ExecuteForTestAsync` using `Spectre.Console.Testing.TestConsole`, mock
+* CLI & Command Testing: Test commands via `ExecuteAsync` using `Spectre.Console.Testing.TestConsole`, mock
   `IRemainingArguments`, and assert on exit codes and console output.
 * File System & Isolation: Keep disk-touching tests isolated. Use `LocalDirectory("./temp")` and helpers
   (`EnsureFileCreated`, `EnsureFileDeleted`) or ensure generated output files are deleted before/after execution. Never
@@ -72,7 +72,7 @@ public class MyMethod
 ### CLI / Command Test
 
 ```csharp
-public class ExecuteForTestAsync
+public class ExecuteAsync
 {
     [Fact]
     public async Task With_Valid_Settings_Returns_0()
@@ -84,7 +84,7 @@ public class ExecuteForTestAsync
         var command = new BumpToolsCommand(testConsole, Mock.Of<ILogger>(), Mock.Of<IBumpToolsHandler>());
 
         // Act
-        var result = await command.ExecuteForTestAsync(context, new BumpToolsSettings(), CancellationToken.None);
+        var result = await command.ExecuteAsync(context, new BumpToolsSettings(), CancellationToken.None);
 
         // Assert
         result.ShouldBe(0);
