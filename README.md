@@ -267,7 +267,7 @@ NuGet configuration).
 Private feeds are configured through `nuget.config` in the same way as for the local tools. See
 [Private Feeds](#private-feeds) above.
 
-#### Limitations (beta)
+#### Limitations
 
 The following are intentionally **not supported yet**. Packages that use them are skipped, leaving the existing value
 untouched:
@@ -293,7 +293,7 @@ Other current limitations:
   id are unified to a single target version. The intended semantics — in particular overriding a package that is also
   referenced with `Include` — are not decided yet, so treat `Update=` as unsupported for now.
 
-#### Beta feedback
+#### Feedback
 
 This feature is new. If a package or file format in your repository is not detected correctly, or a version is
 resolved unexpectedly, please open an issue with a minimal reproduction (the relevant project/props file and the
