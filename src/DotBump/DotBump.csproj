@@ -10,7 +10,7 @@
     <Copyright>Copyright © Roby Van Damme.</Copyright>
     <PackageId>DotBump</PackageId>
     <Product>DotBump</Product>
-    <Description>.NET Global Tool to automate dependency upgrade tasks in .NET solutions.</Description>
+    <Description>.NET Tool to automate dependency upgrade tasks in .NET solutions.</Description>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
