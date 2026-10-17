@@ -254,9 +254,9 @@ NuGet configuration).
 
 * All occurrences of the same package id across the repository are bumped to a single target version.
 * The **highest** currently referenced version is used as the starting point for resolving a newer version, so an
-  occurrence is never downgraded. If an occurrence happens to be below the resolved target it is upgraded to the
-  target as well.
-* If no newer version is found, the package is left unchanged.
+  occurrence is never downgraded.
+* If a newer version is found, every occurrence is upgraded to it. If the highest occurrence is already at the latest
+  version, any stale occurrences below it are aligned to it, so occurrences of the same package do not stay diverged.
 * Pre-release handling matches the local tools: if the current version is a pre-release, pre-release versions are
   considered but stable versions are preferred; otherwise only stable versions are considered.
 * Only files that actually change are written back, and only the version value is changed; everything else (attribute

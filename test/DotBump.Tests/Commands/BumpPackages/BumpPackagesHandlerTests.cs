@@ -57,7 +57,24 @@ public class BumpPackagesHandlerTests
         }
 
         [Fact]
-        public async Task With_Resolved_Version_Lower_Than_An_Occurrence_Does_Not_Downgrade()
+        public async Task With_Diverged_Occurrences_And_No_Newer_Version_Aligns_To_Highest()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(
+                ("Roslynator.Analyzers", "4.13.1"),
+                ("Roslynator.Analyzers", "4.16.1"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver();
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+
+            report.HasChanges.ShouldBeTrue();
+            manifest.Packages.ShouldAllBe(package => package.Version == "4.16.1");
+            fileService.Verify(s => s.SavePackageManifest(manifest), Times.Once);
+        }
+
+        [Fact]
+        public async Task With_Diverged_Occurrences_And_Resolved_Version_Lower_Than_Highest_Aligns_To_Highest()
         {
             var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"), ("MyPackage", "1.2.0"));
             var fileService = CreateFileService(manifest);
@@ -66,11 +83,24 @@ public class BumpPackagesHandlerTests
 
             var report = await handler.HandleAsync(BumpType.Patch, "./repo", "nuget.config");
 
-            report.HasChanges.ShouldBeFalse();
-            manifest.Packages.ShouldSatisfyAllConditions(
-                () => manifest.Packages.Count(package => package.Version == "1.0.0").ShouldBe(1),
-                () => manifest.Packages.Count(package => package.Version == "1.2.0").ShouldBe(1));
-            fileService.Verify(s => s.SavePackageManifest(It.IsAny<PackageManifest>()), Times.Never);
+            report.HasChanges.ShouldBeTrue();
+            manifest.Packages.ShouldAllBe(package => package.Version == "1.2.0");
+            fileService.Verify(s => s.SavePackageManifest(manifest), Times.Once);
+        }
+
+        [Fact]
+        public async Task With_Diverged_Occurrences_And_No_Newer_Version_Preserves_Highest_Occurrence_Text()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(
+                ("MyPackage", "1.0.0-beta.1"),
+                ("MyPackage", "1.0.0-RC1"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver();
+            var handler = CreateHandler(fileService, resolver);
+
+            await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+
+            manifest.Packages.ShouldAllBe(package => package.Version == "1.0.0-RC1");
         }
 
         [Fact]

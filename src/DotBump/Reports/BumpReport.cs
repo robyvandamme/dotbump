@@ -59,8 +59,7 @@ internal class BumpReport
 
         foreach (var packageId in packageManifest.GetPackageIds())
         {
-            _results.Add(
-                new BumpResult(packageId, GetReferenceVersion(packageManifest, packageId, useCurrentVersion: false)));
+            _results.Add(new BumpResult(packageId, GetOldVersion(packageManifest, packageId)));
         }
     }
 
@@ -119,7 +118,7 @@ internal class BumpReport
                 StringComparison.OrdinalIgnoreCase));
             if (reportItem != null)
             {
-                reportItem.NewVersion = GetReferenceVersion(packageManifest, packageId, useCurrentVersion: true);
+                reportItem.NewVersion = GetNewVersion(packageManifest, packageId);
             }
         }
 
@@ -188,28 +187,46 @@ internal class BumpReport
     }
 
     /// <summary>
-    /// Gets the reference version for a package: the highest semantic version across all its
-    /// occurrences, falling back to the first occurrence when none is a valid semantic version.
+    /// Gets the lowest original version across all occurrences of a package, which represents the
+    /// occurrence that is furthest behind. Using the lowest occurrence means that both a real upgrade
+    /// and aligning stale occurrences to a higher existing version are reported as a change.
+    /// Falls back to the first occurrence when none is a valid semantic version.
     /// </summary>
-    private static string GetReferenceVersion(
+    private static string GetOldVersion(PackageManifest packageManifest, string packageId)
+    {
+        return GetVersion(packageManifest, packageId, useOriginalVersion: true, selectLowest: true);
+    }
+
+    /// <summary>
+    /// Gets the highest current version across all occurrences of a package, which is the target all
+    /// occurrences converge to. Falls back to the first occurrence when none is a valid semantic
+    /// version.
+    /// </summary>
+    private static string GetNewVersion(PackageManifest packageManifest, string packageId)
+    {
+        return GetVersion(packageManifest, packageId, useOriginalVersion: false, selectLowest: false);
+    }
+
+    private static string GetVersion(
         PackageManifest packageManifest,
         string packageId,
-        bool useCurrentVersion)
+        bool useOriginalVersion,
+        bool selectLowest)
     {
         var entries = packageManifest.Packages
             .Where(package => string.Equals(package.PackageId, packageId, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         var versions = entries
-            .Select(entry => new SemanticVersion(useCurrentVersion ? entry.Version : entry.OriginalVersion))
+            .Select(entry => new SemanticVersion(useOriginalVersion ? entry.OriginalVersion : entry.Version))
             .Where(version => version.IsValid)
             .ToList();
 
-        if (versions.Count > 0)
+        if (versions.Count == 0)
         {
-            return versions.OrderByDescending(version => version).First().Version;
+            return useOriginalVersion ? entries[0].OriginalVersion : entries[0].Version;
         }
 
-        return useCurrentVersion ? entries[0].Version : entries[0].OriginalVersion;
+        return selectLowest ? versions.Min()!.Version : versions.Max()!.Version;
     }
 }
