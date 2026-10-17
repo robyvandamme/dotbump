@@ -175,7 +175,7 @@ class Build : NukeBuild
 
             if (!IsLocalBuild)
             {
-                dotnet($"nuget push -s {NuGetFeed} -k {NuGetApiKey} {packagePath}");
+                dotnet($"nuget push -s {NuGetFeed} -k {NuGetApiKey} {packagePath} --skip-duplicate");
             }
             else
             {
