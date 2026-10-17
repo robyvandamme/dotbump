@@ -227,6 +227,7 @@ internal class BumpReport
             return useOriginalVersion ? entries[0].OriginalVersion : entries[0].Version;
         }
 
-        return selectLowest ? versions.Min()!.Version : versions.Max()!.Version;
+        versions.Sort();
+        return selectLowest ? versions[0].Version : versions[^1].Version;
     }
 }
