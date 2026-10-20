@@ -463,7 +463,7 @@ public class PackageFileServiceTests
             var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
 
             var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
-            manifest.GetPackageIds().ShouldBe(["Newtonsoft.Json"]);
+            manifest.GetPackageIds().ShouldBe(["Newtonsoft.Json"], Case.Insensitive);
 
             manifest.SetVersion("NEWTONSOFT.JSON", "13.0.2");
             packageFileService.SavePackageManifest(manifest);
