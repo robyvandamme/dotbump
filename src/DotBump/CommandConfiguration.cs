@@ -78,9 +78,11 @@ internal static class CommandConfiguration
                 .WithDescription(
                     "Bump the NuGet package versions. " +
                     "Use the 'minor' type option to bump the packages to the latest minor or patch versions for the current major version. " +
-                    "Use the 'patch' type option to bump the packages to the latest patch version for the current minor version. ")
+                    "Use the 'patch' type option to bump the packages to the latest patch version for the current minor version. " +
+                    "Use the 'major' type option to bump the packages to the latest version, including versions with a higher major version. ")
                 .WithExample(PackagesCommandName)
                 .WithExample(PackagesCommandName, "--type", "patch")
+                .WithExample(PackagesCommandName, "--type", "major")
                 .WithExample(PackagesCommandName, "--config", "./custom-nuget.config", "--output", "bump-packages-report.json")
                 .WithExample(PackagesCommandName, "--debug", "true", "--logfile", "bump-packages-log.txt");
         });

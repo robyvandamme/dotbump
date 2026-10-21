@@ -11,7 +11,7 @@ namespace DotBump.Commands.BumpPackages;
 /// </summary>
 internal class BumpPackagesSettings : BumpSettings
 {
-    [Description("The bump type. Defaults to `minor`. Available options are `minor` and `patch`.")]
+    [Description("The bump type. Defaults to `minor`. Available options are `minor`, `patch` and `major`.")]
     [CommandOption("-t|--type")]
     public BumpType? BumpType { get; init; }
 

@@ -36,6 +36,26 @@ public class BumpPackagesHandlerTests
         }
 
         [Fact]
+        public async Task With_Major_Bump_Type_Forwards_Type_And_Applies_Version()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(("MyPackage", "2.0.0"));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Major, "./repo", "nuget.config");
+
+            report.HasChanges.ShouldBeTrue();
+            manifest.Packages.Single().Version.ShouldBe("2.0.0");
+            resolver.Verify(
+                r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    BumpType.Major,
+                    It.IsAny<NuGetConfig>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task With_Occurrences_At_Different_Versions_Uses_Highest_As_Reference()
         {
             var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"), ("MyPackage", "1.2.0"));

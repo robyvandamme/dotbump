@@ -105,6 +105,40 @@ public class PackageVersionResolverTests
         }
 
         [Fact]
+        public async Task With_Major_Type_And_Higher_Major_Returns_Highest_Major()
+        {
+            var nugetConfig = CreateConfig(("stable-feed", "https://feeds.example.com/stable"));
+            var resolver = CreateResolver(new Dictionary<string, (string Url, string[] Versions)>
+            {
+                ["stable-feed"] = ("https://feeds.example.com/stable", ["1.9.0", "2.0.0", "2.1.5"]),
+            });
+
+            var result = await resolver.ResolveAsync(
+                [new PackageToBump("mytool", new SemanticVersion("1.5.0"))],
+                BumpType.Major,
+                nugetConfig);
+
+            result["mytool"].Version.ShouldBe("2.1.5");
+        }
+
+        [Fact]
+        public async Task With_Major_Type_And_No_Higher_Major_Returns_New_Minor()
+        {
+            var nugetConfig = CreateConfig(("stable-feed", "https://feeds.example.com/stable"));
+            var resolver = CreateResolver(new Dictionary<string, (string Url, string[] Versions)>
+            {
+                ["stable-feed"] = ("https://feeds.example.com/stable", ["1.6.0", "1.9.2"]),
+            });
+
+            var result = await resolver.ResolveAsync(
+                [new PackageToBump("mytool", new SemanticVersion("1.5.0"))],
+                BumpType.Major,
+                nugetConfig);
+
+            result["mytool"].Version.ShouldBe("1.9.2");
+        }
+
+        [Fact]
         public async Task With_No_Newer_Version_Returns_Empty()
         {
             var nugetConfig = CreateConfig(("stable-feed", "https://feeds.example.com/stable"));

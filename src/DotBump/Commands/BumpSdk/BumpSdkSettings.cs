@@ -1,6 +1,7 @@
 // Copyright © Roby Van Damme.
 
 using System.ComponentModel;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace DotBump.Commands.BumpSdk;
@@ -26,4 +27,14 @@ internal class BumpSdkSettings : BumpSettings
     [CommandOption("-s|--security-only")]
     [DefaultValue(false)]
     public bool SecurityOnly { get; init; }
+
+    public override ValidationResult Validate()
+    {
+        if (Type == BumpType.Major)
+        {
+            return ValidationResult.Error("The 'major' bump type is not supported for the sdk command.");
+        }
+
+        return ValidationResult.Success();
+    }
 }

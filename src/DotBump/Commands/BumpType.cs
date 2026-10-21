@@ -13,4 +13,9 @@ internal enum BumpType
     /// Bumps the current version to the latest patch version.
     /// </summary>
     Patch,
+
+    /// <summary>
+    /// Bumps the current version to the latest version, including versions with a higher major version.
+    /// </summary>
+    Major,
 }

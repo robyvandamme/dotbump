@@ -29,6 +29,11 @@ internal class BumpToolsSettings : BumpSettings
 
     public override ValidationResult Validate()
     {
+        if (BumpType == Commands.BumpType.Major)
+        {
+            return ValidationResult.Error("The 'major' bump type is not supported for the tools command.");
+        }
+
         return ValidateFileExists(NuGetConfigPath)
             ?? ValidateFileExists(ToolManifestPath)
             ?? ValidationResult.Success();

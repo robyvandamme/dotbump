@@ -102,7 +102,8 @@ internal class PackageVersionResolver(
 
         var pages = nuGetReleaseFinder.TryFindNewReleaseCatalogPages(
             releaseIndex,
-            package.CurrentVersion);
+            package.CurrentVersion,
+            bumpType);
 
         if (pages.Count == 0)
         {

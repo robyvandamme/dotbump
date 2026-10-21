@@ -196,6 +196,7 @@ Bump the versions of NuGet packages referenced in a repository.
 
 Use the `minor` type option to bump the packages to the latest minor or patch version for the current major
 version. Use the `patch` type option to bump the packages to the latest patch version for the current minor version.
+Use the `major` type option to bump the packages to the latest version, including versions with a higher major version.
 
 The command scans the directory passed via `--path` (defaults to the current directory) recursively and takes the
 following files into account:
@@ -220,7 +221,8 @@ DESCRIPTION:
 Bump the NuGet package versions. Use the 'minor' type option to bump the
 packages to the latest minor or patch versions for the current major version.
 Use the 'patch' type option to bump the packages to the latest patch version for
-the current minor version.
+the current minor version. Use the 'major' type option to bump the packages to
+the latest version, including versions with a higher major version.
 
 USAGE:
     dotnet dotbump packages [OPTIONS]
@@ -228,6 +230,7 @@ USAGE:
 EXAMPLES:
     dotnet dotbump packages
     dotnet dotbump packages --type patch
+    dotnet dotbump packages --type major
     dotnet dotbump packages --path ./src --config ./custom-nuget.config --output bump-packages-report.json
     dotnet dotbump packages --exclude ./test/DotBump.Tests/Data
     dotnet dotbump packages --debug true --logfile bump-packages-log.txt
@@ -236,7 +239,7 @@ OPTIONS:
     -h, --help       Prints help information
         --debug      Enable debug logging for troubleshooting. Includes response data
         --logfile    The file to send the log output to
-    -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`
+    -t, --type       The bump type. Defaults to `minor`. Available options are `minor`, `patch` and `major`
     -o, --output     Output file name. The name of the file to write the result
                      to. The output format is inferred from the file extension:
                      `.json` or `.md`
@@ -257,6 +260,9 @@ NuGet configuration).
   occurrence is never downgraded. If an occurrence happens to be below the resolved target it is upgraded to the
   target as well.
 * If no newer version is found, the package is left unchanged.
+* The `major` type removes the major-version cap, consistent with how `minor` includes patch releases. It therefore
+  also selects a newer minor or patch version when no higher major version is available, and only leaves the package
+  unchanged when nothing newer exists.
 * Pre-release handling matches the local tools: if the current version is a pre-release, pre-release versions are
   considered but stable versions are preferred; otherwise only stable versions are considered.
 * Only files that actually change are written back, and only the version value is changed; everything else (attribute
