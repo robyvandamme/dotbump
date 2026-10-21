@@ -1,5 +1,6 @@
 // Copyright © Roby Van Damme.
 
+using DotBump.Commands;
 using DotBump.Commands.BumpTools;
 using DotBump.Tests.TestHelpers;
 using Shouldly;
@@ -108,6 +109,18 @@ public class BumpToolsSettingsTests
             result.ShouldSatisfyAllConditions(
                 () => result.Successful.ShouldBeFalse(),
                 () => result.Message.ShouldBe($"The file {invalidPath} is not a valid path."));
+        }
+
+        [Fact]
+        public void With_Major_Bump_Type_Returns_Error()
+        {
+            var settings = new BumpToolsSettings { BumpType = BumpType.Major };
+
+            var result = settings.Validate();
+
+            result.ShouldSatisfyAllConditions(
+                () => result.Successful.ShouldBeFalse(),
+                () => result.Message.ShouldBe("The 'major' bump type is not supported for the tools command."));
         }
     }
 

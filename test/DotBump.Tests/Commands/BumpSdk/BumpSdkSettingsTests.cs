@@ -1,0 +1,35 @@
+// Copyright © Roby Van Damme.
+
+using DotBump.Commands;
+using DotBump.Commands.BumpSdk;
+using Shouldly;
+
+namespace DotBump.Tests.Commands.BumpSdk;
+
+public class BumpSdkSettingsTests
+{
+    public class Validate
+    {
+        [Fact]
+        public void With_Default_Settings_Returns_Success()
+        {
+            var settings = new BumpSdkSettings();
+
+            var result = settings.Validate();
+
+            result.Successful.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Major_Bump_Type_Returns_Error()
+        {
+            var settings = new BumpSdkSettings { Type = BumpType.Major };
+
+            var result = settings.Validate();
+
+            result.ShouldSatisfyAllConditions(
+                () => result.Successful.ShouldBeFalse(),
+                () => result.Message.ShouldBe("The 'major' bump type is not supported for the sdk command."));
+        }
+    }
+}

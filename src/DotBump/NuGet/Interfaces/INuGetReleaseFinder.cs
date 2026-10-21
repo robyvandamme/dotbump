@@ -13,7 +13,8 @@ internal interface INuGetReleaseFinder
 
     List<CatalogPage> TryFindNewReleaseCatalogPages(
         RegistrationIndex index,
-        SemanticVersion currentVersion);
+        SemanticVersion currentVersion,
+        BumpType bumpType);
 
     SemanticVersion? TryFindNewVersionInCatalogPages(
         ICollection<CatalogPage> catalogPages,

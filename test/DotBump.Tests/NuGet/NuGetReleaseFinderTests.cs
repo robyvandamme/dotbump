@@ -234,5 +234,133 @@ public class NuGetReleaseFinderTests
 
             result.ShouldBe(new SemanticVersion("1.0.0"));
         }
+
+        [Fact]
+        public void With_Major_Type_And_Higher_Major_Returns_Highest_Major()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var result = service.TryFindNewVersionInCatalogPages(
+                CreateCatalogPages("1.9.0", "2.0.0", "2.1.5"),
+                new SemanticVersion("1.5.0"),
+                BumpType.Major);
+
+            result.ShouldBe(new SemanticVersion("2.1.5"));
+        }
+
+        [Fact]
+        public void With_Major_Type_And_No_Higher_Major_Returns_New_Minor()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var result = service.TryFindNewVersionInCatalogPages(
+                CreateCatalogPages("1.6.0", "1.9.2"),
+                new SemanticVersion("1.5.0"),
+                BumpType.Major);
+
+            result.ShouldBe(new SemanticVersion("1.9.2"));
+        }
+
+        [Fact]
+        public void With_Major_Type_And_No_Newer_Version_Returns_Null()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var result = service.TryFindNewVersionInCatalogPages(
+                CreateCatalogPages("2.0.0", "2.1.5"),
+                new SemanticVersion("2.1.5"),
+                BumpType.Major);
+
+            result.ShouldBeNull();
+        }
+
+        [Fact]
+        public void With_Major_Type_And_Prerelease_Only_Higher_Major_Returns_Null()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var result = service.TryFindNewVersionInCatalogPages(
+                CreateCatalogPages("2.0.0-preview.1"),
+                new SemanticVersion("1.5.0"),
+                BumpType.Major);
+
+            result.ShouldBeNull();
+        }
+
+        [Fact]
+        public void With_Major_Type_And_Prerelease_Current_Prefers_Stable_Version()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var result = service.TryFindNewVersionInCatalogPages(
+                CreateCatalogPages("1.6.0", "2.0.0-preview.1"),
+                new SemanticVersion("1.5.0-preview.1"),
+                BumpType.Major);
+
+            result.ShouldBe(new SemanticVersion("1.6.0"));
+        }
+
+        private static List<CatalogPage> CreateCatalogPages(params string[] versions)
+        {
+            var packages = versions.Select(version => new Package
+            {
+                Id = $"https://example.com/{version}",
+                CatalogEntry = new PackageDetails { Version = version, Listed = true },
+            }).ToList();
+
+            var lowest = versions.OrderBy(version => new SemanticVersion(version)).First();
+            var highest = versions.OrderBy(version => new SemanticVersion(version)).Last();
+
+            return
+            [
+                new CatalogPage
+                {
+                    Id = "https://example.com/page1",
+                    Lower = lowest,
+                    Upper = highest,
+                    Count = versions.Length,
+                    Items = packages,
+                },
+            ];
+        }
+    }
+
+    public class TryFindNewReleaseCatalogPages
+    {
+        [Fact]
+        public void With_Major_Type_Includes_Higher_Major_Pages()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateRegistrationIndex();
+
+            var result = service.TryFindNewReleaseCatalogPages(
+                index,
+                new SemanticVersion("1.5.0"),
+                BumpType.Major);
+
+            result.Select(page => page.Id).ShouldBe(new[] { "page-1", "page-2" });
+        }
+
+        [Fact]
+        public void With_Minor_Type_Excludes_Higher_Major_Pages()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateRegistrationIndex();
+
+            var result = service.TryFindNewReleaseCatalogPages(
+                index,
+                new SemanticVersion("1.5.0"),
+                BumpType.Minor);
+
+            result.Select(page => page.Id).ShouldBe(new[] { "page-1" });
+        }
+
+        private static RegistrationIndex CreateRegistrationIndex()
+        {
+            return new RegistrationIndex
+            {
+                Count = 2,
+                CatalogPages =
+                [
+                    new CatalogPage { Id = "page-1", Lower = "1.0.0", Upper = "1.9.9" },
+                    new CatalogPage { Id = "page-2", Lower = "2.0.0", Upper = "2.5.0" },
+                ],
+            };
+        }
     }
 }
