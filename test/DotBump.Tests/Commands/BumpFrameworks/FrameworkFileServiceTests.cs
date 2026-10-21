@@ -100,6 +100,27 @@ public class FrameworkFileServiceTests
         }
 
         [Fact]
+        public void With_Comment_Split_TargetFramework_Skips_Entry_And_Adds_Warning()
+        {
+            ResetTempDirectory();
+            const string content =
+                "<Project Sdk=\"Microsoft.NET.Sdk\">\n" +
+                "  <PropertyGroup>\n" +
+                "    <TargetFramework>net8<!-- keep -->.0</TargetFramework>\n" +
+                "  </PropertyGroup>\n" +
+                "</Project>\n";
+            WriteFile("App.csproj", content);
+            var service = CreateService();
+
+            var manifest = service.GetFrameworkManifest(TempDirectory.AbsolutePath);
+
+            manifest.Frameworks.ShouldBeEmpty();
+            manifest.Warnings.ShouldContain(warning =>
+                warning.Contains("could not be located", StringComparison.Ordinal));
+            File.ReadAllText(Path.Combine(TempDirectory.AbsolutePath, "App.csproj")).ShouldBe(content);
+        }
+
+        [Fact]
         public void With_Invalid_Xml_Throws_DotBumpException()
         {
             ResetTempDirectory();

@@ -155,6 +155,53 @@ public class BumpFrameworksCommandTests
                 () => markdown.ShouldContain("App.csproj: net8.0 → net10.0"));
         }
 
+        [Fact]
+        public async Task With_Comment_Split_TargetFramework_Leaves_File_Unchanged()
+        {
+            ResetTempDirectory();
+            var globalJsonPath = Path.Combine(TempDirectory.AbsolutePath, "global.json");
+            var projectPath = Path.Combine(TempDirectory.AbsolutePath, "App.csproj");
+            var reportPath = Path.Combine(TempDirectory.AbsolutePath, "frameworks.md");
+            const string projectContent =
+                "<Project Sdk=\"Microsoft.NET.Sdk\">\n" +
+                "  <PropertyGroup>\n" +
+                "    <TargetFramework>net8<!-- keep -->.0</TargetFramework>\n" +
+                "  </PropertyGroup>\n" +
+                "</Project>\n";
+
+            await File.WriteAllTextAsync(
+                globalJsonPath,
+                JsonSerializer.Serialize(new GlobalJson(new Sdk("10.0.100", "latestFeature"))));
+            await File.WriteAllTextAsync(projectPath, projectContent);
+
+            var logger = Mock.Of<ILogger>();
+            var handler = new BumpFrameworksHandler(
+                new FrameworkFileService(logger),
+                new SdkFileService(logger),
+                logger);
+
+            using var testConsole = new TestConsole();
+            var command = new BumpFrameworksCommand(testConsole, logger, handler);
+
+            var result = await command.ExecuteAsync(
+                CreateContext("frameworks"),
+                new BumpFrameworksSettings
+                {
+                    GlobalJsonPath = globalJsonPath,
+                    RepositoryPath = TempDirectory.AbsolutePath,
+                    Output = reportPath,
+                },
+                CancellationToken.None);
+
+            var project = await File.ReadAllTextAsync(projectPath);
+            var markdown = await File.ReadAllTextAsync(reportPath);
+
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => project.ShouldBe(projectContent),
+                () => markdown.ShouldContain("could not be located"));
+        }
+
         private static LocalDirectory TempDirectory => new("./temp/frameworks-command");
 
         private static void ResetTempDirectory()

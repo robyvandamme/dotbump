@@ -125,10 +125,13 @@ internal static class XmlFileText
         int[] lineStartOffsets,
         XElement element)
     {
-        // The value is the text node of the element; its line info points at the text itself rather
-        // than the element's start tag, so attributes or comments cannot be matched.
-        var textNode = element.Nodes().OfType<XText>().FirstOrDefault();
-        if (textNode is not IXmlLineInfo textLineInfo || !textLineInfo.HasLineInfo())
+        // Only a single ordinary text node represents the complete value. Comments, CDATA, nested
+        // elements and multiple text nodes would make a partial replacement corrupt the value.
+        var nodes = element.Nodes().ToList();
+        if (nodes.Count != 1
+            || nodes[0].NodeType != XmlNodeType.Text
+            || nodes[0] is not IXmlLineInfo textLineInfo
+            || !textLineInfo.HasLineInfo())
         {
             return (-1, 0);
         }

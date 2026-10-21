@@ -939,6 +939,20 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Element_Containing_Comment_Returns_No_Span()
+        {
+            const string text = "<Project>\n  <Version>13<!-- keep -->.0.1</Version>\n</Project>\n";
+            var versionElement = XDocument.Parse(text, LoadOptions.SetLineInfo)
+                .Descendants("Version").Single();
+            var lineStartOffsets = XmlFileText.GetLineStartOffsets(text);
+
+            var (start, length) = PackageFileService.GetVersionSpan(text, lineStartOffsets, versionElement);
+
+            start.ShouldBe(-1);
+            length.ShouldBe(0);
+        }
+
+        [Fact]
         public void With_Valid_Attribute_Returns_Span()
         {
             const string text = "<PackageReference Version=\"13.0.1\" />";
