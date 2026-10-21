@@ -77,6 +77,31 @@ public class BumpFrameworksHandlerTests
         }
 
         [Fact]
+        public async Task With_Legacy_Sdk_Version_Throws_DotBumpException_Before_Scanning_Or_Saving()
+        {
+            var manifest = CreateManifest("net8.0", string.Empty);
+            var (handler, fileService, _) = CreateHandler(manifest, "3.1.426");
+
+            await Should.ThrowAsync<DotBumpException>(() => handler.HandleAsync("./repo", "./global.json"));
+
+            fileService.Verify(
+                s => s.GetFrameworkManifest(It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>()),
+                Times.Never);
+            fileService.Verify(s => s.SaveFrameworkManifest(It.IsAny<FrameworkManifest>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task With_DotNet5_Sdk_Sets_Net5_Target_Framework()
+        {
+            var manifest = CreateManifest("net8.0", string.Empty);
+            var (handler, _, _) = CreateHandler(manifest, "5.0.100");
+
+            await handler.HandleAsync("./repo", "./global.json");
+
+            manifest.Frameworks.Single().Framework.ShouldBe("net5.0");
+        }
+
+        [Fact]
         public async Task With_Excluded_Paths_Forwards_Them_To_The_File_Service()
         {
             var manifest = CreateManifest("net8.0", string.Empty);

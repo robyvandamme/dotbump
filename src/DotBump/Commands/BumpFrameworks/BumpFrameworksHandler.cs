@@ -13,6 +13,8 @@ internal class BumpFrameworksHandler(
     ISdkFileService sdkFileService,
     ILogger logger) : IBumpFrameworksHandler
 {
+    private const int MinimumSdkMajor = 5;
+
     public Task<BumpReport> HandleAsync(
         string repositoryPath,
         string globalJsonPath,
@@ -28,6 +30,13 @@ internal class BumpFrameworksHandler(
         {
             throw new DotBumpException(
                 $"Failed to determine a valid target framework from SDK version '{currentSdk.Version}'.");
+        }
+
+        if (currentSdk.SemanticVersion.Major < MinimumSdkMajor)
+        {
+            throw new DotBumpException(
+                $"The frameworks command requires .NET {MinimumSdkMajor} or later; " +
+                $"SDK version '{currentSdk.Version}' cannot be mapped to a modern target framework.");
         }
 
         var targetFramework = $"net{currentSdk.SemanticVersion.Major}.0";

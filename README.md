@@ -146,7 +146,8 @@ dotnet dotbump frameworks --file ./other/global.json --path ./src --output bump-
 
 Only `<TargetFramework>` is supported for now. Files that contain `<TargetFrameworks>` are skipped with a warning, so
 multi-target projects are left untouched. `netstandard*`, `net4x`, `netcoreapp*`, MSBuild property expressions such as
-`$(TargetFramework)` and other unsupported values are also left unchanged.
+`$(TargetFramework)` and other unsupported values are also left unchanged. SDK versions below .NET 5 are rejected
+because those SDKs use `netcoreapp*` target frameworks rather than the modern `netX.0` format.
 
 ### Bump the Local .NET Tools versions
 

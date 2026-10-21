@@ -202,6 +202,50 @@ public class BumpFrameworksCommandTests
                 () => markdown.ShouldContain("could not be located"));
         }
 
+        [Fact]
+        public async Task With_Legacy_Sdk_Version_Leaves_Project_Unchanged()
+        {
+            ResetTempDirectory();
+            var globalJsonPath = Path.Combine(TempDirectory.AbsolutePath, "global.json");
+            var projectPath = Path.Combine(TempDirectory.AbsolutePath, "App.csproj");
+            const string projectContent =
+                "<Project Sdk=\"Microsoft.NET.Sdk\">\n" +
+                "  <PropertyGroup>\n" +
+                "    <TargetFramework>net8.0</TargetFramework>\n" +
+                "  </PropertyGroup>\n" +
+                "</Project>\n";
+
+            await File.WriteAllTextAsync(
+                globalJsonPath,
+                JsonSerializer.Serialize(new GlobalJson(new Sdk("3.1.426", "latestFeature"))));
+            await File.WriteAllTextAsync(projectPath, projectContent);
+
+            var logger = Mock.Of<ILogger>();
+            var handler = new BumpFrameworksHandler(
+                new FrameworkFileService(logger),
+                new SdkFileService(logger),
+                logger);
+
+            using var testConsole = new TestConsole();
+            var command = new BumpFrameworksCommand(testConsole, logger, handler);
+
+            var result = await command.ExecuteAsync(
+                CreateContext("frameworks"),
+                new BumpFrameworksSettings
+                {
+                    GlobalJsonPath = globalJsonPath,
+                    RepositoryPath = TempDirectory.AbsolutePath,
+                },
+                CancellationToken.None);
+
+            var project = await File.ReadAllTextAsync(projectPath);
+
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(1),
+                () => project.ShouldBe(projectContent),
+                () => testConsole.Output.ShouldContain("requires .NET 5 or later"));
+        }
+
         private static LocalDirectory TempDirectory => new("./temp/frameworks-command");
 
         private static void ResetTempDirectory()

@@ -14,7 +14,8 @@ Key capabilities include:
 - `dotnet dotbump sdk`: Bumps the .NET SDK version in `global.json` using the official .NET release index. Supports
   `minor`, `patch` and `major` bump types.
 - `dotnet dotbump frameworks`: Aligns `<TargetFramework>` values in project and shared MSBuild files to the SDK major
-  from `global.json`. Currently supports `<TargetFramework>` only; `<TargetFrameworks>` is skipped with a warning.
+  from `global.json` (SDK 5 or later). Currently supports `<TargetFramework>` only; `<TargetFrameworks>` is skipped with
+  a warning.
 - `dotnet dotbump tools`: Bumps local .NET tools declared in `.config/dotnet-tools.json` using NuGet feeds (supporting
   pre-releases, unlisted package detection, and authenticated private feeds via environment variables). Supports
   `minor`, `patch` and `major` bump types.
