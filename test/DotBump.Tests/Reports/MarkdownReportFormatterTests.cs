@@ -2,6 +2,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using DotBump.Commands;
+using DotBump.Commands.BumpFrameworks.DataModel;
 using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
 using DotBump.Reports;
@@ -70,6 +71,30 @@ public class MarkdownReportFormatterTests
                 "## Tools\n" +
                 "\n" +
                 "- dotnet-outdated-tool: 4.6.0 → 4.6.1\n" +
+                "\n");
+        }
+
+        [Fact]
+        public void With_Frameworks_Change_Returns_Heading_And_List()
+        {
+            var manifest = new FrameworkManifest();
+            var entry = new FrameworkEntry(
+                "src/App/App.csproj",
+                "/repo/src/App/App.csproj",
+                "net8.0",
+                string.Empty,
+                0,
+                6);
+            manifest.Add(entry);
+            manifest.SetFramework(entry, "net10.0");
+            var report = new BumpReport(manifest, BumpType.Major);
+
+            var markdown = MarkdownReportFormatter.Format(report);
+
+            markdown.ShouldBe(
+                "## Frameworks\n" +
+                "\n" +
+                "- src/App/App.csproj: net8.0 → net10.0\n" +
                 "\n");
         }
 

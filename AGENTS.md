@@ -11,9 +11,16 @@ contributors working in this repository.
 
 Key capabilities include:
 
-- `dotnet dotbump sdk`: Bumps the .NET SDK version in `global.json` using the official .NET release index.
+- `dotnet dotbump sdk`: Bumps the .NET SDK version in `global.json` using the official .NET release index. Supports
+  `minor`, `patch` and `major` bump types.
+- `dotnet dotbump frameworks`: Aligns `<TargetFramework>` values in project and shared MSBuild files to the SDK major
+  from `global.json` (SDK 5 or later). Currently supports `<TargetFramework>` only; `<TargetFrameworks>` is skipped with
+  a warning.
 - `dotnet dotbump tools`: Bumps local .NET tools declared in `.config/dotnet-tools.json` using NuGet feeds (supporting
-  pre-releases, unlisted package detection, and authenticated private feeds via environment variables).
+  pre-releases, unlisted package detection, and authenticated private feeds via environment variables). Supports
+  `minor`, `patch` and `major` bump types.
+- `dotnet dotbump packages`: Bumps NuGet package references across project and shared MSBuild files, including major
+  version upgrades, with report output in JSON or markdown.
 
 ### Technology Stack
 
@@ -33,13 +40,16 @@ Key capabilities include:
     - `Commands/`: Command definitions (`AsyncCommand<TSettings>`) and settings classes inheriting from
       `CommandSettings`.
     - `Commands/BumpSdk/`: SDK bump command, handler, services, and models (`global.json`, release index).
+    - `Commands/BumpFrameworks/`: Target framework bump command, handler, file service, and manifest models.
     - `Commands/BumpTools/`: Tools bump command, handler, and local tool manifest file services (`dotnet-tools.json`).
+    - `Commands/BumpPackages/`: NuGet package bump command, handler, file service, and manifest models.
     - `NuGet/`: Reusable NuGet client services, configuration file services (`nuget.config`), validators, release
       finder, and data models.
-    - `Common/`: Shared utilities (`SemanticVersion`, `VersionInfo`, `DotBumpException`, `LoggerExtensions`).
+    - `Common/`: Shared utilities (`SemanticVersion`, `VersionInfo`, `DotBumpException`, `LoggerExtensions`,
+      `XmlFileText`, `RepositoryFileScanner`).
     - `Reports/`: Reporting models (`BumpReport`, `BumpResult`).
 - `test/DotBump.Tests/`: Unit and integration test suite.
-    - `Commands/`: Tests for SDK and Tools commands, handlers, and services.
+    - `Commands/`: Tests for SDK, frameworks, tools and packages commands, handlers, and services.
     - `NuGet/`: Tests for NuGet clients, release finder, configuration validator, and configuration file services.
     - `Common/`: Tests for semantic versioning and argument handling.
     - `Data/`: Static test data (mock NuGet registrations, catalog pages, and `global.json` files).
