@@ -65,9 +65,11 @@ internal static class CommandConfiguration
                 .WithDescription(
                     "Bump the local .NET tools versions. " +
                     "Use the 'minor' type option to bump the tools to the latest minor or patch versions for the current major version. " +
-                    "Use the 'patch' type option to bump the tools to the latest patch version for the current minor version. ")
+                    "Use the 'patch' type option to bump the tools to the latest patch version for the current minor version. " +
+                    "Use the 'major' type option to bump the tools to the latest version, including versions with a higher major version. ")
                 .WithExample(ToolsCommandName)
                 .WithExample(ToolsCommandName, TypeOptionName, "patch")
+                .WithExample(ToolsCommandName, TypeOptionName, "major")
                 .WithExample(ToolsCommandName, "--manifest", "./other/dotnet-tools.json")
                 .WithExample(ToolsCommandName, "--config", "./custom-nuget.config", "--output", "bump-tools-report.json")
                 .WithExample(ToolsCommandName, "--debug", "true", "--logfile", "bump-tools-log.txt");

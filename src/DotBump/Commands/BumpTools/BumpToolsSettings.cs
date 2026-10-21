@@ -11,7 +11,7 @@ namespace DotBump.Commands.BumpTools;
 /// </summary>
 internal class BumpToolsSettings : BumpSettings
 {
-    [Description("The bump type. Defaults to `minor`. Available options are `minor` and `patch`.")]
+    [Description("The bump type. Defaults to `minor`. Available options are `minor`, `patch` and `major`.")]
     [CommandOption("-t|--type")]
     public BumpType? BumpType { get; init; }
 
@@ -29,11 +29,6 @@ internal class BumpToolsSettings : BumpSettings
 
     public override ValidationResult Validate()
     {
-        if (BumpType == Commands.BumpType.Major)
-        {
-            return ValidationResult.Error("The 'major' bump type is not supported for the tools command.");
-        }
-
         return ValidateFileExists(NuGetConfigPath)
             ?? ValidateFileExists(ToolManifestPath)
             ?? ValidationResult.Success();

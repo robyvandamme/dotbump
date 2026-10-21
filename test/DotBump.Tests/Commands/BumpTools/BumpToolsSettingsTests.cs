@@ -112,15 +112,13 @@ public class BumpToolsSettingsTests
         }
 
         [Fact]
-        public void With_Major_Bump_Type_Returns_Error()
+        public void With_Major_Bump_Type_Returns_Success()
         {
             var settings = new BumpToolsSettings { BumpType = BumpType.Major };
 
             var result = settings.Validate();
 
-            result.ShouldSatisfyAllConditions(
-                () => result.Successful.ShouldBeFalse(),
-                () => result.Message.ShouldBe("The 'major' bump type is not supported for the tools command."));
+            result.Successful.ShouldBeTrue();
         }
     }
 
