@@ -21,6 +21,56 @@ public class BumpFrameworksSettingsTests
         }
 
         [Fact]
+        public void With_Existing_GlobalJson_File_Returns_Success()
+        {
+            ResetTempDirectory();
+            var globalJsonPath = ConfigPath("global.json");
+            TempDirectory.EnsureFileCreated("global.json");
+            var settings = new BumpFrameworksSettings { GlobalJsonPath = globalJsonPath };
+
+            var result = settings.Validate();
+
+            result.Successful.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Missing_GlobalJson_File_Returns_Error()
+        {
+            ResetTempDirectory();
+            var missingPath = ConfigPath("missing.json");
+            var settings = new BumpFrameworksSettings { GlobalJsonPath = missingPath };
+
+            var result = settings.Validate();
+
+            result.ShouldSatisfyAllConditions(
+                () => result.Successful.ShouldBeFalse(),
+                () => result.Message.ShouldBe($"The file {missingPath} does not exist."));
+        }
+
+        [Fact]
+        public void With_Invalid_GlobalJson_Path_Returns_Error()
+        {
+            var invalidPath = "bad\0path.json";
+            var settings = new BumpFrameworksSettings { GlobalJsonPath = invalidPath };
+
+            var result = settings.Validate();
+
+            result.ShouldSatisfyAllConditions(
+                () => result.Successful.ShouldBeFalse(),
+                () => result.Message.ShouldBe($"The file {invalidPath} is not a valid path."));
+        }
+
+        [Fact]
+        public void With_Whitespace_GlobalJson_Path_Returns_Success()
+        {
+            var settings = new BumpFrameworksSettings { GlobalJsonPath = "  " };
+
+            var result = settings.Validate();
+
+            result.Successful.ShouldBeTrue();
+        }
+
+        [Fact]
         public void With_Existing_Repository_Directory_Returns_Success()
         {
             ResetTempDirectory();

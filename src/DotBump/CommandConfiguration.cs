@@ -1,6 +1,7 @@
 // Copyright © Roby Van Damme.
 
 using DotBump.Commands.BumpFrameworks;
+using DotBump.Commands.BumpFrameworks.Interfaces;
 using DotBump.Commands.BumpPackages;
 using DotBump.Commands.BumpPackages.Interfaces;
 using DotBump.Commands.BumpSdk;
@@ -92,6 +93,9 @@ internal static class CommandConfiguration
                 .WithExample(PackagesCommandName, TypeOptionName, "major")
                 .WithExample(PackagesCommandName, "--config", "./custom-nuget.config", "--output", "bump-packages-report.json")
                 .WithExample(PackagesCommandName, "--debug", "true", "--logfile", "bump-packages-log.txt");
+
+            config.Settings.Registrar.Register<IFrameworkFileService, FrameworkFileService>();
+            config.Settings.Registrar.Register<IBumpFrameworksHandler, BumpFrameworksHandler>();
 
             config.AddCommand<BumpFrameworksCommand>(name: FrameworksCommandName)
                 .WithDescription("Bump the target framework versions.");

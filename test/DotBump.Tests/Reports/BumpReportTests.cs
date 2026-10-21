@@ -2,6 +2,7 @@
 
 using System.Text.Json;
 using DotBump.Commands;
+using DotBump.Commands.BumpFrameworks.DataModel;
 using DotBump.Commands.BumpPackages.DataModel;
 using DotBump.Reports;
 using DotBump.Tests.TestHelpers;
@@ -12,6 +13,29 @@ namespace DotBump.Tests.Reports;
 
 public class BumpReportTests
 {
+    public class Constructor
+    {
+        [Fact]
+        public void With_Framework_Manifest_Reports_Framework_Command_And_Results()
+        {
+            var manifest = new FrameworkManifest();
+            var entry = new FrameworkEntry("App.csproj", "/repo/App.csproj", "net8.0", string.Empty, 0, 6);
+            manifest.Add(entry);
+            manifest.SetFramework(entry, "net10.0");
+
+            var report = new BumpReport(manifest, BumpType.Major);
+            var result = report.Results.ShouldHaveSingleItem();
+
+            report.ShouldSatisfyAllConditions(
+                () => report.CommandName.ShouldBe("frameworks"),
+                () => report.BumpType.ShouldBe(BumpType.Major),
+                () => report.HasChanges.ShouldBeTrue(),
+                () => result.Id.ShouldBe("App.csproj"),
+                () => result.OldVersion.ShouldBe("net8.0"),
+                () => result.NewVersion.ShouldBe("net10.0"));
+        }
+    }
+
     public class ReportWarnings
     {
         [Fact]

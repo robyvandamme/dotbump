@@ -11,6 +11,10 @@ namespace DotBump.Commands.BumpFrameworks;
 /// </summary>
 internal class BumpFrameworksSettings : BumpSettings
 {
+    [Description("The global.json file used to determine the target framework. Defaults to `./global.json`.")]
+    [CommandOption("-f|--file")]
+    public string? GlobalJsonPath { get; init; }
+
     [Description("The root directory to scan. Defaults to the current directory.")]
     [CommandOption("-p|--path")]
     public string? RepositoryPath { get; init; }
@@ -25,7 +29,8 @@ internal class BumpFrameworksSettings : BumpSettings
 
     public override ValidationResult Validate()
     {
-        return ValidateDirectoryExists(RepositoryPath)
+        return ValidateFileExists(GlobalJsonPath)
+            ?? ValidateDirectoryExists(RepositoryPath)
             ?? ValidateExcludedDirectories(Exclude)
             ?? ValidationResult.Success();
     }

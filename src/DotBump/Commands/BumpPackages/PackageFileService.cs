@@ -1,6 +1,5 @@
 // Copyright © Roby Van Damme.
 
-using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using DotBump.Commands.BumpPackages.DataModel;
@@ -17,7 +16,6 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
     private const string DirectoryBuildTargetsFileName = "Directory.Build.targets";
 
     private static readonly string[] s_projectExtensions = [".csproj", ".fsproj", ".vbproj"];
-    private static readonly string[] s_excludedDirectories = ["bin", "obj", ".git", ".vs", "node_modules"];
 
     private static readonly string[] s_packageElementNames =
         ["PackageReference", "PackageVersion", "GlobalPackageReference"];
@@ -36,10 +34,10 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             throw new DotBumpException($"Repository directory '{rootPath}' does not exist.");
         }
 
-        var normalizedExcludedPaths = NormalizeExcludedPaths(excludedPaths);
         var manifest = new PackageManifest();
+        var scanner = new RepositoryFileScanner(logger);
 
-        foreach (var filePath in EnumerateCandidateFiles(rootPath, normalizedExcludedPaths))
+        foreach (var filePath in scanner.EnumerateCandidateFiles(rootPath, excludedPaths, IsCandidateFile))
         {
             ReadPackageVersions(filePath, manifest);
         }
@@ -64,7 +62,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             }
 
             var updatedText = ApplyChanges(manifest, filePath, text);
-            WriteText(filePath, updatedText);
+            XmlFileText.WriteText(filePath, updatedText);
             logger.Debug("Updated package versions in {File}", filePath);
         }
 
@@ -73,36 +71,22 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
     internal static int GetOffset(int[] lineStartOffsets, int lineNumber, int linePosition)
     {
-        var lineIndex = lineNumber - 1;
-        if (lineIndex < 0 || lineIndex >= lineStartOffsets.Length)
-        {
-            return -1;
-        }
-
-        return lineStartOffsets[lineIndex] + (linePosition - 1);
+        return XmlFileText.GetOffset(lineStartOffsets, lineNumber, linePosition);
     }
 
     internal static (int Start, int Length) GetVersionSpan(string text, int[] lineStartOffsets, XObject source)
     {
         return source switch
         {
-            XAttribute attribute => GetAttributeVersionSpan(text, lineStartOffsets, attribute),
-            XElement element => GetElementVersionSpan(text, lineStartOffsets, element),
+            XAttribute attribute => XmlFileText.GetAttributeValueSpan(text, lineStartOffsets, attribute),
+            XElement element => XmlFileText.GetElementTextSpan(text, lineStartOffsets, element),
             _ => (-1, 0),
         };
     }
 
     internal static bool IsExcludedDirectory(string directory, HashSet<string> excludedPaths)
     {
-        var normalizedDirectory = Path.TrimEndingDirectorySeparator(directory);
-
-        return excludedPaths.Any(excludedPath =>
-            string.Equals(normalizedDirectory, excludedPath, StringComparison.Ordinal)
-            || normalizedDirectory.StartsWith(
-                Path.EndsInDirectorySeparator(excludedPath)
-                    ? excludedPath
-                    : excludedPath + Path.DirectorySeparatorChar,
-                StringComparison.Ordinal));
+        return RepositoryFileScanner.IsExcludedDirectory(directory, excludedPaths);
     }
 
     private static bool IsCandidateFile(string filePath)
@@ -187,210 +171,9 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         return version.IndexOfAny(['[', ']', '(', ')', ',']) < 0;
     }
 
-    private static string ReadText(string filePath)
-    {
-        var bytes = File.ReadAllBytes(filePath);
-        var encoding = DetectEncoding(bytes);
-        var preambleLength = encoding.GetPreamble().Length;
-
-        return encoding.GetString(bytes, preambleLength, bytes.Length - preambleLength);
-    }
-
-    private static void WriteText(string filePath, string text)
-    {
-        // The encoding is detected from the original bytes and carries the BOM, so the file is
-        // written back with the same encoding and byte order mark it had before.
-        var encoding = DetectEncoding(File.ReadAllBytes(filePath));
-        File.WriteAllText(filePath, text, encoding);
-    }
-
-    private static Encoding DetectEncoding(byte[] bytes)
-    {
-        if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
-        {
-            return new UTF8Encoding(true);
-        }
-
-        if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
-        {
-            return new UnicodeEncoding(false, true);
-        }
-
-        if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
-        {
-            return new UnicodeEncoding(true, true);
-        }
-
-        return new UTF8Encoding(false);
-    }
-
-    private static int[] GetLineStartOffsets(string text)
-    {
-        var offsets = new List<int> { 0 };
-
-        for (var i = 0; i < text.Length; i++)
-        {
-            var character = text[i];
-            var isLineBreak = character == '\n'
-                              || (character == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n'));
-
-            if (isLineBreak)
-            {
-                offsets.Add(i + 1);
-            }
-        }
-
-        return offsets.ToArray();
-    }
-
-    // The span covers the raw attribute value exactly as written between the quotes, which may be
-    // entity-encoded. It is intentionally not required to equal the decoded version stored on the
-    // entry (see ReadVersion).
-    private static (int Start, int Length) GetAttributeVersionSpan(
-        string text,
-        int[] lineStartOffsets,
-        XAttribute attribute)
-    {
-        var lineInfo = (IXmlLineInfo)attribute;
-        if (!lineInfo.HasLineInfo())
-        {
-            return (-1, 0);
-        }
-
-        var attributeStart = GetOffset(lineStartOffsets, lineInfo.LineNumber, lineInfo.LinePosition);
-        if (attributeStart < 0 || attributeStart > text.Length)
-        {
-            return (-1, 0);
-        }
-
-        var equalsIndex = text.IndexOf('=', attributeStart);
-        if (equalsIndex < 0)
-        {
-            return (-1, 0);
-        }
-
-        var quoteIndex = equalsIndex + 1;
-        while (quoteIndex < text.Length && char.IsWhiteSpace(text[quoteIndex]))
-        {
-            quoteIndex++;
-        }
-
-        if (quoteIndex >= text.Length || (text[quoteIndex] != '"' && text[quoteIndex] != '\''))
-        {
-            return (-1, 0);
-        }
-
-        var quote = text[quoteIndex];
-        var valueStart = quoteIndex + 1;
-        var valueEnd = text.IndexOf(quote, valueStart);
-
-        return valueEnd < 0 ? (-1, 0) : TrimSpan(text, valueStart, valueEnd);
-    }
-
-    private static (int Start, int Length) GetElementVersionSpan(
-        string text,
-        int[] lineStartOffsets,
-        XElement versionElement)
-    {
-        // The version is the text node of the <Version> element; its line info points at the text
-        // itself rather than the element's start tag, so attributes or comments cannot be matched.
-        var textNode = versionElement.Nodes().OfType<XText>().FirstOrDefault();
-        if (textNode is not IXmlLineInfo textLineInfo || !textLineInfo.HasLineInfo())
-        {
-            return (-1, 0);
-        }
-
-        var valueStart = GetOffset(lineStartOffsets, textLineInfo.LineNumber, textLineInfo.LinePosition);
-        if (valueStart < 0 || valueStart > text.Length)
-        {
-            return (-1, 0);
-        }
-
-        var valueEnd = text.IndexOf('<', valueStart);
-
-        return valueEnd > valueStart ? TrimSpan(text, valueStart, valueEnd) : (-1, 0);
-    }
-
-    private static (int Start, int Length) TrimSpan(string text, int start, int end)
-    {
-        while (start < end && char.IsWhiteSpace(text[start]))
-        {
-            start++;
-        }
-
-        while (end > start && char.IsWhiteSpace(text[end - 1]))
-        {
-            end--;
-        }
-
-        return end > start ? (start, end - start) : (-1, 0);
-    }
-
-    private static HashSet<string> NormalizeExcludedPaths(IReadOnlyCollection<string>? excludedPaths)
-    {
-        if (excludedPaths == null)
-        {
-            return new HashSet<string>(StringComparer.Ordinal);
-        }
-
-        return excludedPaths
-            .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Select(path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
-            .ToHashSet(StringComparer.Ordinal);
-    }
-
-    private IEnumerable<string> EnumerateCandidateFiles(string rootPath, HashSet<string> excludedPaths)
-    {
-        if (IsExcludedDirectory(rootPath, excludedPaths))
-        {
-            yield break;
-        }
-
-        var pendingDirectories = new Stack<string>();
-        pendingDirectories.Push(rootPath);
-
-        while (pendingDirectories.Count > 0)
-        {
-            var directory = pendingDirectories.Pop();
-
-            foreach (var subDirectory in Directory.EnumerateDirectories(directory))
-            {
-                if (s_excludedDirectories.Contains(Path.GetFileName(subDirectory), StringComparer.OrdinalIgnoreCase)
-                    || IsExcludedDirectory(subDirectory, excludedPaths)
-                    || IsReparsePoint(subDirectory))
-                {
-                    continue;
-                }
-
-                pendingDirectories.Push(subDirectory);
-            }
-
-            foreach (var filePath in Directory.EnumerateFiles(directory)
-                         .Where(IsCandidateFile)
-                         .Where(filePath => !IsReparsePoint(filePath)))
-            {
-                yield return filePath;
-            }
-        }
-    }
-
-    private bool IsReparsePoint(string path)
-    {
-        try
-        {
-            return File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint);
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            // If the entry cannot be inspected (vanished or inaccessible), skip it rather than abort the scan.
-            logger.Debug(e, "Skipping {Path} because its attributes could not be read", path);
-            return true;
-        }
-    }
-
     private void ReadPackageVersions(string filePath, PackageManifest manifest)
     {
-        var text = ReadText(filePath);
+        var text = XmlFileText.ReadText(filePath);
 
         XDocument document;
         try
@@ -411,7 +194,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         }
 
         var sourceKind = GetSourceKind(filePath);
-        var lineStartOffsets = GetLineStartOffsets(text);
+        var lineStartOffsets = XmlFileText.GetLineStartOffsets(text);
         var packageFound = false;
 
         foreach (var element in root.Descendants())

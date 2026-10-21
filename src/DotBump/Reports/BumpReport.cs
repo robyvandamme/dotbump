@@ -6,6 +6,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotBump.Commands;
+using DotBump.Commands.BumpFrameworks.DataModel;
 using DotBump.Commands.BumpPackages.DataModel;
 using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
@@ -48,6 +49,25 @@ internal class BumpReport
         CommandName = "sdk";
         BumpType = bumpType;
         _results.Add(new BumpResult("sdk", sdk.Version));
+    }
+
+    public BumpReport(FrameworkManifest frameworkManifest, BumpType bumpType)
+    {
+        ArgumentNullException.ThrowIfNull(frameworkManifest);
+
+        CommandName = "frameworks";
+        BumpType = bumpType;
+
+        foreach (var framework in frameworkManifest.Frameworks)
+        {
+            _results.Add(
+                new BumpResult(framework.Id, framework.OriginalFramework)
+                {
+                    NewVersion = framework.Framework,
+                });
+        }
+
+        TimeStamp = DateTime.UtcNow;
     }
 
     public BumpReport(PackageManifest packageManifest, BumpType bumpType)
