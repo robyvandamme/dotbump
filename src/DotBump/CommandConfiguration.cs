@@ -1,5 +1,6 @@
 // Copyright © Roby Van Damme.
 
+using DotBump.Commands.BumpFrameworks;
 using DotBump.Commands.BumpPackages;
 using DotBump.Commands.BumpPackages.Interfaces;
 using DotBump.Commands.BumpSdk;
@@ -19,6 +20,7 @@ internal static class CommandConfiguration
     private const string SdkCommandName = "sdk";
     private const string ToolsCommandName = "tools";
     private const string PackagesCommandName = "packages";
+    private const string FrameworksCommandName = "frameworks";
     private const string TypeOptionName = "--type";
 
     internal static void Configure(this CommandApp commandApp, ILogger logger, VersionInfo versionInfo)
@@ -90,6 +92,9 @@ internal static class CommandConfiguration
                 .WithExample(PackagesCommandName, TypeOptionName, "major")
                 .WithExample(PackagesCommandName, "--config", "./custom-nuget.config", "--output", "bump-packages-report.json")
                 .WithExample(PackagesCommandName, "--debug", "true", "--logfile", "bump-packages-log.txt");
+
+            config.AddCommand<BumpFrameworksCommand>(name: FrameworksCommandName)
+                .WithDescription("Bump the target framework versions.");
         });
     }
 }
