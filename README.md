@@ -24,9 +24,10 @@ USAGE:
     dotnet dotbump [OPTIONS] <COMMAND>
 
 COMMANDS:
-    sdk       Bump the global.json SDK version
-    tools     Bump the local .NET tools versions
-    packages  Bump the NuGet package versions
+    sdk         Bump the global.json SDK version
+    tools       Bump the local .NET tools versions
+    packages    Bump the NuGet package versions
+    frameworks  Bump the target framework versions
 
 OPTIONS:
     -h, --help       Prints help information
@@ -35,7 +36,7 @@ OPTIONS:
 
 ## Report formats
 
-All three commands accept `--output` to write a report. The format is inferred from the file extension:
+All commands accept `--output` to write a report. The format is inferred from the file extension:
 
 * `.json` — the full, machine-readable report, including every scanned entry, its old and new version, and the
   `warnings` and `errors` arrays. This is the default for any other extension.
@@ -105,6 +106,47 @@ The `major` type removes the major-version cap, consistent with how `minor` incl
 also selects a newer minor or patch version when no higher major version is available, and only leaves the SDK
 unchanged when nothing newer exists. A stable SDK is only bumped to a stable release; preview releases are considered
 only when the current SDK is a pre-release.
+
+### Bump the target framework versions
+
+Bump the `<TargetFramework>` values in a repository based on the SDK version in `global.json`.
+
+The command reads `sdk.version` from `--file` (defaults to `./global.json`), derives `net{major}.0`, and updates
+`<TargetFramework>` in `*.csproj`, `*.fsproj`, `*.vbproj`, `Directory.Build.props` and `Directory.Build.targets`.
+Platform suffixes such as `-windows` and `-ios` are preserved, so only the framework version changes. Only files that
+actually change are written back, and formatting, encoding, BOM and line endings are preserved.
+
+The framework is aligned to the SDK major in both directions: a project targeting a lower or higher major than the SDK
+is moved to the SDK major, keeping the project and SDK in sync.
+
+```text
+DESCRIPTION:
+Bump the target framework versions
+
+USAGE:
+    dotnet dotbump frameworks [OPTIONS]
+
+OPTIONS:
+    -h, --help       Prints help information
+        --debug      Enable debug logging for troubleshooting. Includes response data
+        --logfile    The file to send the log output to
+    -f, --file       The global.json file used to determine the target framework. Defaults to `./global.json`
+    -p, --path       The root directory to scan. Defaults to the current directory
+    -e, --exclude    A directory to exclude from the scan. Can be specified multiple times
+    -o, --output     Output file name. The name of the file to write the result to. The output format is inferred
+                     from the file extension: `.json` or `.md`
+```
+
+Examples:
+
+```shell
+dotnet dotbump frameworks
+dotnet dotbump frameworks --file ./other/global.json --path ./src --output bump-frameworks-report.md
+```
+
+Only `<TargetFramework>` is supported for now. Files that contain `<TargetFrameworks>` are skipped with a warning, so
+multi-target projects are left untouched. `netstandard*`, `net4x`, `netcoreapp*`, MSBuild property expressions such as
+`$(TargetFramework)` and other unsupported values are also left unchanged.
 
 ### Bump the Local .NET Tools versions
 
@@ -263,7 +305,7 @@ OPTIONS:
                      multiple times
 ```
 
-The output file (`--output`) uses the same report formats as the `sdk` and `tools` commands (see
+The output file (`--output`) uses the same report formats as the other commands (see
 [Report formats](#report-formats)), and the command returns exit code `1` when an error occurs (for example an invalid
 NuGet configuration).
 
