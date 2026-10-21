@@ -40,9 +40,17 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: ./global.json
+      - name: Restore tools (updated SDK)
+        run: dotnet tool restore
       - name: Bump target frameworks
         run: |
-          dotnet dotbump frameworks -o ./artifacts/results/bump-frameworks-report.md
+          exclude_args=()
+          if [ -d ./test/DotBump.Tests/Data ]; then
+            exclude_args+=(--exclude ./test/DotBump.Tests/Data)
+          fi
+          dotnet dotbump frameworks \
+            "${exclude_args[@]}" \
+            -o ./artifacts/results/bump-frameworks-report.md
       - name: Bump Tools
         run: |
           dotnet dotbump tools --type major -o ./artifacts/results/bump-tools-report.md
