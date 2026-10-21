@@ -106,7 +106,9 @@ OPTIONS:
 DESCRIPTION:
 Bump the local .NET tools versions. Use the 'minor' type option to bump the tools to
 the latest minor or patch versions for the current major version. Use the 'patch' type 
-option to bump the tools to the latest patch version for the current minor version. 
+option to bump the tools to the latest patch version for the current minor version. Use
+the 'major' type option to bump the tools to the latest version, including versions with
+a higher major version.
 
 USAGE:
     dotnet dotbump tools [OPTIONS]
@@ -114,6 +116,7 @@ USAGE:
 EXAMPLES:
     dotnet dotbump tools
     dotnet dotbump tools --type patch
+    dotnet dotbump tools --type major
     dotnet dotbump tools --manifest ./other/dotnet-tools.json
     dotnet dotbump tools --config ./custom-nuget.config --output bump-tools-report.json
     dotnet dotbump tools --debug true --logfile bump-tools-log.txt
@@ -123,7 +126,7 @@ OPTIONS:
     -h, --help       Prints help information                                                                 
         --debug      Enable debug logging for troubleshooting. Includes response data                        
         --logfile    The file to send the log output to                                                      
-    -t, --type       The bump type. Defaults to `minor`. Available options are `minor` and `patch`           
+    -t, --type       The bump type. Defaults to `minor`. Available options are `minor`, `patch` and `major`
     -o, --output     Output file name. The name of the file to write the result
                      to. The output format is inferred from the file extension:
                      `.json` or `.md`
@@ -132,6 +135,10 @@ OPTIONS:
                      `./dotnet-tools.json`, falling back to `./.config/dotnet-tools.json`                   
 
 ```
+
+The `major` type removes the major-version cap, consistent with how `minor` includes patch releases. It therefore
+also selects a newer minor or patch version when no higher major version is available, and only leaves the tool
+unchanged when nothing newer exists.
 
 #### Pre-releases
 
