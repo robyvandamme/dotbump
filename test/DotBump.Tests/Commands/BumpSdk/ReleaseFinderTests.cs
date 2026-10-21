@@ -233,5 +233,112 @@ public class ReleaseFinderTests
             var result = finder.TryFindNewRelease(currentSdk, releases, bumpType, false);
             result.ShouldBe(release);
         }
+
+        [Fact]
+        public void With_Major_Type_And_Higher_Major_Returns_Release()
+        {
+            var currentSdk = new Sdk("8.0.405", "disable");
+            var release = new Release("9.0", "9.0.200", "active", false);
+            var releases = new List<Release>() { release };
+            var finder = new ReleaseFinder(new Mock<ILogger>().Object);
+
+            var result = finder.TryFindNewRelease(currentSdk, releases, BumpType.Major, false);
+
+            result.ShouldBe(release);
+        }
+
+        [Fact]
+        public void With_Major_Type_And_No_Higher_Major_Returns_New_Minor()
+        {
+            var currentSdk = new Sdk("8.0.405", "disable");
+            var release = new Release("8.0", "8.0.500", "active", false);
+            var releases = new List<Release>() { release };
+            var finder = new ReleaseFinder(new Mock<ILogger>().Object);
+
+            var result = finder.TryFindNewRelease(currentSdk, releases, BumpType.Major, false);
+
+            result.ShouldBe(release);
+        }
+
+        [Fact]
+        public void With_Major_Type_And_No_Newer_Version_Returns_Null()
+        {
+            var currentSdk = new Sdk("9.0.200", "disable");
+            var release = new Release("9.0", "9.0.200", "active", false);
+            var releases = new List<Release>() { release };
+            var finder = new ReleaseFinder(new Mock<ILogger>().Object);
+
+            var result = finder.TryFindNewRelease(currentSdk, releases, BumpType.Major, false);
+
+            result.ShouldBeNull();
+        }
+
+        [Fact]
+        public void With_Major_Type_Returns_Highest_Release_Regardless_Of_Order()
+        {
+            var currentSdk = new Sdk("8.0.405", "disable");
+            var release9 = new Release("9.0", "9.0.200", "active", false);
+            var release10 = new Release("10.0", "10.0.100", "active", false);
+            var releases = new List<Release>() { release9, release10 };
+            var finder = new ReleaseFinder(new Mock<ILogger>().Object);
+
+            var result = finder.TryFindNewRelease(currentSdk, releases, BumpType.Major, false);
+
+            result.ShouldBe(release10);
+        }
+
+        [Fact]
+        public void With_Major_Type_And_Stable_Current_Ignores_PreRelease_Release()
+        {
+            var currentSdk = new Sdk("10.0.100", "disable");
+            var release = new Release("11.0", "11.0.100-preview.1", "preview", false);
+            var releases = new List<Release>() { release };
+            var finder = new ReleaseFinder(new Mock<ILogger>().Object);
+
+            var result = finder.TryFindNewRelease(currentSdk, releases, BumpType.Major, false);
+
+            result.ShouldBeNull();
+        }
+
+        [Fact]
+        public void With_Major_Type_And_PreRelease_Current_Prefers_Stable_Release()
+        {
+            var currentSdk = new Sdk("11.0.100-preview.1", "disable");
+            var stableRelease = new Release("11.0", "11.0.100", "active", false);
+            var previewRelease = new Release("12.0", "12.0.100-preview.1", "preview", false);
+            var releases = new List<Release>() { previewRelease, stableRelease };
+            var finder = new ReleaseFinder(new Mock<ILogger>().Object);
+
+            var result = finder.TryFindNewRelease(currentSdk, releases, BumpType.Major, false);
+
+            result.ShouldBe(stableRelease);
+        }
+
+        [Fact]
+        public void With_Major_Type_And_PreRelease_Current_Only_PreRelease_Returns_PreRelease()
+        {
+            var currentSdk = new Sdk("11.0.100-preview.1", "disable");
+            var release = new Release("12.0", "12.0.100-preview.1", "preview", false);
+            var releases = new List<Release>() { release };
+            var finder = new ReleaseFinder(new Mock<ILogger>().Object);
+
+            var result = finder.TryFindNewRelease(currentSdk, releases, BumpType.Major, false);
+
+            result.ShouldBe(release);
+        }
+
+        [Fact]
+        public void With_Major_Type_And_SecurityOnly_True_Returns_Security_Release()
+        {
+            var currentSdk = new Sdk("8.0.405", "disable");
+            var nonSecurityRelease = new Release("9.0", "9.0.200", "active", false);
+            var securityRelease = new Release("8.0", "8.0.406", "active", true);
+            var releases = new List<Release>() { nonSecurityRelease, securityRelease };
+            var finder = new ReleaseFinder(new Mock<ILogger>().Object);
+
+            var result = finder.TryFindNewRelease(currentSdk, releases, BumpType.Major, true);
+
+            result.ShouldBe(securityRelease);
+        }
     }
 }

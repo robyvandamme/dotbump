@@ -21,15 +21,13 @@ public class BumpSdkSettingsTests
         }
 
         [Fact]
-        public void With_Major_Bump_Type_Returns_Error()
+        public void With_Major_Bump_Type_Returns_Success()
         {
             var settings = new BumpSdkSettings { Type = BumpType.Major };
 
             var result = settings.Validate();
 
-            result.ShouldSatisfyAllConditions(
-                () => result.Successful.ShouldBeFalse(),
-                () => result.Message.ShouldBe("The 'major' bump type is not supported for the sdk command."));
+            result.Successful.ShouldBeTrue();
         }
     }
 }

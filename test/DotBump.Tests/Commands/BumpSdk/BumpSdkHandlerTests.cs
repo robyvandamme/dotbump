@@ -48,6 +48,42 @@ public class BumpSdkHandlerTests
         }
 
         [Fact]
+        public async Task With_Major_Bump_Type_Forwards_Type_And_Applies_Release()
+        {
+            var fileService = new Mock<ISdkFileService>();
+            var releaseService = new Mock<IReleaseService>();
+            fileService.Setup(service => service.GetCurrentSdkVersionFromFile(It.IsAny<string>()))
+                .Returns(new Sdk("8.0.405", "disable"));
+
+            var releaseFinderMock = new Mock<IReleaseFinder>();
+            releaseFinderMock
+                .Setup(finder => finder.TryFindNewRelease(
+                    It.IsAny<Sdk>(),
+                    It.IsAny<IReadOnlyList<Release>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<bool>()))
+                .Returns(new Release("9.0", "9.0.200", "active", false));
+
+            var handler = new BumpSdkHandler(
+                fileService.Object,
+                releaseService.Object,
+                releaseFinderMock.Object,
+                new Mock<ILogger>().Object);
+
+            var result = await handler.HandleAsync(BumpType.Major, "filepath", false);
+
+            result.HasChanges.ShouldBeTrue();
+            fileService.Verify(service => service.UpdateSdkVersion("8.0.405", "9.0.200", "filepath"), Times.Once);
+            releaseFinderMock.Verify(
+                finder => finder.TryFindNewRelease(
+                    It.IsAny<Sdk>(),
+                    It.IsAny<IReadOnlyList<Release>>(),
+                    BumpType.Major,
+                    false),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task With_No_Release_Returns_Report_Without_Changes()
         {
             var fileService = new Mock<ISdkFileService>();
