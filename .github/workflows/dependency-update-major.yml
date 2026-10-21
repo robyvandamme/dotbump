@@ -40,6 +40,8 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: ./global.json
+      - name: Restore tools (updated SDK)
+        run: dotnet tool restore
       - name: Bump target frameworks
         run: |
           dotnet dotbump frameworks -o ./artifacts/results/bump-frameworks-report.md
