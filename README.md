@@ -70,7 +70,8 @@ DESCRIPTION:
 Bump the global.json SDK version. Use the 'minor' type option to bump the SDK to
 the latest minor or patch version for the current major version. Use the 'patch'
 type option to bump the SDK to the latest patch version for the current minor
-version.
+version. Use the 'major' type option to bump the SDK to the latest version,
+including versions with a higher major version.
 
 USAGE:
     dotnet dotbump sdk [OPTIONS]
@@ -78,6 +79,7 @@ USAGE:
 EXAMPLES:
     dotnet dotbump sdk
     dotnet dotbump sdk --type patch
+    dotnet dotbump sdk --type major
     dotnet dotbump sdk --file ./other/global.json --output bump-sdk-report.json
     dotnet dotbump sdk --security-only true --debug true --logfile bump-sdk-log.txt
 
@@ -88,7 +90,7 @@ OPTIONS:
                            response data                                        
         --logfile          The file to send the log output to                   
     -t, --type             The bump type. Defaults to `minor`. Available options
-                           are `minor` and `patch`                              
+                           are `minor`, `patch` and `major`
     -f, --file             The global.json file to update. Defaults to          
                            `./global.json`                                      
     -o, --output           Output file name. The name of the file to write the  
@@ -98,6 +100,11 @@ OPTIONS:
                            security release. Defaults to false      
 
 ```
+
+The `major` type removes the major-version cap, consistent with how `minor` includes patch releases. It therefore
+also selects a newer minor or patch version when no higher major version is available, and only leaves the SDK
+unchanged when nothing newer exists. A stable SDK is only bumped to a stable release; preview releases are considered
+only when the current SDK is a pre-release.
 
 ### Bump the Local .NET Tools versions
 

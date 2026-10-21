@@ -30,6 +30,9 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
             case BumpType.Patch:
                 newRelease = TryFindPatch(currentSdk, releases, securityOnly);
                 break;
+            case BumpType.Major:
+                newRelease = TryFindMajor(currentSdk, releases, securityOnly);
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(bumpType), bumpType, null);
         }
@@ -41,6 +44,24 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
 
         logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindNewRelease), newRelease);
         return newRelease;
+    }
+
+    private static Release? SelectNewestRelease(IEnumerable<Release> candidates, bool allowPreRelease)
+    {
+        var availableReleases = candidates.ToList();
+
+        var newestStable = availableReleases
+            .Where(o => !o.LatestSdkVersion.IsPreRelease)
+            .OrderByDescending(o => o.LatestSdkVersion)
+            .FirstOrDefault();
+        if (newestStable != null)
+        {
+            return newestStable;
+        }
+
+        return allowPreRelease
+            ? availableReleases.OrderByDescending(o => o.LatestSdkVersion).FirstOrDefault()
+            : null;
     }
 
     private Release? TryFindMinorOrPatch(Sdk currentSdk, IReadOnlyList<Release> releases, bool securityOnly)
@@ -85,5 +106,24 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
 
         logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindPatch));
         return null;
+    }
+
+    private Release? TryFindMajor(Sdk currentSdk, IReadOnlyList<Release> releases, bool securityOnly)
+    {
+        logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindMajor));
+
+        // A major bump removes the major-version cap, so newer minor and patch versions are also valid targets.
+        var candidates = releases.Where(o =>
+            o.LatestSdkVersion > currentSdk.SemanticVersion
+            && (!securityOnly || o.Security));
+
+        var newRelease = SelectNewestRelease(candidates, currentSdk.SemanticVersion.IsPreRelease);
+        if (newRelease != null)
+        {
+            logger.Debug("Found new release {Release}", newRelease.LatestSdkVersion.ToString());
+        }
+
+        logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindMajor), newRelease);
+        return newRelease;
     }
 }
