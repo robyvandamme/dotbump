@@ -166,7 +166,8 @@ Bump the local .NET tools versions. Use the 'minor' type option to bump the tool
 the latest minor or patch versions for the current major version. Use the 'patch' type 
 option to bump the tools to the latest patch version for the current minor version. Use
 the 'major' type option to bump the tools to the latest version, including versions with
-a higher major version.
+a higher major version. Use '--prerelease' (or the '--preview' alias) with the 'major'
+type to include pre-release versions.
 
 USAGE:
     dotnet dotbump tools [OPTIONS]
@@ -175,6 +176,7 @@ EXAMPLES:
     dotnet dotbump tools
     dotnet dotbump tools --type patch
     dotnet dotbump tools --type major
+    dotnet dotbump tools --type major --prerelease true
     dotnet dotbump tools --manifest ./other/dotnet-tools.json
     dotnet dotbump tools --config ./custom-nuget.config --output bump-tools-report.json
     dotnet dotbump tools --debug true --logfile bump-tools-log.txt
@@ -191,6 +193,9 @@ OPTIONS:
     -c, --config     The nuget config file to use. Defaults to `./nuget.config`                             
     -m, --manifest   The tools manifest file to update. Defaults to                                        
                      `./dotnet-tools.json`, falling back to `./.config/dotnet-tools.json`                   
+        --prerelease    Include pre-release versions when bumping. Also
+                        available as `--preview`. Only applies to `major` bumps.
+                        Defaults to false
 
 ```
 
@@ -202,7 +207,8 @@ unchanged when nothing newer exists.
 
 If the current .NET tool version is a pre-release version, pre-release versions will be taken into account for new 
 versions, but stable versions will be preferred. If the current .NET tool version is a stable version, only stable 
-versions will be taken into account for new versions.
+versions will be taken into account for new versions. Use `--prerelease` (or its `--preview` alias) with the `major`
+type to include pre-release versions and select the highest version available, whether stable or pre-release.
 
 Examples:
 
@@ -222,6 +228,12 @@ Bump to: 1.0.0
 Current version: 1.0.1-beta.1
 Available versions: 1.0.1-beta.2, 1.0.0
 Bump to: 1.0.1-beta.2
+```
+
+```text
+Current version: 1.5.0
+Available versions: 1.9.0, 2.0.0-preview.1
+Bump to (major with --prerelease): 2.0.0-preview.1
 ```
 
 #### Private Feeds

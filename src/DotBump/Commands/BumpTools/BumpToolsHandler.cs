@@ -16,7 +16,11 @@ internal class BumpToolsHandler(
     INuGetConfigValidator nugetConfigValidator,
     ILogger logger) : IBumpToolsHandler
 {
-    public async Task<BumpReport> HandleAsync(BumpType bumpType, string nugetConfigPath, string toolManifestPath)
+    public async Task<BumpReport> HandleAsync(
+        BumpType bumpType,
+        string nugetConfigPath,
+        string toolManifestPath,
+        bool preRelease = false)
     {
         logger.MethodStart(nameof(BumpToolsHandler), nameof(HandleAsync), bumpType);
 
@@ -37,7 +41,7 @@ internal class BumpToolsHandler(
             .ToList();
 
         var bestVersions = await packageVersionResolver
-            .ResolveAsync(packagesToBump, bumpType, nuGetConfiguration)
+            .ResolveAsync(packagesToBump, bumpType, nuGetConfiguration, preRelease)
             .ConfigureAwait(false);
 
         foreach (var (toolKey, newVersion) in bestVersions)
