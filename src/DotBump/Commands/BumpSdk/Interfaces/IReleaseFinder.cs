@@ -11,5 +11,5 @@ internal interface IReleaseFinder
         IReadOnlyList<Release> releases,
         BumpType bumpType,
         bool securityOnly,
-        bool preview);
+        bool preRelease);
 }

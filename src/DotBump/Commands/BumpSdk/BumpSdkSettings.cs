@@ -28,8 +28,8 @@ internal class BumpSdkSettings : BumpSettings
     public bool SecurityOnly { get; init; }
 
     [Description(
-        "Include preview and release candidate SDK versions when bumping. Also available as `--prerelease`. Only applies to `major` bumps. Defaults to false.")]
-    [CommandOption("--preview|--prerelease")]
+        "Include pre-release SDK versions when bumping. Also available as `--preview`. Only applies to `major` bumps. Defaults to false.")]
+    [CommandOption("--prerelease|--preview")]
     [DefaultValue(false)]
-    public bool Preview { get; init; }
+    public bool PreRelease { get; init; }
 }

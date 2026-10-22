@@ -14,7 +14,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         IReadOnlyList<Release> releases,
         BumpType bumpType,
         bool securityOnly,
-        bool preview)
+        bool preRelease)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindNewRelease));
 
@@ -32,7 +32,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
                 newRelease = TryFindPatch(currentSdk, releases, securityOnly);
                 break;
             case BumpType.Major:
-                newRelease = TryFindMajor(currentSdk, releases, securityOnly, preview);
+                newRelease = TryFindMajor(currentSdk, releases, securityOnly, preRelease);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(bumpType), bumpType, null);
@@ -109,7 +109,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         return null;
     }
 
-    private Release? TryFindMajor(Sdk currentSdk, IReadOnlyList<Release> releases, bool securityOnly, bool preview)
+    private Release? TryFindMajor(Sdk currentSdk, IReadOnlyList<Release> releases, bool securityOnly, bool preRelease)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindMajor));
 
@@ -118,7 +118,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
             o.LatestSdkVersion > currentSdk.SemanticVersion
             && (!securityOnly || o.Security));
 
-        var newRelease = preview
+        var newRelease = preRelease
             ? candidates.OrderByDescending(o => o.LatestSdkVersion).FirstOrDefault()
             : SelectNewestRelease(candidates, currentSdk.SemanticVersion.IsPreRelease);
 

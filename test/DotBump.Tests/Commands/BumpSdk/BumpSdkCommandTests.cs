@@ -84,7 +84,7 @@ public class BumpSdkCommandTests
         }
 
         [Fact]
-        public async Task With_Major_Bump_And_Preview_True_Returns_0_And_Bumps_To_Latest_Preview()
+        public async Task With_Major_Bump_And_PreRelease_True_Returns_0_And_Bumps_To_Latest_PreRelease()
         {
             var json = new GlobalJson(new Sdk("8.0.405", "disable"));
             var directory = new LocalDirectory("./temp");
@@ -107,7 +107,7 @@ public class BumpSdkCommandTests
                 new BumpSdkSettings
                 {
                     Type = BumpType.Major,
-                    Preview = true,
+                    PreRelease = true,
                     GlobalJsonPath = "./temp/global.json",
                 },
                 CancellationToken.None);
@@ -401,9 +401,9 @@ public class BumpSdkCommandTests
         }
 
         [Theory]
-        [InlineData("--preview")]
         [InlineData("--prerelease")]
-        public async Task With_Preview_Option_Or_Alias_Sets_Preview_To_True(string previewOption)
+        [InlineData("--preview")]
+        public async Task With_PreRelease_Option_Or_Alias_Sets_PreRelease_To_True(string preReleaseOption)
         {
             using var testConsole = new TestConsole();
             var handler = new Mock<IBumpSdkHandler>();
@@ -426,7 +426,7 @@ public class BumpSdkCommandTests
                 config.AddCommand<BumpSdkCommand>("sdk");
             });
 
-            var result = await app.RunAsync(["sdk", "--type", "major", previewOption, "true"]);
+            var result = await app.RunAsync(["sdk", "--type", "major", preReleaseOption, "true"]);
 
             result.ShouldBe(0);
             handler.Verify(

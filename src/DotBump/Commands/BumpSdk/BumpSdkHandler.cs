@@ -13,7 +13,7 @@ internal class BumpSdkHandler(
     IReleaseFinder releaseFinder,
     ILogger logger) : IBumpSdkHandler
 {
-    public async Task<BumpReport> HandleAsync(BumpType bumpType, string filePath, bool securityOnly, bool preview)
+    public async Task<BumpReport> HandleAsync(BumpType bumpType, string filePath, bool securityOnly, bool preRelease)
     {
         logger.MethodStart(nameof(BumpSdkHandler), nameof(HandleAsync));
 
@@ -24,7 +24,7 @@ internal class BumpSdkHandler(
 
         var releases = await releaseService.GetReleasesAsync().ConfigureAwait(false);
         var newRelease =
-            releaseFinder.TryFindNewRelease(currentSdk, releases.ToList(), bumpType, securityOnly, preview);
+            releaseFinder.TryFindNewRelease(currentSdk, releases.ToList(), bumpType, securityOnly, preRelease);
 
         if (newRelease != null)
         {
