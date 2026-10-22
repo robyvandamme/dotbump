@@ -23,6 +23,7 @@ internal static class CommandConfiguration
     private const string PackagesCommandName = "packages";
     private const string FrameworksCommandName = "frameworks";
     private const string TypeOptionName = "--type";
+    private const string PreviewOptionName = "--preview";
     private const string PatchBumpType = "patch";
     private const string MajorBumpType = "major";
 
@@ -53,11 +54,11 @@ internal static class CommandConfiguration
                     "Use the 'minor' type option to bump the SDK to the latest minor or patch version for the current major version. " +
                     "Use the 'patch' type option to bump the SDK to the latest patch version for the current minor version. " +
                     "Use the 'major' type option to bump the SDK to the latest version, including versions with a higher major version. " +
-                    "Use '--preview' with the 'major' type to include preview and release candidate versions. ")
+                    "Use '--preview' (or the '--prerelease' alias) with the 'major' type to include preview and release candidate versions. ")
                 .WithExample(SdkCommandName)
                 .WithExample(SdkCommandName, TypeOptionName, PatchBumpType)
                 .WithExample(SdkCommandName, TypeOptionName, MajorBumpType)
-                .WithExample(SdkCommandName, TypeOptionName, MajorBumpType, "--preview", "true")
+                .WithExample(SdkCommandName, TypeOptionName, MajorBumpType, PreviewOptionName, "true")
                 .WithExample(SdkCommandName, "--file", "./other/global.json", "--output", "bump-sdk-report.json")
                 .WithExample(SdkCommandName, "--security-only", "true", "--debug", "true", "--logfile", "bump-sdk-log.txt");
 

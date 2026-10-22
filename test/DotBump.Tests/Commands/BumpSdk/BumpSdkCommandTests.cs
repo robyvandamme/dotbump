@@ -11,6 +11,7 @@ using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
 using Shouldly;
+using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Testing;
 
@@ -397,6 +398,40 @@ public class BumpSdkCommandTests
             result.ShouldSatisfyAllConditions(
                 () => result.ShouldBe(0),
                 () => testConsole.Output.ShouldContain("[draft]"));
+        }
+
+        [Theory]
+        [InlineData("--preview")]
+        [InlineData("--prerelease")]
+        public async Task With_Preview_Option_Or_Alias_Sets_Preview_To_True(string previewOption)
+        {
+            using var testConsole = new TestConsole();
+            var handler = new Mock<IBumpSdkHandler>();
+            handler
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync(new BumpReport(new Sdk("8.0.405", "disable"), BumpType.Major));
+
+            IAnsiConsole console = testConsole;
+            var app = new CommandApp();
+            app.Configure(config =>
+            {
+                config.PropagateExceptions();
+                config.Settings.Registrar.RegisterInstance(console);
+                config.Settings.Registrar.RegisterInstance(Mock.Of<ILogger>());
+                config.Settings.Registrar.RegisterInstance(handler.Object);
+                config.AddCommand<BumpSdkCommand>("sdk");
+            });
+
+            var result = await app.RunAsync(["sdk", "--type", "major", previewOption, "true"]);
+
+            result.ShouldBe(0);
+            handler.Verify(
+                h => h.HandleAsync(BumpType.Major, It.IsAny<string>(), false, true),
+                Times.Once);
         }
     }
 }
