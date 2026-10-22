@@ -23,6 +23,8 @@ internal static class CommandConfiguration
     private const string PackagesCommandName = "packages";
     private const string FrameworksCommandName = "frameworks";
     private const string TypeOptionName = "--type";
+    private const string PatchBumpType = "patch";
+    private const string MajorBumpType = "major";
 
     internal static void Configure(this CommandApp commandApp, ILogger logger, VersionInfo versionInfo)
     {
@@ -53,9 +55,9 @@ internal static class CommandConfiguration
                     "Use the 'major' type option to bump the SDK to the latest version, including versions with a higher major version. " +
                     "Use '--preview' with the 'major' type to include preview and release candidate versions. ")
                 .WithExample(SdkCommandName)
-                .WithExample(SdkCommandName, TypeOptionName, "patch")
-                .WithExample(SdkCommandName, TypeOptionName, "major")
-                .WithExample(SdkCommandName, TypeOptionName, "major", "--preview", "true")
+                .WithExample(SdkCommandName, TypeOptionName, PatchBumpType)
+                .WithExample(SdkCommandName, TypeOptionName, MajorBumpType)
+                .WithExample(SdkCommandName, TypeOptionName, MajorBumpType, "--preview", "true")
                 .WithExample(SdkCommandName, "--file", "./other/global.json", "--output", "bump-sdk-report.json")
                 .WithExample(SdkCommandName, "--security-only", "true", "--debug", "true", "--logfile", "bump-sdk-log.txt");
 
@@ -75,8 +77,8 @@ internal static class CommandConfiguration
                     "Use the 'patch' type option to bump the tools to the latest patch version for the current minor version. " +
                     "Use the 'major' type option to bump the tools to the latest version, including versions with a higher major version. ")
                 .WithExample(ToolsCommandName)
-                .WithExample(ToolsCommandName, TypeOptionName, "patch")
-                .WithExample(ToolsCommandName, TypeOptionName, "major")
+                .WithExample(ToolsCommandName, TypeOptionName, PatchBumpType)
+                .WithExample(ToolsCommandName, TypeOptionName, MajorBumpType)
                 .WithExample(ToolsCommandName, "--manifest", "./other/dotnet-tools.json")
                 .WithExample(ToolsCommandName, "--config", "./custom-nuget.config", "--output", "bump-tools-report.json")
                 .WithExample(ToolsCommandName, "--debug", "true", "--logfile", "bump-tools-log.txt");
@@ -91,8 +93,8 @@ internal static class CommandConfiguration
                     "Use the 'patch' type option to bump the packages to the latest patch version for the current minor version. " +
                     "Use the 'major' type option to bump the packages to the latest version, including versions with a higher major version. ")
                 .WithExample(PackagesCommandName)
-                .WithExample(PackagesCommandName, TypeOptionName, "patch")
-                .WithExample(PackagesCommandName, TypeOptionName, "major")
+                .WithExample(PackagesCommandName, TypeOptionName, PatchBumpType)
+                .WithExample(PackagesCommandName, TypeOptionName, MajorBumpType)
                 .WithExample(PackagesCommandName, "--config", "./custom-nuget.config", "--output", "bump-packages-report.json")
                 .WithExample(PackagesCommandName, "--debug", "true", "--logfile", "bump-packages-log.txt");
 
