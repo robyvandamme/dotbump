@@ -29,7 +29,8 @@ public class BumpToolsHandlerTests
                 .Setup(r => r.ResolveAsync(
                     It.IsAny<IReadOnlyCollection<PackageToBump>>(),
                     It.IsAny<BumpType>(),
-                    It.IsAny<NuGetConfig>()))
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()))
                 .ReturnsAsync(new Dictionary<string, SemanticVersion> { ["mytool"] = new("1.1.0") });
             var handler = CreateHandler(fileService, resolver);
 
@@ -50,7 +51,8 @@ public class BumpToolsHandlerTests
                 .Setup(r => r.ResolveAsync(
                     It.IsAny<IReadOnlyCollection<PackageToBump>>(),
                     It.IsAny<BumpType>(),
-                    It.IsAny<NuGetConfig>()))
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()))
                 .ReturnsAsync(new Dictionary<string, SemanticVersion> { ["mytool"] = new("2.0.0") });
             var handler = CreateHandler(fileService, resolver);
 
@@ -62,7 +64,8 @@ public class BumpToolsHandlerTests
                 r => r.ResolveAsync(
                     It.IsAny<IReadOnlyCollection<PackageToBump>>(),
                     BumpType.Major,
-                    It.IsAny<NuGetConfig>()),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
                 Times.Once);
         }
 
@@ -76,7 +79,8 @@ public class BumpToolsHandlerTests
                 .Setup(r => r.ResolveAsync(
                     It.IsAny<IReadOnlyCollection<PackageToBump>>(),
                     It.IsAny<BumpType>(),
-                    It.IsAny<NuGetConfig>()))
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()))
                 .ReturnsAsync(new Dictionary<string, SemanticVersion>());
             var handler = CreateHandler(fileService, resolver);
 
@@ -102,7 +106,8 @@ public class BumpToolsHandlerTests
                 r => r.ResolveAsync(
                     It.IsAny<IReadOnlyCollection<PackageToBump>>(),
                     It.IsAny<BumpType>(),
-                    It.IsAny<NuGetConfig>()),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
                 Times.Never);
         }
 
@@ -116,7 +121,8 @@ public class BumpToolsHandlerTests
                 .Setup(r => r.ResolveAsync(
                     It.IsAny<IReadOnlyCollection<PackageToBump>>(),
                     It.IsAny<BumpType>(),
-                    It.IsAny<NuGetConfig>()))
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()))
                 .ReturnsAsync(new Dictionary<string, SemanticVersion>());
             var handler = CreateHandler(fileService, resolver);
 
@@ -129,7 +135,8 @@ public class BumpToolsHandlerTests
                         && packages.Single().PackageId == "mytool"
                         && packages.Single().CurrentVersion.Version == "1.0.0"),
                     BumpType.Minor,
-                    It.IsAny<NuGetConfig>()),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
                 Times.Once);
         }
 

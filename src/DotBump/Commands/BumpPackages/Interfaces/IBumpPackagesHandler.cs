@@ -10,5 +10,6 @@ internal interface IBumpPackagesHandler
         BumpType bumpType,
         string repositoryPath,
         string nugetConfigPath,
-        IReadOnlyCollection<string>? excludedPaths = null);
+        IReadOnlyCollection<string>? excludedPaths = null,
+        bool preview = false);
 }

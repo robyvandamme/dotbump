@@ -295,6 +295,34 @@ public class NuGetReleaseFinderTests
             result.ShouldBe(new SemanticVersion("1.6.0"));
         }
 
+        [Fact]
+        public void With_Major_Type_And_Preview_True_And_Higher_PreRelease_Returns_PreRelease()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var result = service.TryFindNewVersionInCatalogPages(
+                CreateCatalogPages("2.0.0", "2.1.0-preview.1"),
+                new SemanticVersion("1.5.0"),
+                BumpType.Major,
+                allowPreRelease: true,
+                preferHighestVersion: true);
+
+            result.ShouldBe(new SemanticVersion("2.1.0-preview.1"));
+        }
+
+        [Fact]
+        public void With_Major_Type_And_Preview_True_And_Higher_Stable_Returns_Stable()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var result = service.TryFindNewVersionInCatalogPages(
+                CreateCatalogPages("2.0.0-preview.1", "2.1.0"),
+                new SemanticVersion("1.5.0"),
+                BumpType.Major,
+                allowPreRelease: true,
+                preferHighestVersion: true);
+
+            result.ShouldBe(new SemanticVersion("2.1.0"));
+        }
+
         private static List<CatalogPage> CreateCatalogPages(params string[] versions)
         {
             var packages = versions.Select(version => new Package

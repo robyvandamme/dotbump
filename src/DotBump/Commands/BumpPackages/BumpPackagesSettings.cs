@@ -31,6 +31,12 @@ internal class BumpPackagesSettings : BumpSettings
     [CommandOption("-e|--exclude")]
     public string[]? Exclude { get; init; }
 
+    [Description(
+        "Include pre-release versions when bumping. Also available as `--prerelease`. Only applies to `major` bumps. Defaults to false.")]
+    [CommandOption("--preview|--prerelease")]
+    [DefaultValue(false)]
+    public bool Preview { get; init; }
+
     public override ValidationResult Validate()
     {
         return ValidateFileExists(NuGetConfigPath)

@@ -97,13 +97,50 @@ public class BumpPackagesCommandTests
                 () => testConsole.Output.ShouldContain("An error occurred bumping package versions."));
         }
 
+        [Theory]
+        [InlineData("--preview")]
+        [InlineData("--prerelease")]
+        public async Task With_Preview_Option_Or_Alias_Forwards_Preview_To_Handler(string previewOption)
+        {
+            using var testConsole = new TestConsole();
+            var handler = CreateHandler(CreateReport(("MyPackage", "1.0.0")));
+
+            IAnsiConsole console = testConsole;
+            var app = new CommandApp();
+            app.Configure(config =>
+            {
+                config.PropagateExceptions();
+                config.Settings.Registrar.RegisterInstance(console);
+                config.Settings.Registrar.RegisterInstance(Mock.Of<ILogger>());
+                config.Settings.Registrar.RegisterInstance(handler.Object);
+                config.AddCommand<BumpPackagesCommand>("packages");
+            });
+
+            var result = await app.RunAsync(["packages", "--type", "major", previewOption, "true"]);
+
+            result.ShouldBe(0);
+            handler.Verify(
+                h => h.HandleAsync(
+                    BumpType.Major,
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    true),
+                Times.Once);
+        }
+
         [Fact]
         public async Task With_Handler_Throws_Returns_1()
         {
             using var testConsole = new TestConsole();
             var handler = new Mock<IBumpPackagesHandler>();
             handler
-                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<bool>()))
                 .ThrowsAsync(new InvalidOperationException("boom"));
             var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
 
@@ -200,7 +237,8 @@ public class BumpPackagesCommandTests
                     It.IsAny<BumpType>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.Is<IReadOnlyCollection<string>>(paths => paths.Contains(excludedPath))),
+                    It.Is<IReadOnlyCollection<string>>(paths => paths.Contains(excludedPath)),
+                    It.IsAny<bool>()),
                 Times.Once);
         }
 
@@ -252,7 +290,12 @@ public class BumpPackagesCommandTests
         {
             var handler = new Mock<IBumpPackagesHandler>();
             handler
-                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<bool>()))
                 .ReturnsAsync(report);
             return handler;
         }
@@ -342,7 +385,8 @@ public class BumpPackagesCommandTests
                         It.IsAny<BumpType>(),
                         It.IsAny<string>(),
                         It.IsAny<string>(),
-                        It.IsAny<IReadOnlyCollection<string>>()))
+                        It.IsAny<IReadOnlyCollection<string>>(),
+                        It.IsAny<bool>()))
                     .ReturnsAsync(new BumpReport(
                         TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0")),
                         BumpType.Minor));
@@ -373,7 +417,8 @@ public class BumpPackagesCommandTests
                         It.Is<IReadOnlyCollection<string>>(paths =>
                             paths.Count == 2
                             && paths.Contains(first.AbsolutePath)
-                            && paths.Contains(second.AbsolutePath))),
+                            && paths.Contains(second.AbsolutePath)),
+                        It.IsAny<bool>()),
                     Times.Once);
             }
             finally
