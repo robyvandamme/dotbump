@@ -29,6 +29,7 @@ public class BumpSdkHandlerTests
                     It.IsAny<Sdk>(),
                     It.IsAny<IReadOnlyList<Release>>(),
                     It.IsAny<BumpType>(),
+                    It.IsAny<bool>(),
                     It.IsAny<bool>()))
                 .Returns(new Release("1.0", "1.2.0", "eol", false));
 
@@ -39,7 +40,7 @@ public class BumpSdkHandlerTests
                 releaseService.Object,
                 releaseFinderMock.Object,
                 loggerMock.Object);
-            var result = await handler.HandleAsync(BumpType.Minor, "filepath", false);
+            var result = await handler.HandleAsync(BumpType.Minor, "filepath", false, false);
 
             result.ShouldSatisfyAllConditions(
                 () => result.HasChanges.ShouldBeTrue(),
@@ -61,6 +62,7 @@ public class BumpSdkHandlerTests
                     It.IsAny<Sdk>(),
                     It.IsAny<IReadOnlyList<Release>>(),
                     It.IsAny<BumpType>(),
+                    It.IsAny<bool>(),
                     It.IsAny<bool>()))
                 .Returns(new Release("9.0", "9.0.200", "active", false));
 
@@ -70,7 +72,7 @@ public class BumpSdkHandlerTests
                 releaseFinderMock.Object,
                 new Mock<ILogger>().Object);
 
-            var result = await handler.HandleAsync(BumpType.Major, "filepath", false);
+            var result = await handler.HandleAsync(BumpType.Major, "filepath", false, false);
 
             result.HasChanges.ShouldBeTrue();
             fileService.Verify(service => service.UpdateSdkVersion("8.0.405", "9.0.200", "filepath"), Times.Once);
@@ -79,7 +81,44 @@ public class BumpSdkHandlerTests
                     It.IsAny<Sdk>(),
                     It.IsAny<IReadOnlyList<Release>>(),
                     BumpType.Major,
+                    false,
                     false),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task With_Preview_True_Forwards_Preview_To_ReleaseFinder()
+        {
+            var fileService = new Mock<ISdkFileService>();
+            var releaseService = new Mock<IReleaseService>();
+            fileService.Setup(service => service.GetCurrentSdkVersionFromFile(It.IsAny<string>()))
+                .Returns(new Sdk("8.0.405", "disable"));
+
+            var releaseFinderMock = new Mock<IReleaseFinder>();
+            releaseFinderMock
+                .Setup(finder => finder.TryFindNewRelease(
+                    It.IsAny<Sdk>(),
+                    It.IsAny<IReadOnlyList<Release>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>()))
+                .Returns((Release?)null);
+
+            var handler = new BumpSdkHandler(
+                fileService.Object,
+                releaseService.Object,
+                releaseFinderMock.Object,
+                new Mock<ILogger>().Object);
+
+            await handler.HandleAsync(BumpType.Major, "filepath", false, true);
+
+            releaseFinderMock.Verify(
+                finder => finder.TryFindNewRelease(
+                    It.IsAny<Sdk>(),
+                    It.IsAny<IReadOnlyList<Release>>(),
+                    BumpType.Major,
+                    false,
+                    true),
                 Times.Once);
         }
 
@@ -98,6 +137,7 @@ public class BumpSdkHandlerTests
                     It.IsAny<Sdk>(),
                     It.IsAny<IReadOnlyList<Release>>(),
                     It.IsAny<BumpType>(),
+                    It.IsAny<bool>(),
                     It.IsAny<bool>()))
                 .Returns((Release?)null);
 
@@ -108,7 +148,7 @@ public class BumpSdkHandlerTests
                 releaseService.Object,
                 releaseFinderMock.Object,
                 loggerMock.Object);
-            var result = await handler.HandleAsync(BumpType.Minor, "filepath", false);
+            var result = await handler.HandleAsync(BumpType.Minor, "filepath", false, false);
 
             result.ShouldSatisfyAllConditions(
                 () => result.HasChanges.ShouldBeFalse(),

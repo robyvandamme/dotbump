@@ -26,4 +26,10 @@ internal class BumpSdkSettings : BumpSettings
     [CommandOption("-s|--security-only")]
     [DefaultValue(false)]
     public bool SecurityOnly { get; init; }
+
+    [Description(
+        "Include preview and release candidate SDK versions when bumping. Only applies to `major` bumps. Defaults to false.")]
+    [CommandOption("-p|--preview")]
+    [DefaultValue(false)]
+    public bool Preview { get; init; }
 }

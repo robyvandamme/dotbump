@@ -6,5 +6,5 @@ namespace DotBump.Commands.BumpSdk.Interfaces;
 
 internal interface IBumpSdkHandler
 {
-    Task<BumpReport> HandleAsync(BumpType bumpType, string filePath, bool securityOnly);
+    Task<BumpReport> HandleAsync(BumpType bumpType, string filePath, bool securityOnly, bool preview);
 }

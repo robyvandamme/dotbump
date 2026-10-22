@@ -50,10 +50,12 @@ internal static class CommandConfiguration
                     "Bump the global.json SDK version. " +
                     "Use the 'minor' type option to bump the SDK to the latest minor or patch version for the current major version. " +
                     "Use the 'patch' type option to bump the SDK to the latest patch version for the current minor version. " +
-                    "Use the 'major' type option to bump the SDK to the latest version, including versions with a higher major version. ")
+                    "Use the 'major' type option to bump the SDK to the latest version, including versions with a higher major version. " +
+                    "Use '--preview' with the 'major' type to include preview and release candidate versions. ")
                 .WithExample(SdkCommandName)
                 .WithExample(SdkCommandName, TypeOptionName, "patch")
                 .WithExample(SdkCommandName, TypeOptionName, "major")
+                .WithExample(SdkCommandName, TypeOptionName, "major", "--preview", "true")
                 .WithExample(SdkCommandName, "--file", "./other/global.json", "--output", "bump-sdk-report.json")
                 .WithExample(SdkCommandName, "--security-only", "true", "--debug", "true", "--logfile", "bump-sdk-log.txt");
 
