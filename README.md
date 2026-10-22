@@ -72,8 +72,9 @@ Bump the global.json SDK version. Use the 'minor' type option to bump the SDK to
 the latest minor or patch version for the current major version. Use the 'patch'
 type option to bump the SDK to the latest patch version for the current minor
 version. Use the 'major' type option to bump the SDK to the latest version,
-including versions with a higher major version. Use '--preview' with the
-'major' type to include preview and release candidate versions.
+including versions with a higher major version. Use '--preview' (or the
+'--prerelease' alias) with the 'major' type to include preview and release
+candidate versions.
 
 USAGE:
     dotnet dotbump sdk [OPTIONS]
@@ -101,18 +102,18 @@ OPTIONS:
                            file extension: `.json` or `.md`                     
     -s, --security-only    Only bump the version if the new release is a        
                            security release. Defaults to false                  
-    -p, --preview          Include preview and release candidate SDK versions   
-                           when bumping. Only applies to `major` bumps.        
-                           Defaults to false                                    
+        --preview          Include preview and release candidate SDK versions   
+                           when bumping. Also available as `--prerelease`. Only 
+                           applies to `major` bumps. Defaults to false          
 
 ```
 
 The `major` type removes the major-version cap, consistent with how `minor` includes patch releases. It therefore
 also selects a newer minor or patch version when no higher major version is available, and only leaves the SDK
 unchanged when nothing newer exists. By default, a stable SDK is only bumped to a stable release; preview releases are
-considered only when the current SDK is a pre-release. Use `--preview` with the `major` type to also include preview
-and release candidate versions and select the highest version available, whether stable or pre-release. This includes
-releases in the `go-live` support phase.
+considered only when the current SDK is a pre-release. Use `--preview` (or its `--prerelease` alias) with the `major`
+type to also include preview and release candidate versions and select the highest version available, whether stable or
+pre-release. This includes releases in the `go-live` support phase.
 
 ### Bump the target framework versions
 
