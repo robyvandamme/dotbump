@@ -33,16 +33,18 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
             var globalJsonPath = settings.GlobalJsonPath ?? "./global.json";
             var outputFile = settings.Output;
             var securityOnly = settings.SecurityOnly;
+            var preview = settings.Preview;
 
             logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("GlobalJson file path: {Path}", globalJsonPath);
             logger.Debug("Output file : {OutputFile}", outputFile);
             logger.Debug("Security updates only: {Security}", securityOnly);
+            logger.Debug("Include preview releases: {Preview}", preview);
 
             console.MarkupLine(
-                $"Bumping SDK with settings: type={bumpType}, file={Markup.Escape(globalJsonPath)}, output: {Markup.Escape(outputFile ?? "none")}, securityOnly: {securityOnly}");
+                $"Bumping SDK with settings: type={bumpType}, file={Markup.Escape(globalJsonPath)}, output: {Markup.Escape(outputFile ?? "none")}, securityOnly: {securityOnly}, preview: {preview}");
 
-            var bumpReport = await bumpSdkHandler.HandleAsync(bumpType, globalJsonPath, securityOnly)
+            var bumpReport = await bumpSdkHandler.HandleAsync(bumpType, globalJsonPath, securityOnly, preview)
                 .ConfigureAwait(false);
 
             WriteReportToConsole(bumpReport);

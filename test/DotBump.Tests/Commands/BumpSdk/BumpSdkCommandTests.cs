@@ -83,6 +83,42 @@ public class BumpSdkCommandTests
         }
 
         [Fact]
+        public async Task With_Major_Bump_And_Preview_True_Returns_0_And_Bumps_To_Latest_Preview()
+        {
+            var json = new GlobalJson(new Sdk("8.0.405", "disable"));
+            var directory = new LocalDirectory("./temp");
+            directory.EnsureFileDeleted("global.json");
+            directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
+
+            var loggerMock = new Mock<ILogger>().Object;
+            using var testConsole = new TestConsole();
+            var sdkFileService = new SdkFileService(loggerMock);
+            var releaseService = new ReleaseFileService();
+            var releaseFinder = new ReleaseFinder(loggerMock);
+            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+
+            var command = new BumpSdkCommand(testConsole, loggerMock, handler);
+            var arguments = new[] { "bump", "sdk" };
+            var remainingArguments = new Mock<IRemainingArguments>();
+            var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
+            var result = await command.ExecuteAsync(
+                context,
+                new BumpSdkSettings
+                {
+                    Type = BumpType.Major,
+                    Preview = true,
+                    GlobalJsonPath = "./temp/global.json",
+                },
+                CancellationToken.None);
+
+            var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => globalJson.Version.ShouldBe("10.0.100-preview.1.25120.13"),
+                () => testConsole.Output.ShouldContain("SDK version bumped"));
+        }
+
+        [Fact]
         public async Task Sdk_Version_Not_Updated_Returns_0()
         {
             var json = new GlobalJson(new Sdk("8.0.406", "disable"));
@@ -345,7 +381,11 @@ public class BumpSdkCommandTests
             using var testConsole = new TestConsole().Width(500);
             var handler = new Mock<IBumpSdkHandler>();
             handler
-                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>()))
                 .ReturnsAsync(new BumpReport(new Sdk("8.0.405", "disable"), BumpType.Minor));
             var command = new BumpSdkCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
 
