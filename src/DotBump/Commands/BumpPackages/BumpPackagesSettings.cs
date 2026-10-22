@@ -32,10 +32,10 @@ internal class BumpPackagesSettings : BumpSettings
     public string[]? Exclude { get; init; }
 
     [Description(
-        "Include pre-release versions when bumping. Also available as `--prerelease`. Only applies to `major` bumps. Defaults to false.")]
-    [CommandOption("--preview|--prerelease")]
+        "Include pre-release versions when bumping. Also available as `--preview`. Only applies to `major` bumps. Defaults to false.")]
+    [CommandOption("--prerelease|--preview")]
     [DefaultValue(false)]
-    public bool Preview { get; init; }
+    public bool PreRelease { get; init; }
 
     public override ValidationResult Validate()
     {

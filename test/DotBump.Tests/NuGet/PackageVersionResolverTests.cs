@@ -139,7 +139,7 @@ public class PackageVersionResolverTests
         }
 
         [Fact]
-        public async Task With_Major_Type_And_Preview_True_And_Higher_PreRelease_Returns_PreRelease()
+        public async Task With_Major_Type_And_PreRelease_True_And_Higher_PreRelease_Returns_PreRelease()
         {
             var nugetConfig = CreateConfig(("feed", "https://feeds.example.com/feed"));
             var resolver = CreateResolver(new Dictionary<string, (string Url, string[] Versions)>
@@ -151,13 +151,13 @@ public class PackageVersionResolverTests
                 [new PackageToBump("mytool", new SemanticVersion("1.5.0"))],
                 BumpType.Major,
                 nugetConfig,
-                preview: true);
+                preRelease: true);
 
             result["mytool"].Version.ShouldBe("2.1.0-preview.1");
         }
 
         [Fact]
-        public async Task With_Major_Type_And_Preview_True_And_Higher_PreRelease_In_Other_Feed_Returns_PreRelease()
+        public async Task With_Major_Type_And_PreRelease_True_And_Higher_PreRelease_In_Other_Feed_Returns_PreRelease()
         {
             var nugetConfig = CreateConfig(
                 ("stable-feed", "https://feeds.example.com/stable"),
@@ -172,13 +172,13 @@ public class PackageVersionResolverTests
                 [new PackageToBump("mytool", new SemanticVersion("1.5.0"))],
                 BumpType.Major,
                 nugetConfig,
-                preview: true);
+                preRelease: true);
 
             result["mytool"].Version.ShouldBe("2.0.0-preview.1");
         }
 
         [Fact]
-        public async Task With_Minor_Type_And_Preview_True_Ignores_PreRelease()
+        public async Task With_Minor_Type_And_PreRelease_True_Ignores_PreRelease()
         {
             var nugetConfig = CreateConfig(("feed", "https://feeds.example.com/feed"));
             var resolver = CreateResolver(new Dictionary<string, (string Url, string[] Versions)>
@@ -190,7 +190,7 @@ public class PackageVersionResolverTests
                 [new PackageToBump("mytool", new SemanticVersion("1.0.0"))],
                 BumpType.Minor,
                 nugetConfig,
-                preview: true);
+                preRelease: true);
 
             result.ShouldBeEmpty();
         }

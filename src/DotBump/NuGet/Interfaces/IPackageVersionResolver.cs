@@ -15,7 +15,7 @@ internal interface IPackageVersionResolver
     /// <param name="packages">The packages and their current versions.</param>
     /// <param name="bumpType">The bump type.</param>
     /// <param name="nuGetConfiguration">The NuGet configuration with the package sources to query.</param>
-    /// <param name="preview">Whether pre-release versions should be included for a major bump.</param>
+    /// <param name="preRelease">Whether pre-release versions should be included for a major bump.</param>
     /// <returns>
     /// A dictionary keyed by package identifier containing the resolved newer version.
     /// Packages for which no newer version was found are not included.
@@ -24,5 +24,5 @@ internal interface IPackageVersionResolver
         IReadOnlyCollection<PackageToBump> packages,
         BumpType bumpType,
         NuGetConfig nuGetConfiguration,
-        bool preview = false);
+        bool preRelease = false);
 }

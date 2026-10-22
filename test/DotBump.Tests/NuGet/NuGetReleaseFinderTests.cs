@@ -296,7 +296,7 @@ public class NuGetReleaseFinderTests
         }
 
         [Fact]
-        public void With_Major_Type_And_Preview_True_And_Higher_PreRelease_Returns_PreRelease()
+        public void With_Major_Type_And_PreRelease_True_And_Higher_PreRelease_Returns_PreRelease()
         {
             var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
             var result = service.TryFindNewVersionInCatalogPages(
@@ -310,7 +310,7 @@ public class NuGetReleaseFinderTests
         }
 
         [Fact]
-        public void With_Major_Type_And_Preview_True_And_Higher_Stable_Returns_Stable()
+        public void With_Major_Type_And_PreRelease_True_And_Higher_Stable_Returns_Stable()
         {
             var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
             var result = service.TryFindNewVersionInCatalogPages(

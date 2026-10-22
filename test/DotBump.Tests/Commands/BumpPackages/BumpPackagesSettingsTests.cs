@@ -21,9 +21,9 @@ public class BumpPackagesSettingsTests
         }
 
         [Fact]
-        public void With_Preview_True_Returns_Success()
+        public void With_PreRelease_True_Returns_Success()
         {
-            var settings = new BumpPackagesSettings { Preview = true };
+            var settings = new BumpPackagesSettings { PreRelease = true };
 
             var result = settings.Validate();
 

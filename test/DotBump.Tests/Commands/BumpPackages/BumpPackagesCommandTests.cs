@@ -98,9 +98,9 @@ public class BumpPackagesCommandTests
         }
 
         [Theory]
-        [InlineData("--preview")]
         [InlineData("--prerelease")]
-        public async Task With_Preview_Option_Or_Alias_Forwards_Preview_To_Handler(string previewOption)
+        [InlineData("--preview")]
+        public async Task With_PreRelease_Option_Or_Alias_Forwards_PreRelease_To_Handler(string preReleaseOption)
         {
             using var testConsole = new TestConsole();
             var handler = CreateHandler(CreateReport(("MyPackage", "1.0.0")));
@@ -116,7 +116,7 @@ public class BumpPackagesCommandTests
                 config.AddCommand<BumpPackagesCommand>("packages");
             });
 
-            var result = await app.RunAsync(["packages", "--type", "major", previewOption, "true"]);
+            var result = await app.RunAsync(["packages", "--type", "major", preReleaseOption, "true"]);
 
             result.ShouldBe(0);
             handler.Verify(

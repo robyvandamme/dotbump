@@ -57,7 +57,7 @@ public class BumpPackagesHandlerTests
         }
 
         [Fact]
-        public async Task With_Preview_True_Forwards_Preview_To_Resolver()
+        public async Task With_PreRelease_True_Forwards_PreRelease_To_Resolver()
         {
             var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"));
             var fileService = CreateFileService(manifest);
@@ -71,7 +71,7 @@ public class BumpPackagesHandlerTests
                 .ReturnsAsync(new Dictionary<string, SemanticVersion>());
             var handler = CreateHandler(fileService, resolver);
 
-            await handler.HandleAsync(BumpType.Major, "./repo", "nuget.config", preview: true);
+            await handler.HandleAsync(BumpType.Major, "./repo", "nuget.config", preRelease: true);
 
             resolver.Verify(
                 r => r.ResolveAsync(

@@ -24,6 +24,7 @@ internal static class CommandConfiguration
     private const string FrameworksCommandName = "frameworks";
     private const string TypeOptionName = "--type";
     private const string PreviewOptionName = "--preview";
+    private const string PreReleaseOptionName = "--prerelease";
     private const string PatchBumpType = "patch";
     private const string MajorBumpType = "major";
 
@@ -93,11 +94,11 @@ internal static class CommandConfiguration
                     "Use the 'minor' type option to bump the packages to the latest minor or patch versions for the current major version. " +
                     "Use the 'patch' type option to bump the packages to the latest patch version for the current minor version. " +
                     "Use the 'major' type option to bump the packages to the latest version, including versions with a higher major version. " +
-                    "Use '--preview' (or the '--prerelease' alias) with the 'major' type to include pre-release versions. ")
+                    "Use '--prerelease' (or the '--preview' alias) with the 'major' type to include pre-release versions. ")
                 .WithExample(PackagesCommandName)
                 .WithExample(PackagesCommandName, TypeOptionName, PatchBumpType)
                 .WithExample(PackagesCommandName, TypeOptionName, MajorBumpType)
-                .WithExample(PackagesCommandName, TypeOptionName, MajorBumpType, PreviewOptionName, "true")
+                .WithExample(PackagesCommandName, TypeOptionName, MajorBumpType, PreReleaseOptionName, "true")
                 .WithExample(PackagesCommandName, "--config", "./custom-nuget.config", "--output", "bump-packages-report.json")
                 .WithExample(PackagesCommandName, "--debug", "true", "--logfile", "bump-packages-log.txt");
 
