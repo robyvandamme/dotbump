@@ -38,17 +38,23 @@ internal class BumpToolsCommand(
                 ? Path.GetFullPath(settings.NuGetConfigPath)
                 : _defaultNugetConfigPath;
             var toolManifestPath = toolManifestLocator.Resolve(settings.ToolManifestPath);
+            var preRelease = settings.PreRelease;
 
             logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("Output file : {OutputFile}", outputFile);
             logger.Debug("NuGet config : {NuGetConfig}", nugetConfigPath);
             logger.Debug("Tools manifest : {ToolManifest}", toolManifestPath);
+            logger.Debug("Include pre-release versions: {PreRelease}", preRelease);
 
             console.MarkupLine(
                 $"Bumping Tools with settings: type={bumpType}, output: {Markup.Escape(outputFile ?? "none")}, " +
-                $"config: {Markup.Escape(nugetConfigPath)}, manifest: {Markup.Escape(toolManifestPath)}");
+                $"config: {Markup.Escape(nugetConfigPath)}, manifest: {Markup.Escape(toolManifestPath)}, preRelease: {preRelease}");
 
-            var bumpReport = await bumpToolsHandler.HandleAsync(bumpType, nugetConfigPath, toolManifestPath);
+            var bumpReport = await bumpToolsHandler.HandleAsync(
+                bumpType,
+                nugetConfigPath,
+                toolManifestPath,
+                preRelease);
 
             WriteReportToConsole(bumpReport);
 

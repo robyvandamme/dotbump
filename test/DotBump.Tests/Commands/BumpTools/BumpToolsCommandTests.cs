@@ -11,6 +11,7 @@ using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
 using Shouldly;
+using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Testing;
 
@@ -231,7 +232,11 @@ public class BumpToolsCommandTests
             using var testConsole = new TestConsole().Width(500);
             var handler = new Mock<IBumpToolsHandler>();
             handler
-                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>()))
                 .ReturnsAsync(new BumpReport(
                     new ToolsManifest
                     {
@@ -259,7 +264,11 @@ public class BumpToolsCommandTests
             using var testConsole = new TestConsole().Width(500);
             var handler = new Mock<IBumpToolsHandler>();
             handler
-                .Setup(h => h.HandleAsync(It.IsAny<BumpType>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>()))
                 .ReturnsAsync(new BumpReport(
                     new ToolsManifest
                     {
@@ -279,6 +288,55 @@ public class BumpToolsCommandTests
             result.ShouldSatisfyAllConditions(
                 () => result.ShouldBe(0),
                 () => testConsole.Output.ShouldContain("[draft]"));
+        }
+
+        [Theory]
+        [InlineData("--prerelease")]
+        [InlineData("--preview")]
+        public async Task With_PreRelease_Option_Or_Alias_Forwards_PreRelease_To_Handler(string preReleaseOption)
+        {
+            using var testConsole = new TestConsole();
+            var handler = new Mock<IBumpToolsHandler>();
+            handler
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync(new BumpReport(
+                    new ToolsManifest
+                    {
+                        Version = 1,
+                        IsRoot = true,
+                        Tools = new Dictionary<string, ToolManifestEntry>(),
+                    },
+                    BumpType.Major));
+
+            var locator = new Mock<IToolManifestLocator>();
+            locator.Setup(l => l.Resolve(It.IsAny<string?>())).Returns("./dotnet-tools.json");
+
+            IAnsiConsole console = testConsole;
+            var app = new CommandApp();
+            app.Configure(config =>
+            {
+                config.PropagateExceptions();
+                config.Settings.Registrar.RegisterInstance(console);
+                config.Settings.Registrar.RegisterInstance(Mock.Of<ILogger>());
+                config.Settings.Registrar.RegisterInstance(handler.Object);
+                config.Settings.Registrar.RegisterInstance(locator.Object);
+                config.AddCommand<BumpToolsCommand>("tools");
+            });
+
+            var result = await app.RunAsync(["tools", "--type", "major", preReleaseOption, "true"]);
+
+            result.ShouldBe(0);
+            handler.Verify(
+                h => h.HandleAsync(
+                    BumpType.Major,
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    true),
+                Times.Once);
         }
 
         private static void ConfigurePrivateToolsManifest()

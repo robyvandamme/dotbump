@@ -70,6 +70,32 @@ public class BumpToolsHandlerTests
         }
 
         [Fact]
+        public async Task With_PreRelease_True_Forwards_PreRelease_To_Resolver()
+        {
+            var manifest = CreateManifest("mytool", "1.0.0");
+            var fileService = CreateFileService(manifest);
+            var resolver = new Mock<IPackageVersionResolver>();
+            resolver
+                .Setup(r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync(new Dictionary<string, SemanticVersion>());
+            var handler = CreateHandler(fileService, resolver);
+
+            await handler.HandleAsync(BumpType.Major, "nuget.config", "dotnet-tools.json", preRelease: true);
+
+            resolver.Verify(
+                r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    BumpType.Major,
+                    It.IsAny<NuGetConfig>(),
+                    true),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task With_No_Resolved_Version_Does_Not_Save()
         {
             var manifest = CreateManifest("mytool", "1.0.0");

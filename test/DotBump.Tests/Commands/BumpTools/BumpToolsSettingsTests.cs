@@ -120,6 +120,16 @@ public class BumpToolsSettingsTests
 
             result.Successful.ShouldBeTrue();
         }
+
+        [Fact]
+        public void With_PreRelease_True_Returns_Success()
+        {
+            var settings = new BumpToolsSettings { PreRelease = true };
+
+            var result = settings.Validate();
+
+            result.Successful.ShouldBeTrue();
+        }
     }
 
     private static LocalDirectory TempDirectory => new("./temp/settings-tools");
