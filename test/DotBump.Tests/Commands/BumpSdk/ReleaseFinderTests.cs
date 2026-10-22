@@ -342,7 +342,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void With_Major_Type_And_Preview_True_And_Higher_Preview_Returns_Preview()
+        public void With_Major_Type_And_PreRelease_True_And_Higher_PreRelease_Returns_PreRelease()
         {
             var currentSdk = new Sdk("8.0.405", "disable");
             var stableRelease = new Release("9.0", "9.0.200", "active", false);
@@ -356,7 +356,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void With_Major_Type_And_Preview_True_And_Only_Stable_Returns_Highest_Stable()
+        public void With_Major_Type_And_PreRelease_True_And_Only_Stable_Returns_Highest_Stable()
         {
             var currentSdk = new Sdk("8.0.405", "disable");
             var release = new Release("9.0", "9.0.200", "active", false);
@@ -369,7 +369,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void With_Major_Type_And_Preview_True_And_Higher_Stable_Returns_Stable()
+        public void With_Major_Type_And_PreRelease_True_And_Higher_Stable_Returns_Stable()
         {
             var currentSdk = new Sdk("8.0.405", "disable");
             var previewRelease = new Release("11.0", "11.0.100-preview.1", "preview", false);
@@ -383,7 +383,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void With_Major_Type_And_Preview_True_And_GoLive_Release_Returns_PreRelease()
+        public void With_Major_Type_And_PreRelease_True_And_GoLive_Release_Returns_PreRelease()
         {
             var currentSdk = new Sdk("10.0.100", "disable");
             var release = new Release("11.0", "11.0.100-rc.2", "go-live", false);
@@ -396,7 +396,7 @@ public class ReleaseFinderTests
         }
 
         [Fact]
-        public void With_Major_Type_And_Preview_True_And_SecurityOnly_True_Returns_Null_For_Non_Security_Preview()
+        public void With_Major_Type_And_PreRelease_True_And_SecurityOnly_True_Returns_Null_For_Non_Security_PreRelease()
         {
             var currentSdk = new Sdk("8.0.405", "disable");
             var release = new Release("10.0", "10.0.100-preview.1", "preview", false);

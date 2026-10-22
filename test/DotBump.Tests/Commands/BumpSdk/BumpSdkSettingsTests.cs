@@ -29,5 +29,15 @@ public class BumpSdkSettingsTests
 
             result.Successful.ShouldBeTrue();
         }
+
+        [Fact]
+        public void With_PreRelease_True_Returns_Success()
+        {
+            var settings = new BumpSdkSettings { PreRelease = true };
+
+            var result = settings.Validate();
+
+            result.Successful.ShouldBeTrue();
+        }
     }
 }

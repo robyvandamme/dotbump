@@ -87,7 +87,7 @@ public class BumpSdkHandlerTests
         }
 
         [Fact]
-        public async Task With_Preview_True_Forwards_Preview_To_ReleaseFinder()
+        public async Task With_PreRelease_True_Forwards_PreRelease_To_ReleaseFinder()
         {
             var fileService = new Mock<ISdkFileService>();
             var releaseService = new Mock<IReleaseService>();
