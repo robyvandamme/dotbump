@@ -72,8 +72,8 @@ Bump the global.json SDK version. Use the 'minor' type option to bump the SDK to
 the latest minor or patch version for the current major version. Use the 'patch'
 type option to bump the SDK to the latest patch version for the current minor
 version. Use the 'major' type option to bump the SDK to the latest version,
-including versions with a higher major version. Use '--prerelease' (or the
-'--preview' alias) with the 'major' type to include pre-release versions.
+including versions with a higher major version. Use '--prerelease' with the
+'major' type to include pre-release versions.
 
 USAGE:
     dotnet dotbump sdk [OPTIONS]
@@ -101,18 +101,17 @@ OPTIONS:
                            file extension: `.json` or `.md`                     
     -s, --security-only    Only bump the version if the new release is a        
                            security release. Defaults to false                  
-        --prerelease       Include pre-release SDK versions when bumping. Also  
-                           available as `--preview`. Only applies to `major`    
-                           bumps. Defaults to false                             
+        --prerelease       Include pre-release SDK versions when bumping. Only   
+                           applies to `major` bumps. Defaults to false          
 
 ```
 
 The `major` type removes the major-version cap, consistent with how `minor` includes patch releases. It therefore
 also selects a newer minor or patch version when no higher major version is available, and only leaves the SDK
 unchanged when nothing newer exists. By default, a stable SDK is only bumped to a stable release; pre-release versions
-are considered only when the current SDK is a pre-release. Use `--prerelease` (or its `--preview` alias) with the
-`major` type to also include pre-release versions and select the highest version available, whether stable or
-pre-release. This includes releases in the `go-live` support phase.
+are considered only when the current SDK is a pre-release. Use `--prerelease` with the `major` type to also include
+pre-release versions and select the highest version available, whether stable or pre-release. This includes releases in
+the `go-live` support phase.
 
 ### Bump the target framework versions
 
@@ -165,8 +164,8 @@ Bump the local .NET tools versions. Use the 'minor' type option to bump the tool
 the latest minor or patch versions for the current major version. Use the 'patch' type 
 option to bump the tools to the latest patch version for the current minor version. Use
 the 'major' type option to bump the tools to the latest version, including versions with
-a higher major version. Use '--prerelease' (or the '--preview' alias) with the 'major'
-type to include pre-release versions.
+a higher major version. Use '--prerelease' with the 'major' type to include
+pre-release versions.
 
 USAGE:
     dotnet dotbump tools [OPTIONS]
@@ -192,9 +191,8 @@ OPTIONS:
     -c, --config     The nuget config file to use. Defaults to `./nuget.config`                             
     -m, --manifest   The tools manifest file to update. Defaults to                                        
                      `./dotnet-tools.json`, falling back to `./.config/dotnet-tools.json`                   
-        --prerelease    Include pre-release versions when bumping. Also
-                        available as `--preview`. Only applies to `major` bumps.
-                        Defaults to false
+        --prerelease    Include pre-release versions when bumping. Only applies
+                        to `major` bumps. Defaults to false
 
 ```
 
@@ -206,8 +204,8 @@ unchanged when nothing newer exists.
 
 If the current .NET tool version is a pre-release version, pre-release versions will be taken into account for new 
 versions, but stable versions will be preferred. If the current .NET tool version is a stable version, only stable 
-versions will be taken into account for new versions. Use `--prerelease` (or its `--preview` alias) with the `major`
-type to include pre-release versions and select the highest version available, whether stable or pre-release.
+versions will be taken into account for new versions. Use `--prerelease` with the `major` type to include pre-release
+versions and select the highest version available, whether stable or pre-release.
 
 Examples:
 
@@ -299,8 +297,7 @@ packages to the latest minor or patch versions for the current major version.
 Use the 'patch' type option to bump the packages to the latest patch version for
 the current minor version. Use the 'major' type option to bump the packages to
 the latest version, including versions with a higher major version. Use
-'--prerelease' (or the '--preview' alias) with the 'major' type to include
-pre-release versions.
+'--prerelease' with the 'major' type to include pre-release versions.
 
 USAGE:
     dotnet dotbump packages [OPTIONS]
@@ -326,9 +323,8 @@ OPTIONS:
     -p, --path       The root directory to scan. Defaults to the current directory
     -e, --exclude    A directory to exclude from the scan. Can be specified
                      multiple times
-        --prerelease    Include pre-release versions when bumping. Also
-                        available as `--preview`. Only applies to `major` bumps.
-                        Defaults to false
+        --prerelease    Include pre-release versions when bumping. Only applies
+                        to `major` bumps. Defaults to false
 ```
 
 The output file (`--output`) uses the same report formats as the other commands (see
@@ -346,8 +342,8 @@ NuGet configuration).
   also selects a newer minor or patch version when no higher major version is available, and only leaves the package
   unchanged when nothing newer exists.
 * If the current version is a pre-release, pre-release versions are considered but stable versions are preferred;
-  otherwise only stable versions are considered. Use `--prerelease` (or its `--preview` alias) with the `major` type to
-  include pre-release versions and select the highest version available, whether stable or pre-release.
+  otherwise only stable versions are considered. Use `--prerelease` with the `major` type to include pre-release
+  versions and select the highest version available, whether stable or pre-release.
 * Only files that actually change are written back, and only the version value is changed; everything else (attribute
   quoting, entities, attribute layout, XML declaration, encoding, byte order mark and line endings) is preserved.
 

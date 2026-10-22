@@ -28,8 +28,8 @@ internal class BumpToolsSettings : BumpSettings
     public string? ToolManifestPath { get; init; }
 
     [Description(
-        "Include pre-release versions when bumping. Also available as `--preview`. Only applies to `major` bumps. Defaults to false.")]
-    [CommandOption("--prerelease|--preview")]
+        "Include pre-release versions when bumping. Only applies to `major` bumps. Defaults to false.")]
+    [CommandOption("--prerelease")]
     [DefaultValue(false)]
     public bool PreRelease { get; init; }
 

@@ -97,10 +97,8 @@ public class BumpPackagesCommandTests
                 () => testConsole.Output.ShouldContain("An error occurred bumping package versions."));
         }
 
-        [Theory]
-        [InlineData("--prerelease")]
-        [InlineData("--preview")]
-        public async Task With_PreRelease_Option_Or_Alias_Forwards_PreRelease_To_Handler(string preReleaseOption)
+        [Fact]
+        public async Task With_PreRelease_Option_Forwards_PreRelease_To_Handler()
         {
             using var testConsole = new TestConsole();
             var handler = CreateHandler(CreateReport(("MyPackage", "1.0.0")));
@@ -116,7 +114,7 @@ public class BumpPackagesCommandTests
                 config.AddCommand<BumpPackagesCommand>("packages");
             });
 
-            var result = await app.RunAsync(["packages", "--type", "major", preReleaseOption, "true"]);
+            var result = await app.RunAsync(["packages", "--type", "major", "--prerelease", "true"]);
 
             result.ShouldBe(0);
             handler.Verify(
