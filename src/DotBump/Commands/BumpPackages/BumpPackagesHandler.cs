@@ -21,7 +21,8 @@ internal class BumpPackagesHandler(
         BumpType bumpType,
         string repositoryPath,
         string nugetConfigPath,
-        IReadOnlyCollection<string>? excludedPaths = null)
+        IReadOnlyCollection<string>? excludedPaths = null,
+        bool preRelease = false)
     {
         logger.MethodStart(nameof(BumpPackagesHandler), nameof(HandleAsync), bumpType);
 
@@ -46,7 +47,7 @@ internal class BumpPackagesHandler(
             .ToList();
 
         var bestVersions = await packageVersionResolver
-            .ResolveAsync(packagesToBump, bumpType, nuGetConfiguration)
+            .ResolveAsync(packagesToBump, bumpType, nuGetConfiguration, preRelease)
             .ConfigureAwait(false);
 
         foreach (var (packageId, newVersion) in bestVersions)

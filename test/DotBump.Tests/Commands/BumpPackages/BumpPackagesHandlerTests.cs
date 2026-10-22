@@ -51,7 +51,34 @@ public class BumpPackagesHandlerTests
                 r => r.ResolveAsync(
                     It.IsAny<IReadOnlyCollection<PackageToBump>>(),
                     BumpType.Major,
-                    It.IsAny<NuGetConfig>()),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task With_PreRelease_True_Forwards_PreRelease_To_Resolver()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"));
+            var fileService = CreateFileService(manifest);
+            var resolver = new Mock<IPackageVersionResolver>();
+            resolver
+                .Setup(r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync(new Dictionary<string, SemanticVersion>());
+            var handler = CreateHandler(fileService, resolver);
+
+            await handler.HandleAsync(BumpType.Major, "./repo", "nuget.config", preRelease: true);
+
+            resolver.Verify(
+                r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    BumpType.Major,
+                    It.IsAny<NuGetConfig>(),
+                    true),
                 Times.Once);
         }
 
@@ -72,7 +99,8 @@ public class BumpPackagesHandlerTests
                         && packages.Single().PackageId == "MyPackage"
                         && packages.Single().CurrentVersion.Version == "1.2.0"),
                     BumpType.Minor,
-                    It.IsAny<NuGetConfig>()),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
                 Times.Once);
         }
 
@@ -138,7 +166,8 @@ public class BumpPackagesHandlerTests
                 r => r.ResolveAsync(
                     It.IsAny<IReadOnlyCollection<PackageToBump>>(),
                     It.IsAny<BumpType>(),
-                    It.IsAny<NuGetConfig>()),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
                 Times.Never);
         }
 
@@ -156,7 +185,8 @@ public class BumpPackagesHandlerTests
                 r => r.ResolveAsync(
                     It.Is<IReadOnlyCollection<PackageToBump>>(packages => packages.Count == 0),
                     BumpType.Minor,
-                    It.IsAny<NuGetConfig>()),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
                 Times.Once);
             report.Warnings.ShouldContain(warning =>
                 warning.Contains("MyPackage", StringComparison.Ordinal)
@@ -247,7 +277,8 @@ public class BumpPackagesHandlerTests
                 .Setup(r => r.ResolveAsync(
                     It.IsAny<IReadOnlyCollection<PackageToBump>>(),
                     It.IsAny<BumpType>(),
-                    It.IsAny<NuGetConfig>()))
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()))
                 .ReturnsAsync(resolved.ToDictionary(item => item.Id, item => new SemanticVersion(item.Version)));
             return resolver;
         }

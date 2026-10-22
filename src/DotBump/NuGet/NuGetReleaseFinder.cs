@@ -67,7 +67,12 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
     {
         ArgumentNullException.ThrowIfNull(currentVersion);
 
-        return TryFindNewVersionInCatalogPages(catalogPages, currentVersion, bumpType, currentVersion.IsPreRelease);
+        return TryFindNewVersionInCatalogPages(
+            catalogPages,
+            currentVersion,
+            bumpType,
+            currentVersion.IsPreRelease,
+            false);
     }
 
     /// <summary>
@@ -83,6 +88,31 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
         SemanticVersion currentVersion,
         BumpType bumpType,
         bool allowPreRelease)
+    {
+        return TryFindNewVersionInCatalogPages(
+            catalogPages,
+            currentVersion,
+            bumpType,
+            allowPreRelease,
+            false);
+    }
+
+    /// <summary>
+    /// Tries to find a new version in the provided catalog pages using the provided bump type, pre-release allowance
+    /// and selection preference.
+    /// </summary>
+    /// <param name="catalogPages">The list of catalog pages.</param>
+    /// <param name="currentVersion">The current version.</param>
+    /// <param name="bumpType">The bump type.</param>
+    /// <param name="allowPreRelease">Whether to include pre-release versions.</param>
+    /// <param name="preferHighestVersion">Whether the highest eligible version should win instead of preferring stable.</param>
+    /// <returns>A new version if one is found.</returns>
+    public SemanticVersion? TryFindNewVersionInCatalogPages(
+        ICollection<CatalogPage> catalogPages,
+        SemanticVersion currentVersion,
+        BumpType bumpType,
+        bool allowPreRelease,
+        bool preferHighestVersion)
     {
         ArgumentNullException.ThrowIfNull(catalogPages);
         ArgumentNullException.ThrowIfNull(currentVersion);
@@ -122,18 +152,38 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
 
         return bumpType switch
         {
-            BumpType.Minor => TryFindNewMinorOrPatchVersion(currentVersion, versions, allowPreRelease),
-            BumpType.Patch => TryFindNewPatchVersion(currentVersion, versions, allowPreRelease),
-            BumpType.Major => TryFindNewMajorVersion(currentVersion, versions, allowPreRelease),
+            BumpType.Minor => TryFindNewMinorOrPatchVersion(
+                currentVersion,
+                versions,
+                allowPreRelease,
+                preferHighestVersion),
+            BumpType.Patch => TryFindNewPatchVersion(
+                currentVersion,
+                versions,
+                allowPreRelease,
+                preferHighestVersion),
+            BumpType.Major => TryFindNewMajorVersion(
+                currentVersion,
+                versions,
+                allowPreRelease,
+                preferHighestVersion),
             _ => throw new ArgumentOutOfRangeException(nameof(bumpType)),
         };
     }
 
     private static SemanticVersion? SelectNewestVersion(
         IEnumerable<SemanticVersion> availableNewVersions,
-        bool allowPreRelease)
+        bool allowPreRelease,
+        bool preferHighestVersion)
     {
         var candidates = availableNewVersions.ToList();
+
+        if (preferHighestVersion)
+        {
+            return allowPreRelease
+                ? candidates.OrderByDescending(o => o).FirstOrDefault()
+                : candidates.Where(o => !o.IsPreRelease).OrderByDescending(o => o).FirstOrDefault();
+        }
 
         var newestStable = candidates
             .Where(o => !o.IsPreRelease)
@@ -152,13 +202,15 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
     private SemanticVersion? TryFindNewMinorOrPatchVersion(
         SemanticVersion currentVersion,
         List<SemanticVersion> versions,
-        bool allowPreRelease)
+        bool allowPreRelease,
+        bool preferHighestVersion)
     {
         logger.MethodStart(nameof(NuGetReleaseFinder), nameof(TryFindNewMinorOrPatchVersion));
 
         var result = SelectNewestVersion(
             versions.Where(o => o.Major == currentVersion.Major && o > currentVersion),
-            allowPreRelease);
+            allowPreRelease,
+            preferHighestVersion);
 
         logger.MethodReturn(nameof(NuGetReleaseFinder), nameof(TryFindNewMinorOrPatchVersion), result);
         return result;
@@ -167,7 +219,8 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
     private SemanticVersion? TryFindNewPatchVersion(
         SemanticVersion currentVersion,
         List<SemanticVersion> versions,
-        bool allowPreRelease)
+        bool allowPreRelease,
+        bool preferHighestVersion)
     {
         logger.MethodStart(nameof(NuGetReleaseFinder), nameof(TryFindNewPatchVersion));
 
@@ -175,7 +228,8 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
             versions.Where(o => o.Major == currentVersion.Major
                                 && o.Minor == currentVersion.Minor
                                 && o > currentVersion),
-            allowPreRelease);
+            allowPreRelease,
+            preferHighestVersion);
 
         logger.MethodReturn(nameof(NuGetReleaseFinder), nameof(TryFindNewPatchVersion), result);
         return result;
@@ -184,12 +238,16 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
     private SemanticVersion? TryFindNewMajorVersion(
         SemanticVersion currentVersion,
         List<SemanticVersion> versions,
-        bool allowPreRelease)
+        bool allowPreRelease,
+        bool preferHighestVersion)
     {
         logger.MethodStart(nameof(NuGetReleaseFinder), nameof(TryFindNewMajorVersion));
 
         // A major bump removes the major-version cap, so newer minor and patch versions are also valid targets.
-        var result = SelectNewestVersion(versions.Where(o => o > currentVersion), allowPreRelease);
+        var result = SelectNewestVersion(
+            versions.Where(o => o > currentVersion),
+            allowPreRelease,
+            preferHighestVersion);
 
         logger.MethodReturn(nameof(NuGetReleaseFinder), nameof(TryFindNewMajorVersion), result);
         return result;

@@ -21,6 +21,16 @@ public class BumpPackagesSettingsTests
         }
 
         [Fact]
+        public void With_PreRelease_True_Returns_Success()
+        {
+            var settings = new BumpPackagesSettings { PreRelease = true };
+
+            var result = settings.Validate();
+
+            result.Successful.ShouldBeTrue();
+        }
+
+        [Fact]
         public void With_Existing_Config_File_Returns_Success()
         {
             ResetTempDirectory();

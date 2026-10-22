@@ -26,4 +26,11 @@ internal interface INuGetReleaseFinder
         SemanticVersion currentVersion,
         BumpType bumpType,
         bool allowPreRelease);
+
+    SemanticVersion? TryFindNewVersionInCatalogPages(
+        ICollection<CatalogPage> catalogPages,
+        SemanticVersion currentVersion,
+        BumpType bumpType,
+        bool allowPreRelease,
+        bool preferHighestVersion);
 }

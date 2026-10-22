@@ -15,6 +15,7 @@ internal interface IPackageVersionResolver
     /// <param name="packages">The packages and their current versions.</param>
     /// <param name="bumpType">The bump type.</param>
     /// <param name="nuGetConfiguration">The NuGet configuration with the package sources to query.</param>
+    /// <param name="preRelease">Whether pre-release versions should be included for a major bump.</param>
     /// <returns>
     /// A dictionary keyed by package identifier containing the resolved newer version.
     /// Packages for which no newer version was found are not included.
@@ -22,5 +23,6 @@ internal interface IPackageVersionResolver
     Task<IReadOnlyDictionary<string, SemanticVersion>> ResolveAsync(
         IReadOnlyCollection<PackageToBump> packages,
         BumpType bumpType,
-        NuGetConfig nuGetConfiguration);
+        NuGetConfig nuGetConfiguration,
+        bool preRelease = false);
 }

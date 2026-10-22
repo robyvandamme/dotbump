@@ -18,13 +18,15 @@ internal class PackageVersionResolver(
     public async Task<IReadOnlyDictionary<string, SemanticVersion>> ResolveAsync(
         IReadOnlyCollection<PackageToBump> packages,
         BumpType bumpType,
-        NuGetConfig nuGetConfiguration)
+        NuGetConfig nuGetConfiguration,
+        bool preRelease = false)
     {
         logger.MethodStart(nameof(PackageVersionResolver), nameof(ResolveAsync), bumpType);
 
         ArgumentNullException.ThrowIfNull(packages);
         ArgumentNullException.ThrowIfNull(nuGetConfiguration);
 
+        var usePreRelease = preRelease && bumpType == BumpType.Major;
         var bestVersions = new Dictionary<string, SemanticVersion>();
 
         if (packages.Count == 0 || nuGetConfiguration.PackageSources.Count == 0)
@@ -47,10 +49,15 @@ internal class PackageVersionResolver(
             {
                 bestVersions.TryGetValue(package.PackageId, out var currentBest);
 
-                var candidateVersion = await ResolvePackageVersionAsync(nuGetClient, baseUrl, package, bumpType)
+                var candidateVersion = await ResolvePackageVersionAsync(
+                        nuGetClient,
+                        baseUrl,
+                        package,
+                        bumpType,
+                        usePreRelease)
                     .ConfigureAwait(false);
 
-                if (candidateVersion != null && IsBetterCandidate(candidateVersion, currentBest))
+                if (candidateVersion != null && IsBetterCandidate(candidateVersion, currentBest, usePreRelease))
                 {
                     bestVersions[package.PackageId] = candidateVersion;
                 }
@@ -62,11 +69,16 @@ internal class PackageVersionResolver(
         return bestVersions;
     }
 
-    private static bool IsBetterCandidate(SemanticVersion candidate, SemanticVersion? currentBest)
+    private static bool IsBetterCandidate(SemanticVersion candidate, SemanticVersion? currentBest, bool preRelease)
     {
         if (currentBest == null)
         {
             return true;
+        }
+
+        if (preRelease)
+        {
+            return candidate > currentBest;
         }
 
         if (!candidate.IsPreRelease && currentBest.IsPreRelease)
@@ -89,7 +101,8 @@ internal class PackageVersionResolver(
         INuGetClient nuGetClient,
         string baseUrl,
         PackageToBump package,
-        BumpType bumpType)
+        BumpType bumpType,
+        bool preRelease)
     {
         var releaseIndex = await nuGetClient
             .GetPackageInformationAsync(baseUrl, package.PackageId)
@@ -120,7 +133,8 @@ internal class PackageVersionResolver(
                 pages,
                 package.CurrentVersion,
                 bumpType,
-                package.CurrentVersion.IsPreRelease);
+                preRelease || package.CurrentVersion.IsPreRelease,
+                preRelease);
         }
 
         var detailPages = await nuGetClient
@@ -131,6 +145,7 @@ internal class PackageVersionResolver(
             detailPages.ToList(),
             package.CurrentVersion,
             bumpType,
-            package.CurrentVersion.IsPreRelease);
+            preRelease || package.CurrentVersion.IsPreRelease,
+            preRelease);
     }
 }
