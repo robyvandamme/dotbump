@@ -1,8 +1,10 @@
 // Copyright © Roby Van Damme.
 
+using System.Text.Json;
 using DotBump.Commands;
 using DotBump.Common;
 using DotBump.NuGet;
+using DotBump.NuGet.DataModel.NuGetService;
 using DotBump.NuGet.DataModel.Registrations;
 using DotBump.Tests.NuGet.Fakes;
 using Moq;
@@ -13,6 +15,79 @@ namespace DotBump.Tests.NuGet;
 
 public class NuGetReleaseFinderTests
 {
+    public class GetRegistrationsBaseUrl
+    {
+        [Fact]
+        public void With_NuGet_Org_Service_Index_Returns_SemVer2_Registration_Url()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+
+            var result = service.GetRegistrationsBaseUrl(LoadServiceIndex("nuget-service-index.json"));
+
+            // The unversioned RegistrationsBaseUrl points at registration5-semver1, which omits SemVer2 packages.
+            result.ShouldBe("https://api.nuget.org/v3/registration5-gz-semver2/");
+        }
+
+        [Fact]
+        public void With_Only_Versioned_Resource_Returns_Versioned_Url()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateServiceIndex(("https://example.com/versioned", "RegistrationsBaseUrl/Versioned"));
+
+            var result = service.GetRegistrationsBaseUrl(index);
+
+            result.ShouldBe("https://example.com/versioned");
+        }
+
+        [Fact]
+        public void With_Only_Plain_Resource_Returns_Plain_Url()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateServiceIndex(("https://example.com/plain", "RegistrationsBaseUrl"));
+
+            var result = service.GetRegistrationsBaseUrl(index);
+
+            result.ShouldBe("https://example.com/plain");
+        }
+
+        [Fact]
+        public void With_GitHub_Service_Index_Returns_Plain_Url()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+
+            var result = service.GetRegistrationsBaseUrl(LoadServiceIndex("DotBumpGitHub/service-index.json"));
+
+            result.ShouldBe("https://nuget.pkg.github.com/robyvandamme");
+        }
+
+        [Fact]
+        public void With_No_Registration_Resource_Throws_DotBumpException()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateServiceIndex(("https://example.com/search", "SearchQueryService"));
+
+            Should.Throw<DotBumpException>(() => service.GetRegistrationsBaseUrl(index));
+        }
+
+        private static ServiceIndex LoadServiceIndex(string relativePath)
+        {
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "NuGet", relativePath);
+            var json = File.ReadAllText(filePath);
+            return JsonSerializer.Deserialize<ServiceIndex>(json)!;
+        }
+
+        private static ServiceIndex CreateServiceIndex(params (string Id, string Type)[] resources)
+        {
+            return new ServiceIndex
+            {
+                Version = "3.0.0",
+                Resources = resources
+                    .Select(resource => new Resource { Id = resource.Id, Type = resource.Type })
+                    .ToList(),
+            };
+        }
+    }
+
     public class TryFindNewVersionInCatalogPages
     {
         // NOTE: this one does not cover all cases, so maybe look for a different one

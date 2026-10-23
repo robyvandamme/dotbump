@@ -11,14 +11,33 @@ namespace DotBump.NuGet;
 
 internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
 {
+    /// <summary>
+    /// The registration resource types that include SemVer 2.0.0 packages, in order of preference.
+    /// The unversioned <c>RegistrationsBaseUrl</c> on nuget.org points at the SemVer 1.0.0 hive, which
+    /// omits versions with a dot-separated pre-release label (for example <c>1.0.0-rc.1</c>).
+    /// </summary>
+    private static readonly string[] s_semVer2RegistrationTypes =
+    [
+        "RegistrationsBaseUrl/Versioned",
+        "RegistrationsBaseUrl/3.6.0",
+    ];
+
     public string GetRegistrationsBaseUrl(ServiceIndex serviceIndex)
     {
         logger.MethodStart(nameof(NuGetReleaseFinder), nameof(GetRegistrationsBaseUrl), serviceIndex);
 
         ArgumentNullException.ThrowIfNull(serviceIndex);
 
-        var registrationResource = serviceIndex.Resources.FirstOrDefault(o => o.Type.Equals(
+        var registrationResource = serviceIndex.Resources.FirstOrDefault(o => s_semVer2RegistrationTypes
+            .Contains(o.Type, StringComparer.OrdinalIgnoreCase));
+
+        // Fall back to the SemVer 1.0.0 resources for feeds that only expose those (for example GitHub Packages).
+        registrationResource ??= serviceIndex.Resources.FirstOrDefault(o => o.Type.Equals(
             "RegistrationsBaseUrl",
+            StringComparison.OrdinalIgnoreCase));
+
+        registrationResource ??= serviceIndex.Resources.FirstOrDefault(o => o.Type.StartsWith(
+            "RegistrationsBaseUrl/",
             StringComparison.OrdinalIgnoreCase));
 
         if (registrationResource != null)
