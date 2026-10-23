@@ -1,6 +1,7 @@
 // Copyright © Roby Van Damme.
 
 using System.Net;
+using System.Text.RegularExpressions;
 using DotBump.Commands;
 using DotBump.Commands.BumpPackages;
 using DotBump.Commands.BumpPackages.DataModel;
@@ -271,6 +272,53 @@ public class BumpPackagesCommandTests
 
                 result.ShouldBe(0);
                 (await File.ReadAllTextAsync(projectPath)).ShouldContain("Version=\"12.0.3\"");
+            }
+            finally
+            {
+                tempDirectory.EnsureDirectoryDeleted();
+            }
+        }
+
+        [Fact]
+        public async Task With_Major_Type_And_PreRelease_Bumps_To_SemVer2_PreRelease_From_Live_NuGet_Feed()
+        {
+            // AutoFixture's current pre-release label is dot-separated (5.0.0-rc.1), which makes it a
+            // SemVer 2.0.0 package. It is only visible through the SemVer2 registration hive.
+            var tempDirectory = new LocalDirectory("./temp/live-prerelease-packages");
+            tempDirectory.EnsureDirectoryDeleted();
+            tempDirectory.EnsureDirectoryCreated();
+            var projectPath = Path.Combine(tempDirectory.AbsolutePath, "App.csproj");
+            await File.WriteAllTextAsync(
+                projectPath,
+                "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <PackageReference Include=\"AutoFixture\" Version=\"4.18.1\" />\n  </ItemGroup>\n</Project>\n");
+
+            try
+            {
+                var logger = new Mock<ILogger>().Object;
+                using var testConsole = new TestConsole();
+                var handler = new BumpPackagesHandler(
+                    new PackageFileService(logger),
+                    new NuGetConfigFileService(logger),
+                    new PackageVersionResolver(new NuGetClientFactory(logger), new NuGetReleaseFinder(logger), logger),
+                    new NuGetConfigValidator(logger),
+                    logger);
+                var command = new BumpPackagesCommand(testConsole, logger, handler);
+
+                var result = await command.ExecuteAsync(
+                    CreateContext("packages"),
+                    new BumpPackagesSettings
+                    {
+                        BumpType = BumpType.Major,
+                        PreRelease = true,
+                        RepositoryPath = tempDirectory.AbsolutePath,
+                    },
+                    CancellationToken.None);
+
+                var match = Regex.Match(await File.ReadAllTextAsync(projectPath), "Version=\"([^\"]+)\"");
+                var version = new SemanticVersion(match.Groups[1].Value);
+
+                result.ShouldBe(0);
+                version.Major.ShouldBeGreaterThanOrEqualTo(5);
             }
             finally
             {

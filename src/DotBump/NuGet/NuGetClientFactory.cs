@@ -21,6 +21,7 @@ internal class NuGetClientFactory(ILogger logger) : INuGetClientFactory
             var handler = new HttpClientHandler
             {
                 Credentials = new NetworkCredential(config.Credential.UserName, config.Credential.Password),
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
             };
             var httpClient = new HttpClient(handler);
             httpClient.DefaultRequestHeaders.Add("User-Agent", "dotBumpNuGetClient/1.0");
@@ -34,7 +35,12 @@ internal class NuGetClientFactory(ILogger logger) : INuGetClientFactory
         {
             logger.Debug("No credential found in config for {URL}", config.Url);
 
-            var httpClient = new HttpClient();
+            // The SemVer 2.0.0 registration endpoints on nuget.org are gzip encoded.
+            var handler = new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+            };
+            var httpClient = new HttpClient(handler);
             httpClient.DefaultRequestHeaders.Add("User-Agent", "dotBumpNuGetClient/1.0");
 
             var nugetClient = new NuGetClient(httpClient, logger);
