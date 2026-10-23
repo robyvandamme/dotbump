@@ -11,16 +11,16 @@ namespace DotBump.NuGet;
 
 internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
 {
+    private const string RegistrationBaseUrlType = "RegistrationsBaseUrl";
+    private const string RegistrationBaseUrlTypePrefix = "RegistrationsBaseUrl/";
+    private const string VersionedRegistrationBaseUrlType = "RegistrationsBaseUrl/Versioned";
+
     /// <summary>
-    /// The registration resource types that include SemVer 2.0.0 packages, in order of preference.
-    /// The unversioned <c>RegistrationsBaseUrl</c> on nuget.org points at the SemVer 1.0.0 hive, which
-    /// omits versions with a dot-separated pre-release label (for example <c>1.0.0-rc.1</c>).
+    /// The first registration resource version that includes SemVer 2.0.0 packages. The unversioned
+    /// <c>RegistrationsBaseUrl</c> and older versions point at the SemVer 1.0.0 hive, which omits versions
+    /// with a dot-separated pre-release label (for example <c>1.0.0-rc.1</c>).
     /// </summary>
-    private static readonly string[] s_semVer2RegistrationTypes =
-    [
-        "RegistrationsBaseUrl/Versioned",
-        "RegistrationsBaseUrl/3.6.0",
-    ];
+    private static readonly Version s_minSemVer2RegistrationVersion = new(3, 6, 0);
 
     public string GetRegistrationsBaseUrl(ServiceIndex serviceIndex)
     {
@@ -28,20 +28,30 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
 
         ArgumentNullException.ThrowIfNull(serviceIndex);
 
-        var registrationResource = serviceIndex.Resources.FirstOrDefault(o => s_semVer2RegistrationTypes
-            .Contains(o.Type, StringComparer.OrdinalIgnoreCase));
+        // The Versioned resource is an alias for the latest registration hive, so the server can move it
+        // to a newer hive without the client knowing the concrete version.
+        var registrationResource = serviceIndex.Resources.FirstOrDefault(o => o.Type.Equals(
+            VersionedRegistrationBaseUrlType,
+            StringComparison.OrdinalIgnoreCase));
+
+        // Otherwise accept any stable version at or above the first SemVer 2.0.0 capable registration hive.
+        registrationResource ??= FindHighestSemVer2RegistrationResource(serviceIndex.Resources);
 
         // Fall back to the SemVer 1.0.0 resources for feeds that only expose those (for example GitHub Packages).
         registrationResource ??= serviceIndex.Resources.FirstOrDefault(o => o.Type.Equals(
-            "RegistrationsBaseUrl",
+            RegistrationBaseUrlType,
             StringComparison.OrdinalIgnoreCase));
 
         registrationResource ??= serviceIndex.Resources.FirstOrDefault(o => o.Type.StartsWith(
-            "RegistrationsBaseUrl/",
+            RegistrationBaseUrlTypePrefix,
             StringComparison.OrdinalIgnoreCase));
 
         if (registrationResource != null)
         {
+            logger.Debug(
+                "Using registration resource {RegistrationType} at {RegistrationUrl}",
+                registrationResource.Type,
+                registrationResource.Id);
             logger.MethodReturn(nameof(NuGetReleaseFinder), nameof(GetRegistrationsBaseUrl), registrationResource.Id);
             return registrationResource.Id;
         }
@@ -188,6 +198,40 @@ internal class NuGetReleaseFinder(ILogger logger) : INuGetReleaseFinder
                 preferHighestVersion),
             _ => throw new ArgumentOutOfRangeException(nameof(bumpType)),
         };
+    }
+
+    private static Resource? FindHighestSemVer2RegistrationResource(IEnumerable<Resource> resources)
+    {
+        Resource? bestResource = null;
+        Version? bestVersion = null;
+
+        foreach (var resource in resources)
+        {
+            var version = TryGetRegistrationVersion(resource.Type);
+            if (version == null || version < s_minSemVer2RegistrationVersion)
+            {
+                continue;
+            }
+
+            if (bestVersion == null || version > bestVersion)
+            {
+                bestVersion = version;
+                bestResource = resource;
+            }
+        }
+
+        return bestResource;
+    }
+
+    private static Version? TryGetRegistrationVersion(string type)
+    {
+        if (!type.StartsWith(RegistrationBaseUrlTypePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // Pre-release resource versions (for example 3.0.0-rc or 3.7.0-preview) do not parse and are ignored.
+        return Version.TryParse(type[RegistrationBaseUrlTypePrefix.Length..], out var version) ? version : null;
     }
 
     private static SemanticVersion? SelectNewestVersion(

@@ -40,6 +40,80 @@ public class NuGetReleaseFinderTests
         }
 
         [Fact]
+        public void With_Only_3_6_0_Resource_Returns_It()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateServiceIndex(("https://example.com/3.6.0", "RegistrationsBaseUrl/3.6.0"));
+
+            var result = service.GetRegistrationsBaseUrl(index);
+
+            result.ShouldBe("https://example.com/3.6.0");
+        }
+
+        [Fact]
+        public void With_3_6_0_And_Newer_Resources_Returns_Highest_Version()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateServiceIndex(
+                ("https://example.com/3.6.0", "RegistrationsBaseUrl/3.6.0"),
+                ("https://example.com/3.7.0", "RegistrationsBaseUrl/3.7.0"));
+
+            var result = service.GetRegistrationsBaseUrl(index);
+
+            result.ShouldBe("https://example.com/3.7.0");
+        }
+
+        [Fact]
+        public void With_Versioned_And_Newer_Version_Returns_Versioned_Url()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateServiceIndex(
+                ("https://example.com/versioned", "RegistrationsBaseUrl/Versioned"),
+                ("https://example.com/3.7.0", "RegistrationsBaseUrl/3.7.0"));
+
+            var result = service.GetRegistrationsBaseUrl(index);
+
+            result.ShouldBe("https://example.com/versioned");
+        }
+
+        [Fact]
+        public void With_PreRelease_Version_Above_3_6_0_And_Plain_Returns_Plain_Url()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateServiceIndex(
+                ("https://example.com/3.7.0-preview", "RegistrationsBaseUrl/3.7.0-preview"),
+                ("https://example.com/plain", "RegistrationsBaseUrl"));
+
+            var result = service.GetRegistrationsBaseUrl(index);
+
+            result.ShouldBe("https://example.com/plain");
+        }
+
+        [Fact]
+        public void With_3_4_0_And_Plain_Returns_Plain_Url()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateServiceIndex(
+                ("https://example.com/3.4.0", "RegistrationsBaseUrl/3.4.0"),
+                ("https://example.com/plain", "RegistrationsBaseUrl"));
+
+            var result = service.GetRegistrationsBaseUrl(index);
+
+            result.ShouldBe("https://example.com/plain");
+        }
+
+        [Fact]
+        public void With_Only_3_4_0_Resource_Returns_It()
+        {
+            var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
+            var index = CreateServiceIndex(("https://example.com/3.4.0", "RegistrationsBaseUrl/3.4.0"));
+
+            var result = service.GetRegistrationsBaseUrl(index);
+
+            result.ShouldBe("https://example.com/3.4.0");
+        }
+
+        [Fact]
         public void With_Only_Plain_Resource_Returns_Plain_Url()
         {
             var service = new NuGetReleaseFinder(new Mock<ILogger>().Object);
