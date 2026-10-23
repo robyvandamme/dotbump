@@ -32,6 +32,12 @@ internal class BumpPackagesSettings : BumpSettings
     public string[]? Exclude { get; init; }
 
     [Description(
+        "A package id or pattern (`*` and `?` supported) to skip when bumping. Can be specified multiple times or " +
+        "as a comma-separated list.")]
+    [CommandOption("--skip-packages")]
+    public string[]? SkipPackages { get; init; }
+
+    [Description(
         "Include pre-release versions when bumping. Only applies to `major` bumps. Defaults to false.")]
     [CommandOption("--prerelease")]
     [DefaultValue(false)]
@@ -42,6 +48,7 @@ internal class BumpPackagesSettings : BumpSettings
         return ValidateFileExists(NuGetConfigPath)
             ?? ValidateDirectoryExists(RepositoryPath)
             ?? ValidateExcludedDirectories(Exclude)
+            ?? ValidateSkipPatterns(SkipPackages)
             ?? ValidationResult.Success();
     }
 

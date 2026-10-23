@@ -124,7 +124,8 @@ public class BumpPackagesCommandTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<IReadOnlyCollection<string>>(),
-                    true),
+                    true,
+                    It.IsAny<IReadOnlyCollection<string>>()),
                 Times.Once);
         }
 
@@ -139,7 +140,8 @@ public class BumpPackagesCommandTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<IReadOnlyCollection<string>>(),
-                    It.IsAny<bool>()))
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
                 .ThrowsAsync(new InvalidOperationException("boom"));
             var command = new BumpPackagesCommand(testConsole, Mock.Of<ILogger>(), handler.Object);
 
@@ -237,7 +239,8 @@ public class BumpPackagesCommandTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.Is<IReadOnlyCollection<string>>(paths => paths.Contains(excludedPath)),
-                    It.IsAny<bool>()),
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()),
                 Times.Once);
         }
 
@@ -341,7 +344,8 @@ public class BumpPackagesCommandTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<IReadOnlyCollection<string>>(),
-                    It.IsAny<bool>()))
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
                 .ReturnsAsync(report);
             return handler;
         }
@@ -432,7 +436,8 @@ public class BumpPackagesCommandTests
                         It.IsAny<string>(),
                         It.IsAny<string>(),
                         It.IsAny<IReadOnlyCollection<string>>(),
-                        It.IsAny<bool>()))
+                        It.IsAny<bool>(),
+                        It.IsAny<IReadOnlyCollection<string>>()))
                     .ReturnsAsync(new BumpReport(
                         TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0")),
                         BumpType.Minor));
@@ -464,13 +469,65 @@ public class BumpPackagesCommandTests
                             paths.Count == 2
                             && paths.Contains(first.AbsolutePath)
                             && paths.Contains(second.AbsolutePath)),
-                        It.IsAny<bool>()),
+                        It.IsAny<bool>(),
+                        It.IsAny<IReadOnlyCollection<string>>()),
                     Times.Once);
             }
             finally
             {
                 tempRoot.EnsureDirectoryDeleted();
             }
+        }
+    }
+
+    public class SkipPackagesOption
+    {
+        [Fact]
+        public async Task With_Repeated_And_Comma_Separated_Options_Forwards_Normalized_Patterns()
+        {
+            using var testConsole = new TestConsole();
+            var handler = new Mock<IBumpPackagesHandler>();
+            handler
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
+                .ReturnsAsync(new BumpReport(
+                    TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0")),
+                    BumpType.Minor));
+
+            IAnsiConsole console = testConsole;
+            var app = new CommandApp();
+            app.Configure(config =>
+            {
+                config.PropagateExceptions();
+                config.Settings.Registrar.RegisterInstance(console);
+                config.Settings.Registrar.RegisterInstance(Mock.Of<ILogger>());
+                config.Settings.Registrar.RegisterInstance(handler.Object);
+                config.AddCommand<BumpPackagesCommand>("packages");
+            });
+
+            var exitCode = await app.RunAsync(
+            [
+                "packages",
+                "--skip-packages", "Microsoft.*",
+                "--skip-packages", "System.*, Azure.* ",
+            ]);
+
+            exitCode.ShouldBe(0);
+            handler.Verify(
+                h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<bool>(),
+                    It.Is<IReadOnlyCollection<string>>(patterns =>
+                        patterns.SequenceEqual(new[] { "Microsoft.*", "System.*", "Azure.*" }))),
+                Times.Once);
         }
     }
 }

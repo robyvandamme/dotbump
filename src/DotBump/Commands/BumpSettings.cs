@@ -93,4 +93,21 @@ internal abstract class BumpSettings : CommandSettings
 
         return null;
     }
+
+    /// <summary>
+    /// Validates that a supplied skip option contains at least one non-empty pattern.
+    /// </summary>
+    /// <param name="patterns">The supplied patterns, or <see langword="null"/> when the option was not used.</param>
+    /// <returns>A <see cref="ValidationResult"/> describing the failure, or <see langword="null"/> when valid.</returns>
+    protected static ValidationResult? ValidateSkipPatterns(IEnumerable<string>? patterns)
+    {
+        if (patterns == null)
+        {
+            return null;
+        }
+
+        return NamePatternMatcher.Normalize(patterns).Count > 0
+            ? null
+            : ValidationResult.Error("At least one non-empty skip pattern is required.");
+    }
 }

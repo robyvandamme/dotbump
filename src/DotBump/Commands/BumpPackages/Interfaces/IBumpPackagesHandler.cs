@@ -11,5 +11,6 @@ internal interface IBumpPackagesHandler
         string repositoryPath,
         string nugetConfigPath,
         IReadOnlyCollection<string>? excludedPaths = null,
-        bool preRelease = false);
+        bool preRelease = false,
+        IReadOnlyCollection<string>? skipPackages = null);
 }

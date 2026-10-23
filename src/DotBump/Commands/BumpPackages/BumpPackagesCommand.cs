@@ -47,6 +47,7 @@ internal class BumpPackagesCommand(
                 .Where(path => !string.IsNullOrWhiteSpace(path))
                 .Select(Path.GetFullPath)
                 .ToArray();
+            var skipPackages = NamePatternMatcher.Normalize(settings.SkipPackages);
             var preRelease = settings.PreRelease;
 
             logger.Debug("Bump type: {Type}", bumpType);
@@ -54,17 +55,21 @@ internal class BumpPackagesCommand(
             logger.Debug("Output file : {OutputFile}", outputFile);
             logger.Debug("NuGet config : {NuGetConfig}", nugetConfigPath);
             logger.Debug("Excluded paths : {ExcludedPaths}", excludedPaths ?? []);
+            logger.Debug("Skip packages : {SkipPackages}", skipPackages);
             logger.Debug("Include pre-release versions: {PreRelease}", preRelease);
 
+            var skipPackagesDisplay = skipPackages.Count > 0 ? string.Join(", ", skipPackages) : "none";
+
             console.MarkupLine(
-                $"Bumping Packages with settings: type={bumpType}, path={Markup.Escape(repositoryPath)}, output: {Markup.Escape(outputFile ?? "none")}, config: {Markup.Escape(nugetConfigPath)}, preRelease: {preRelease}");
+                $"Bumping Packages with settings: type={bumpType}, path={Markup.Escape(repositoryPath)}, output: {Markup.Escape(outputFile ?? "none")}, config: {Markup.Escape(nugetConfigPath)}, skipPackages: {Markup.Escape(skipPackagesDisplay)}, preRelease: {preRelease}");
 
             var bumpReport = await bumpPackagesHandler.HandleAsync(
                 bumpType,
                 repositoryPath,
                 nugetConfigPath,
                 excludedPaths,
-                preRelease);
+                preRelease,
+                skipPackages);
 
             WriteReportToConsole(bumpReport);
 

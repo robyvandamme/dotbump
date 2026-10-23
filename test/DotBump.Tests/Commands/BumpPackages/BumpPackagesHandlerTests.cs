@@ -261,6 +261,100 @@ public class BumpPackagesHandlerTests
                 Times.Once);
         }
 
+        [Fact]
+        public async Task With_Skipped_Package_Does_Not_Resolve_And_Reports_Warning()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(("Skip.Me", "1.0.0"), ("Keep.Me", "1.0.0"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(("Skip.Me", "2.0.0"), ("Keep.Me", "1.1.0"));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(
+                BumpType.Minor,
+                "./repo",
+                "nuget.config",
+                skipPackages: ["Skip.Me"]);
+
+            report.Warnings.ShouldContain(warning =>
+                warning.Contains("Skip.Me", StringComparison.Ordinal)
+                && warning.Contains("--skip-packages", StringComparison.Ordinal));
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Single(package => package.PackageId == "Skip.Me").Version.ShouldBe("1.0.0"),
+                () => manifest.Packages.Single(package => package.PackageId == "Keep.Me").Version.ShouldBe("1.1.0"));
+            resolver.Verify(
+                r => r.ResolveAsync(
+                    It.Is<IReadOnlyCollection<PackageToBump>>(packages =>
+                        packages.Count == 1 && packages.Single().PackageId == "Keep.Me"),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task With_Skipped_Package_Wildcard_Matches_Case_Insensitively()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(
+                ("Microsoft.Extensions.Logging", "10.0.0"),
+                ("Newtonsoft.Json", "12.0.1"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(
+                ("Microsoft.Extensions.Logging", "11.0.0"),
+                ("Newtonsoft.Json", "13.0.3"));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(
+                BumpType.Major,
+                "./repo",
+                "nuget.config",
+                skipPackages: ["microsoft.*"]);
+
+            report.Warnings.ShouldContain(warning =>
+                warning.Contains("Microsoft.Extensions.Logging", StringComparison.Ordinal)
+                && warning.Contains("microsoft.*", StringComparison.Ordinal));
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Single(package => package.PackageId == "Microsoft.Extensions.Logging").Version
+                    .ShouldBe("10.0.0"),
+                () => manifest.Packages.Single(package => package.PackageId == "Newtonsoft.Json").Version
+                    .ShouldBe("13.0.3"));
+            resolver.Verify(
+                r => r.ResolveAsync(
+                    It.Is<IReadOnlyCollection<PackageToBump>>(packages =>
+                        packages.Count == 1 && packages.Single().PackageId == "Newtonsoft.Json"),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task With_Skipped_Package_And_Invalid_Version_Reports_Only_Skip_Warning()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.2.3.beta"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver();
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(
+                BumpType.Minor,
+                "./repo",
+                "nuget.config",
+                skipPackages: ["MyPackage"]);
+
+            report.Warnings.ShouldSatisfyAllConditions(
+                () => report.Warnings.ShouldContain(warning =>
+                    warning.Contains("--skip-packages", StringComparison.Ordinal)),
+                () => report.Warnings.ShouldNotContain(warning =>
+                    warning.Contains("cannot be parsed", StringComparison.Ordinal)));
+            resolver.Verify(
+                r => r.ResolveAsync(
+                    It.Is<IReadOnlyCollection<PackageToBump>>(packages => packages.Count == 0),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
+                Times.Once);
+        }
+
         private static Mock<IPackageFileService> CreateFileService(PackageManifest manifest)
         {
             var fileService = new Mock<IPackageFileService>();
@@ -279,7 +373,17 @@ public class BumpPackagesHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(resolved.ToDictionary(item => item.Id, item => new SemanticVersion(item.Version)));
+                .Returns((IReadOnlyCollection<PackageToBump> packages, BumpType _, NuGetConfig _, bool _) =>
+                {
+                    var bestVersions = resolved
+                        .Where(item => packages.Any(package => string.Equals(
+                            package.PackageId,
+                            item.Id,
+                            StringComparison.OrdinalIgnoreCase)))
+                        .ToDictionary(item => item.Id, item => new SemanticVersion(item.Version));
+
+                    return Task.FromResult<IReadOnlyDictionary<string, SemanticVersion>>(bestVersions);
+                });
             return resolver;
         }
 
