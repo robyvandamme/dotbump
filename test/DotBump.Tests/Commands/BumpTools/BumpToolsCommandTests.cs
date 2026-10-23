@@ -290,10 +290,8 @@ public class BumpToolsCommandTests
                 () => testConsole.Output.ShouldContain("[draft]"));
         }
 
-        [Theory]
-        [InlineData("--prerelease")]
-        [InlineData("--preview")]
-        public async Task With_PreRelease_Option_Or_Alias_Forwards_PreRelease_To_Handler(string preReleaseOption)
+        [Fact]
+        public async Task With_PreRelease_Option_Forwards_PreRelease_To_Handler()
         {
             using var testConsole = new TestConsole();
             var handler = new Mock<IBumpToolsHandler>();
@@ -327,7 +325,7 @@ public class BumpToolsCommandTests
                 config.AddCommand<BumpToolsCommand>("tools");
             });
 
-            var result = await app.RunAsync(["tools", "--type", "major", preReleaseOption, "true"]);
+            var result = await app.RunAsync(["tools", "--type", "major", "--prerelease", "true"]);
 
             result.ShouldBe(0);
             handler.Verify(

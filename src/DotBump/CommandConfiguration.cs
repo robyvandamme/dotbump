@@ -54,7 +54,7 @@ internal static class CommandConfiguration
                     "Use the 'minor' type option to bump the SDK to the latest minor or patch version for the current major version. " +
                     "Use the 'patch' type option to bump the SDK to the latest patch version for the current minor version. " +
                     "Use the 'major' type option to bump the SDK to the latest version, including versions with a higher major version. " +
-                    "Use '--prerelease' (or the '--preview' alias) with the 'major' type to include pre-release versions. ")
+                    "Use '--prerelease' with the 'major' type to include pre-release versions. ")
                 .WithExample(SdkCommandName)
                 .WithExample(SdkCommandName, TypeOptionName, PatchBumpType)
                 .WithExample(SdkCommandName, TypeOptionName, MajorBumpType)
@@ -77,7 +77,7 @@ internal static class CommandConfiguration
                     "Use the 'minor' type option to bump the tools to the latest minor or patch versions for the current major version. " +
                     "Use the 'patch' type option to bump the tools to the latest patch version for the current minor version. " +
                     "Use the 'major' type option to bump the tools to the latest version, including versions with a higher major version. " +
-                    "Use '--prerelease' (or the '--preview' alias) with the 'major' type to include pre-release versions. ")
+                    "Use '--prerelease' with the 'major' type to include pre-release versions. ")
                 .WithExample(ToolsCommandName)
                 .WithExample(ToolsCommandName, TypeOptionName, PatchBumpType)
                 .WithExample(ToolsCommandName, TypeOptionName, MajorBumpType)
@@ -95,7 +95,7 @@ internal static class CommandConfiguration
                     "Use the 'minor' type option to bump the packages to the latest minor or patch versions for the current major version. " +
                     "Use the 'patch' type option to bump the packages to the latest patch version for the current minor version. " +
                     "Use the 'major' type option to bump the packages to the latest version, including versions with a higher major version. " +
-                    "Use '--prerelease' (or the '--preview' alias) with the 'major' type to include pre-release versions. ")
+                    "Use '--prerelease' with the 'major' type to include pre-release versions. ")
                 .WithExample(PackagesCommandName)
                 .WithExample(PackagesCommandName, TypeOptionName, PatchBumpType)
                 .WithExample(PackagesCommandName, TypeOptionName, MajorBumpType)

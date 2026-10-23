@@ -400,10 +400,8 @@ public class BumpSdkCommandTests
                 () => testConsole.Output.ShouldContain("[draft]"));
         }
 
-        [Theory]
-        [InlineData("--prerelease")]
-        [InlineData("--preview")]
-        public async Task With_PreRelease_Option_Or_Alias_Sets_PreRelease_To_True(string preReleaseOption)
+        [Fact]
+        public async Task With_PreRelease_Option_Sets_PreRelease_To_True()
         {
             using var testConsole = new TestConsole();
             var handler = new Mock<IBumpSdkHandler>();
@@ -426,7 +424,7 @@ public class BumpSdkCommandTests
                 config.AddCommand<BumpSdkCommand>("sdk");
             });
 
-            var result = await app.RunAsync(["sdk", "--type", "major", preReleaseOption, "true"]);
+            var result = await app.RunAsync(["sdk", "--type", "major", "--prerelease", "true"]);
 
             result.ShouldBe(0);
             handler.Verify(
