@@ -139,7 +139,7 @@ OPTIONS:
     -h, --help       Prints help information
         --debug      Enable debug logging for troubleshooting. Includes response data
         --logfile    The file to send the log output to
-    -f, --file       The global.json file used to determine the target framework. Defaults to `./global.json`
+    -f, --file       The global.json file used to determine the target versions. Defaults to `./global.json`
     -p, --path       The root directory to scan. Defaults to the current directory
     -e, --exclude    A directory to exclude from the scan. Can be specified multiple times
     -o, --output     Output file name. The name of the file to write the result to. The output format is inferred
@@ -185,7 +185,7 @@ OPTIONS:
     -h, --help       Prints help information
         --debug      Enable debug logging for troubleshooting. Includes response data
         --logfile    The file to send the log output to
-    -f, --file       The global.json file used to determine the C# language version. Defaults to `./global.json`
+    -f, --file       The global.json file used to determine the target versions. Defaults to `./global.json`
     -p, --path       The root directory to scan. Defaults to the current directory
     -e, --exclude    A directory to exclude from the scan. Can be specified multiple times
     -o, --output     Output file name. The name of the file to write the result to. The output format is inferred

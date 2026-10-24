@@ -1,113 +1,27 @@
 // Copyright © Roby Van Damme.
 
 using DotBump.Commands.BumpLanguage.Interfaces;
-using DotBump.Common;
 using DotBump.Reports;
 using Serilog;
 using Spectre.Console;
-using Spectre.Console.Cli;
 
 namespace DotBump.Commands.BumpLanguage;
 
-internal class BumpLanguageCommand(
+internal sealed class BumpLanguageCommand(
     IAnsiConsole console,
     ILogger logger,
     IBumpLanguageHandler bumpLanguageHandler)
-    : AsyncCommand<BumpLanguageSettings>
+    : SdkAlignmentCommand<BumpLanguageSettings>(
+        console,
+        logger,
+        "language",
+        "language versions")
 {
-    private readonly string _defaultRepositoryPath = Directory.GetCurrentDirectory();
-
-    public override async Task<int> ExecuteAsync(
-        CommandContext context,
-        BumpLanguageSettings settings,
-        CancellationToken cancellationToken)
+    protected override Task<BumpReport> HandleAsync(
+        string repositoryPath,
+        string globalJsonPath,
+        string[]? excludedPaths)
     {
-        logger.MethodStart(nameof(BumpLanguageCommand), nameof(ExecuteAsync));
-
-        ArgumentNullException.ThrowIfNull(context);
-        ArgumentNullException.ThrowIfNull(settings);
-
-        if (context.Name != "language")
-        {
-            throw new DotBumpException($"Unsupported command name {context.Name}");
-        }
-
-        try
-        {
-            var globalJsonPath = settings.GlobalJsonPath ?? "./global.json";
-            var outputFile = settings.Output;
-            var repositoryPath = !string.IsNullOrWhiteSpace(settings.RepositoryPath)
-                ? Path.GetFullPath(settings.RepositoryPath)
-                : _defaultRepositoryPath;
-            var excludedPaths = settings.Exclude?
-                .Where(path => !string.IsNullOrWhiteSpace(path))
-                .Select(Path.GetFullPath)
-                .ToArray();
-
-            logger.Debug("GlobalJson file path : {GlobalJson}", globalJsonPath);
-            logger.Debug("Repository path : {RepositoryPath}", repositoryPath);
-            logger.Debug("Output file : {OutputFile}", outputFile);
-            logger.Debug("Excluded paths : {ExcludedPaths}", excludedPaths ?? []);
-
-            console.MarkupLine(
-                $"Bumping language versions with settings: file={Markup.Escape(globalJsonPath)}, " +
-                $"path={Markup.Escape(repositoryPath)}, output: {Markup.Escape(outputFile ?? "none")}");
-
-            var bumpReport = await bumpLanguageHandler
-                .HandleAsync(repositoryPath, globalJsonPath, excludedPaths)
-                .ConfigureAwait(false);
-
-            WriteReportToConsole(bumpReport);
-
-            await bumpReport.WriteToFileAsync(outputFile);
-
-            if (bumpReport.Errors.Any())
-            {
-                logger.MethodReturn(nameof(BumpLanguageCommand), nameof(ExecuteAsync));
-                return 1;
-            }
-        }
-#pragma warning disable CA1031
-        catch (Exception e)
-#pragma warning restore CA1031
-        {
-            logger.Error(e, "An error occurred while trying to bump the language versions");
-            console.WriteException(e, ExceptionFormats.ShortenEverything);
-            logger.MethodReturn(nameof(BumpLanguageCommand), nameof(ExecuteAsync));
-            return 1;
-        }
-
-        logger.MethodReturn(nameof(BumpLanguageCommand), nameof(ExecuteAsync));
-        return 0;
-    }
-
-    private void WriteReportToConsole(BumpReport bumpReport)
-    {
-        if (bumpReport.Errors.Any())
-        {
-            console.MarkupLine("An error occurred bumping language versions.");
-            foreach (var bumpReportError in bumpReport.Errors)
-            {
-                console.MarkupLine(Markup.Escape(bumpReportError));
-            }
-        }
-        else
-        {
-            if (!bumpReport.HasChanges)
-            {
-                console.MarkupLine("No language versions were bumped.");
-            }
-            else
-            {
-                console.MarkupLine("Language versions bumped:");
-                foreach (var bumpResult in bumpReport.Results)
-                {
-                    if (bumpResult.WasBumped)
-                    {
-                        console.MarkupLine(Markup.Escape(bumpResult.ToString()));
-                    }
-                }
-            }
-        }
+        return bumpLanguageHandler.HandleAsync(repositoryPath, globalJsonPath, excludedPaths);
     }
 }

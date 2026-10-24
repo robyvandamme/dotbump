@@ -40,8 +40,8 @@ Key capabilities include:
 ## 2. Repository Layout
 
 - `src/DotBump/`: Primary application source code.
-    - `Commands/`: Command definitions (`AsyncCommand<TSettings>`) and settings classes inheriting from
-      `CommandSettings`.
+    - `Commands/`: Command definitions (`AsyncCommand<TSettings>`), settings classes inheriting from
+      `CommandSettings`, and shared bases (`BumpSettings`, `BumpPathSettings`, `SdkAlignmentCommand`).
     - `Commands/BumpSdk/`: SDK bump command, handler, services, and models (`global.json`, release index).
     - `Commands/BumpFrameworks/`: Target framework bump command, handler, file service, and manifest models.
     - `Commands/BumpLanguage/`: C# language version bump command, handler, file service, and manifest models.
