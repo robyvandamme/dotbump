@@ -3,6 +3,7 @@
 using System.ComponentModel.DataAnnotations;
 using DotBump.Commands;
 using DotBump.Commands.BumpFrameworks.DataModel;
+using DotBump.Commands.BumpLanguage.DataModel;
 using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
 using DotBump.Reports;
@@ -95,6 +96,24 @@ public class MarkdownReportFormatterTests
                 "## Frameworks\n" +
                 "\n" +
                 "- src/App/App.csproj: net8.0 → net10.0\n" +
+                "\n");
+        }
+
+        [Fact]
+        public void With_Language_Change_Returns_Heading_And_List()
+        {
+            var manifest = new LanguageManifest();
+            var entry = new LanguageEntry("src/App/App.csproj", "/repo/src/App/App.csproj", "12.0", 0, 4);
+            manifest.Add(entry);
+            manifest.SetVersion(entry, "14.0");
+            var report = new BumpReport(manifest, BumpType.Major);
+
+            var markdown = MarkdownReportFormatter.Format(report);
+
+            markdown.ShouldBe(
+                "## Language\n" +
+                "\n" +
+                "- src/App/App.csproj: 12.0 → 14.0\n" +
                 "\n");
         }
 

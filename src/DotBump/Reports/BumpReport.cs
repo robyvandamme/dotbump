@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotBump.Commands;
 using DotBump.Commands.BumpFrameworks.DataModel;
+using DotBump.Commands.BumpLanguage.DataModel;
 using DotBump.Commands.BumpPackages.DataModel;
 using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
@@ -64,6 +65,25 @@ internal class BumpReport
                 new BumpResult(framework.Id, framework.OriginalFramework)
                 {
                     NewVersion = framework.Framework,
+                });
+        }
+
+        TimeStamp = DateTime.UtcNow;
+    }
+
+    public BumpReport(LanguageManifest languageManifest, BumpType bumpType)
+    {
+        ArgumentNullException.ThrowIfNull(languageManifest);
+
+        CommandName = "language";
+        BumpType = bumpType;
+
+        foreach (var language in languageManifest.Entries)
+        {
+            _results.Add(
+                new BumpResult(language.Id, language.OriginalVersion)
+                {
+                    NewVersion = language.Version,
                 });
         }
 

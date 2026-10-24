@@ -3,6 +3,7 @@
 using System.Text.Json;
 using DotBump.Commands;
 using DotBump.Commands.BumpFrameworks.DataModel;
+using DotBump.Commands.BumpLanguage.DataModel;
 using DotBump.Commands.BumpPackages.DataModel;
 using DotBump.Reports;
 using DotBump.Tests.TestHelpers;
@@ -33,6 +34,26 @@ public class BumpReportTests
                 () => result.Id.ShouldBe("App.csproj"),
                 () => result.OldVersion.ShouldBe("net8.0"),
                 () => result.NewVersion.ShouldBe("net10.0"));
+        }
+
+        [Fact]
+        public void With_Language_Manifest_Reports_Language_Command_And_Results()
+        {
+            var manifest = new LanguageManifest();
+            var entry = new LanguageEntry("App.csproj", "/repo/App.csproj", "12.0", 0, 4);
+            manifest.Add(entry);
+            manifest.SetVersion(entry, "14.0");
+
+            var report = new BumpReport(manifest, BumpType.Major);
+            var result = report.Results.ShouldHaveSingleItem();
+
+            report.ShouldSatisfyAllConditions(
+                () => report.CommandName.ShouldBe("language"),
+                () => report.BumpType.ShouldBe(BumpType.Major),
+                () => report.HasChanges.ShouldBeTrue(),
+                () => result.Id.ShouldBe("App.csproj"),
+                () => result.OldVersion.ShouldBe("12.0"),
+                () => result.NewVersion.ShouldBe("14.0"));
         }
     }
 
