@@ -1,6 +1,5 @@
 // Copyright © Roby Van Damme.
 
-using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using DotBump.Commands.BumpLanguage.DataModel;
@@ -17,11 +16,6 @@ internal sealed class LanguageFileService(ILogger logger) : ILanguageFileService
     private const string LangVersionElementName = "LangVersion";
 
     private static readonly string[] s_projectExtensions = [".csproj"];
-
-    private static readonly Regex s_languageVersionPattern = new(
-        @"^(?<major>\d+)(?:\.(?<minor>\d+))?$",
-        RegexOptions.Compiled,
-        TimeSpan.FromMilliseconds(100));
 
     public LanguageManifest GetLanguageManifest(
         string repositoryPath,
@@ -128,7 +122,7 @@ internal sealed class LanguageFileService(ILogger logger) : ILanguageFileService
                 continue;
             }
 
-            if (!s_languageVersionPattern.IsMatch(value))
+            if (!LanguageVersion.TryParse(value, out var parsedVersion))
             {
                 logger.Debug(
                     "Skipping language version '{Version}' in {File} because it is not a numeric value",
@@ -147,7 +141,7 @@ internal sealed class LanguageFileService(ILogger logger) : ILanguageFileService
                 continue;
             }
 
-            manifest.Add(new LanguageEntry(relativePath, filePath, value, start, length));
+            manifest.Add(new LanguageEntry(relativePath, filePath, value, parsedVersion, start, length));
             languageVersionFound = true;
         }
 

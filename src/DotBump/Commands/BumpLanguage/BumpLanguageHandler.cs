@@ -1,6 +1,6 @@
 // Copyright © Roby Van Damme.
 
-using System.Globalization;
+using DotBump.Commands.BumpLanguage.DataModel;
 using DotBump.Commands.BumpLanguage.Interfaces;
 using DotBump.Commands.BumpSdk.Interfaces;
 using DotBump.Common;
@@ -41,16 +41,16 @@ internal class BumpLanguageHandler(
                 $"SDK version '{currentSdk.Version}' cannot be mapped to a C# language version.");
         }
 
-        var targetVersion = new Version(
+        var targetVersion = new LanguageVersion(
             currentSdk.SemanticVersion.Major + LanguageVersionMajorOffset,
             0);
-        var targetLanguageVersion = $"{targetVersion.Major}.0";
+        var targetLanguageVersion = targetVersion.ToString();
         logger.Debug("Target language version: {LanguageVersion}", targetLanguageVersion);
 
         var manifest = languageFileService.GetLanguageManifest(repositoryPath, excludedPaths);
         foreach (var entry in manifest.Entries)
         {
-            if (TryParseVersion(entry.OriginalVersion, out var currentVersion) && currentVersion < targetVersion)
+            if (entry.ParsedVersion.CompareTo(targetVersion) < 0)
             {
                 manifest.SetVersion(entry, targetLanguageVersion);
             }
@@ -66,27 +66,5 @@ internal class BumpLanguageHandler(
 
         logger.MethodReturn(nameof(BumpLanguageHandler), nameof(HandleAsync), bumpReport);
         return Task.FromResult(bumpReport);
-    }
-
-    private static bool TryParseVersion(string value, out Version version)
-    {
-        version = new Version(0, 0);
-
-        var parts = value.Split('.', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length is < 1 or > 2
-            || !int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var major))
-        {
-            return false;
-        }
-
-        var minor = 0;
-        if (parts.Length == 2
-            && !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out minor))
-        {
-            return false;
-        }
-
-        version = new Version(major, minor);
-        return true;
     }
 }

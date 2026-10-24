@@ -11,12 +11,14 @@ internal sealed class LanguageEntry
         string id,
         string filePath,
         string originalVersion,
+        LanguageVersion parsedVersion,
         int versionStart,
         int versionLength)
     {
         Id = id;
         FilePath = filePath;
         OriginalVersion = originalVersion;
+        ParsedVersion = parsedVersion;
         Version = originalVersion;
         VersionStart = versionStart;
         VersionLength = versionLength;
@@ -36,6 +38,11 @@ internal sealed class LanguageEntry
     /// Gets the language version as it was found in the file.
     /// </summary>
     public string OriginalVersion { get; }
+
+    /// <summary>
+    /// Gets the parsed numeric language version.
+    /// </summary>
+    public LanguageVersion ParsedVersion { get; }
 
     /// <summary>
     /// Gets or sets the language version after the bump.

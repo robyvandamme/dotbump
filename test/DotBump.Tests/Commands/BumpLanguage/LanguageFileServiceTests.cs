@@ -2,6 +2,7 @@
 
 using System.Text;
 using DotBump.Commands.BumpLanguage;
+using DotBump.Commands.BumpLanguage.DataModel;
 using DotBump.Common;
 using DotBump.Tests.TestHelpers;
 using Moq;
@@ -26,6 +27,7 @@ public class LanguageFileServiceTests
             var entry = manifest.Entries.ShouldHaveSingleItem();
             entry.Id.ShouldBe("App.csproj");
             entry.OriginalVersion.ShouldBe("12.0");
+            entry.ParsedVersion.ShouldBe(new LanguageVersion(12, 0));
         }
 
         [Fact]

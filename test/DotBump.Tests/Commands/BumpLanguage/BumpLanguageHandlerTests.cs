@@ -121,8 +121,10 @@ public class BumpLanguageHandlerTests
 
         private static LanguageManifest CreateManifest(string version)
         {
+            LanguageVersion.TryParse(version, out var parsedVersion).ShouldBeTrue();
+
             var manifest = new LanguageManifest();
-            manifest.Add(new LanguageEntry("App.csproj", "/repo/App.csproj", version, 0, version.Length));
+            manifest.Add(new LanguageEntry("App.csproj", "/repo/App.csproj", version, parsedVersion, 0, version.Length));
             return manifest;
         }
 

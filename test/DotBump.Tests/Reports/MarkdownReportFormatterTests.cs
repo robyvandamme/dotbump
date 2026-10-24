@@ -103,7 +103,13 @@ public class MarkdownReportFormatterTests
         public void With_Language_Change_Returns_Heading_And_List()
         {
             var manifest = new LanguageManifest();
-            var entry = new LanguageEntry("src/App/App.csproj", "/repo/src/App/App.csproj", "12.0", 0, 4);
+            var entry = new LanguageEntry(
+                "src/App/App.csproj",
+                "/repo/src/App/App.csproj",
+                "12.0",
+                new LanguageVersion(12, 0),
+                0,
+                4);
             manifest.Add(entry);
             manifest.SetVersion(entry, "14.0");
             var report = new BumpReport(manifest, BumpType.Major);

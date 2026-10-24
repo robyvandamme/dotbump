@@ -210,7 +210,7 @@ public class BumpLanguageCommandTests
         private static LanguageManifest CreateChangedManifest()
         {
             var manifest = new LanguageManifest();
-            var entry = new LanguageEntry("App.csproj", "/repo/App.csproj", "12.0", 0, 4);
+            var entry = new LanguageEntry("App.csproj", "/repo/App.csproj", "12.0", new LanguageVersion(12, 0), 0, 4);
             manifest.Add(entry);
             manifest.SetVersion(entry, "14.0");
             return manifest;

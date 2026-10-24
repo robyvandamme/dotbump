@@ -40,7 +40,7 @@ public class BumpReportTests
         public void With_Language_Manifest_Reports_Language_Command_And_Results()
         {
             var manifest = new LanguageManifest();
-            var entry = new LanguageEntry("App.csproj", "/repo/App.csproj", "12.0", 0, 4);
+            var entry = new LanguageEntry("App.csproj", "/repo/App.csproj", "12.0", new LanguageVersion(12, 0), 0, 4);
             manifest.Add(entry);
             manifest.SetVersion(entry, "14.0");
 
