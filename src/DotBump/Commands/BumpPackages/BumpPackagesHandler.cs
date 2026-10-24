@@ -22,7 +22,8 @@ internal class BumpPackagesHandler(
         string repositoryPath,
         string nugetConfigPath,
         IReadOnlyCollection<string>? excludedPaths = null,
-        bool preRelease = false)
+        bool preRelease = false,
+        IReadOnlyCollection<string>? skipPackages = null)
     {
         logger.MethodStart(nameof(BumpPackagesHandler), nameof(HandleAsync), bumpType);
 
@@ -41,7 +42,7 @@ internal class BumpPackagesHandler(
             return bumpReport;
         }
 
-        var referenceVersions = GetReferenceVersions(manifest);
+        var referenceVersions = GetReferenceVersions(manifest, skipPackages);
         var packagesToBump = referenceVersions
             .Select(reference => new PackageToBump(reference.Key, reference.Value))
             .ToList();
@@ -75,15 +76,27 @@ internal class BumpPackagesHandler(
 
     /// <summary>
     /// Gets the distinct packages and the highest current version of each, which is used as the
-    /// reference version to resolve a newer version from. Packages without a valid semantic
-    /// version are skipped.
+    /// reference version to resolve a newer version from. Packages that match a skip pattern and
+    /// packages without a valid semantic version are skipped.
     /// </summary>
-    private Dictionary<string, SemanticVersion> GetReferenceVersions(PackageManifest manifest)
+    private Dictionary<string, SemanticVersion> GetReferenceVersions(
+        PackageManifest manifest,
+        IReadOnlyCollection<string>? skipPackages)
     {
         var referenceVersions = new Dictionary<string, SemanticVersion>();
+        var skipMatcher = NamePatternMatcher.Create(skipPackages);
 
         foreach (var packageId in manifest.GetPackageIds())
         {
+            if (skipMatcher.TryMatch(packageId, out var matchedPattern))
+            {
+                var skipWarning =
+                    $"Skipping '{packageId}' because it matches --skip-package pattern '{matchedPattern}'.";
+                logger.Warning("{Warning}", skipWarning);
+                manifest.AddWarning(skipWarning);
+                continue;
+            }
+
             var occurrences = manifest.Packages
                 .Where(package => string.Equals(package.PackageId, packageId, StringComparison.OrdinalIgnoreCase))
                 .ToList();

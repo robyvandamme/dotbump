@@ -307,6 +307,7 @@ EXAMPLES:
     dotnet dotbump packages --type patch
     dotnet dotbump packages --type major
     dotnet dotbump packages --type major --prerelease true
+    dotnet dotbump packages --type major --prerelease true --skip-package "Microsoft.*"
     dotnet dotbump packages --path ./src --config ./custom-nuget.config --output bump-packages-report.json
     dotnet dotbump packages --exclude ./test/DotBump.Tests/Data
     dotnet dotbump packages --debug true --logfile bump-packages-log.txt
@@ -323,6 +324,10 @@ OPTIONS:
     -p, --path       The root directory to scan. Defaults to the current directory
     -e, --exclude    A directory to exclude from the scan. Can be specified
                      multiple times
+        --skip-package
+                     A package id or pattern (`*` and `?` supported) to skip.
+                     Can be specified multiple times or as a comma-separated
+                     list
         --prerelease    Include pre-release versions when bumping. Only applies
                         to `major` bumps. Defaults to false
 ```
@@ -346,6 +351,29 @@ NuGet configuration).
   versions and select the highest version available, whether stable or pre-release.
 * Only files that actually change are written back, and only the version value is changed; everything else (attribute
   quoting, entities, attribute layout, XML declaration, encoding, byte order mark and line endings) is preserved.
+
+#### Skipping packages
+
+Packages can be excluded from a bump with `--skip-package`. Skipped packages are left at their current version and are
+not looked up on the NuGet feeds at all.
+
+The option accepts exact package ids and wildcard patterns. `*` matches zero or more characters and `?` matches exactly
+one character; matching is case-insensitive. Patterns can be specified multiple times or as a comma-separated list:
+
+```shell
+dotnet dotbump packages --type major --prerelease true --skip-package "Microsoft.*" --skip-package "System.*"
+dotnet dotbump packages --type major --prerelease true --skip-package "Microsoft.*,System.*"
+dotnet dotbump packages --type major --skip-package "*.Test*"
+```
+
+Quote patterns in bash/zsh so the shell does not expand them as file globs. Every skipped package is listed under
+`warnings` in the output report, for example:
+
+```markdown
+### Warnings
+
+- Skipping 'Microsoft.Extensions.Logging' because it matches --skip-package pattern 'Microsoft.*'.
+```
 
 #### Private feeds
 
