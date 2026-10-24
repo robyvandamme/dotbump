@@ -2,6 +2,8 @@
 
 using DotBump.Commands.BumpFrameworks;
 using DotBump.Commands.BumpFrameworks.Interfaces;
+using DotBump.Commands.BumpLanguage;
+using DotBump.Commands.BumpLanguage.Interfaces;
 using DotBump.Commands.BumpPackages;
 using DotBump.Commands.BumpPackages.Interfaces;
 using DotBump.Commands.BumpSdk;
@@ -22,6 +24,7 @@ internal static class CommandConfiguration
     private const string ToolsCommandName = "tools";
     private const string PackagesCommandName = "packages";
     private const string FrameworksCommandName = "frameworks";
+    private const string LanguageCommandName = "language";
     private const string TypeOptionName = "--type";
     private const string PreReleaseOptionName = "--prerelease";
     private const string PatchBumpType = "patch";
@@ -108,6 +111,19 @@ internal static class CommandConfiguration
 
             config.AddCommand<BumpFrameworksCommand>(name: FrameworksCommandName)
                 .WithDescription("Bump the target framework versions.");
+
+            config.Settings.Registrar.Register<ILanguageFileService, LanguageFileService>();
+            config.Settings.Registrar.Register<IBumpLanguageHandler, BumpLanguageHandler>();
+
+            config.AddCommand<BumpLanguageCommand>(name: LanguageCommandName)
+                .WithDescription(
+                    "Bump the C# language version. " +
+                    "The language version is derived from the SDK major version in global.json as SDK major + 4. " +
+                    "Only explicit numeric LangVersion values in C# projects and shared MSBuild files are bumped.")
+                .WithExample(LanguageCommandName)
+                .WithExample(LanguageCommandName, "--file", "./other/global.json", "--path", "./src")
+                .WithExample(LanguageCommandName, "--output", "bump-language-report.json")
+                .WithExample(LanguageCommandName, "--debug", "true", "--logfile", "bump-language-log.txt");
         });
     }
 }
