@@ -130,6 +130,38 @@ public class BumpToolsSettingsTests
 
             result.Successful.ShouldBeTrue();
         }
+
+        [Fact]
+        public void With_Skip_Patterns_Returns_Success()
+        {
+            var settings = new BumpToolsSettings { SkipTools = ["dotnet-*", "GitVersion.*"] };
+
+            var result = settings.Validate();
+
+            result.Successful.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Comma_Separated_Skip_Patterns_Returns_Success()
+        {
+            var settings = new BumpToolsSettings { SkipTools = ["dotnet-*, GitVersion.*"] };
+
+            var result = settings.Validate();
+
+            result.Successful.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Whitespace_Skip_Patterns_Returns_Error()
+        {
+            var settings = new BumpToolsSettings { SkipTools = ["  ", ","] };
+
+            var result = settings.Validate();
+
+            result.ShouldSatisfyAllConditions(
+                () => result.Successful.ShouldBeFalse(),
+                () => result.Message.ShouldBe("At least one non-empty skip pattern is required."));
+        }
     }
 
     private static LocalDirectory TempDirectory => new("./temp/settings-tools");

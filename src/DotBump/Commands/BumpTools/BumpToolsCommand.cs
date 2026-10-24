@@ -38,23 +38,29 @@ internal class BumpToolsCommand(
                 ? Path.GetFullPath(settings.NuGetConfigPath)
                 : _defaultNugetConfigPath;
             var toolManifestPath = toolManifestLocator.Resolve(settings.ToolManifestPath);
+            var skipTools = NamePatternMatcher.Normalize(settings.SkipTools);
             var preRelease = settings.PreRelease;
 
             logger.Debug("Bump type: {Type}", bumpType);
             logger.Debug("Output file : {OutputFile}", outputFile);
             logger.Debug("NuGet config : {NuGetConfig}", nugetConfigPath);
             logger.Debug("Tools manifest : {ToolManifest}", toolManifestPath);
+            logger.Debug("Skip tools : {SkipTools}", skipTools);
             logger.Debug("Include pre-release versions: {PreRelease}", preRelease);
+
+            var skipToolsDisplay = skipTools.Count > 0 ? string.Join(", ", skipTools) : "none";
 
             console.MarkupLine(
                 $"Bumping Tools with settings: type={bumpType}, output: {Markup.Escape(outputFile ?? "none")}, " +
-                $"config: {Markup.Escape(nugetConfigPath)}, manifest: {Markup.Escape(toolManifestPath)}, preRelease: {preRelease}");
+                $"config: {Markup.Escape(nugetConfigPath)}, manifest: {Markup.Escape(toolManifestPath)}, " +
+                $"skipTools: {Markup.Escape(skipToolsDisplay)}, preRelease: {preRelease}");
 
             var bumpReport = await bumpToolsHandler.HandleAsync(
                 bumpType,
                 nugetConfigPath,
                 toolManifestPath,
-                preRelease);
+                preRelease,
+                skipTools);
 
             WriteReportToConsole(bumpReport);
 

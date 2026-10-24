@@ -10,5 +10,6 @@ internal interface IBumpToolsHandler
         BumpType bumpType,
         string nugetConfigPath,
         string toolManifestPath,
-        bool preRelease = false);
+        bool preRelease = false,
+        IReadOnlyCollection<string>? skipTools = null);
 }

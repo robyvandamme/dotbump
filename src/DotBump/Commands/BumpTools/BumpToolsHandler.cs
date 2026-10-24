@@ -20,7 +20,8 @@ internal class BumpToolsHandler(
         BumpType bumpType,
         string nugetConfigPath,
         string toolManifestPath,
-        bool preRelease = false)
+        bool preRelease = false,
+        IReadOnlyCollection<string>? skipTools = null)
     {
         logger.MethodStart(nameof(BumpToolsHandler), nameof(HandleAsync), bumpType);
 
@@ -36,9 +37,23 @@ internal class BumpToolsHandler(
             return bumpReport;
         }
 
-        var packagesToBump = manifest.Tools
-            .Select(tool => new PackageToBump(tool.Key, tool.Value.SemanticVersion))
-            .ToList();
+        var skipMatcher = NamePatternMatcher.Create(skipTools);
+        var skipWarnings = new List<string>();
+        var packagesToBump = new List<PackageToBump>();
+
+        foreach (var tool in manifest.Tools)
+        {
+            if (skipMatcher.TryMatch(tool.Key, out var matchedPattern))
+            {
+                var skipWarning =
+                    $"Skipping tool '{tool.Key}' because it matches --skip-tool pattern '{matchedPattern}'.";
+                logger.Warning("{Warning}", skipWarning);
+                skipWarnings.Add(skipWarning);
+                continue;
+            }
+
+            packagesToBump.Add(new PackageToBump(tool.Key, tool.Value.SemanticVersion));
+        }
 
         var bestVersions = await packageVersionResolver
             .ResolveAsync(packagesToBump, bumpType, nuGetConfiguration, preRelease)
@@ -50,6 +65,7 @@ internal class BumpToolsHandler(
         }
 
         bumpReport.ReportChanges(manifest);
+        bumpReport.ReportWarnings(skipWarnings);
 
         if (bumpReport.HasChanges)
         {
