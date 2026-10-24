@@ -175,6 +175,7 @@ EXAMPLES:
     dotnet dotbump tools --type patch
     dotnet dotbump tools --type major
     dotnet dotbump tools --type major --prerelease true
+    dotnet dotbump tools --type major --skip-tool "dotnet-*"
     dotnet dotbump tools --manifest ./other/dotnet-tools.json
     dotnet dotbump tools --config ./custom-nuget.config --output bump-tools-report.json
     dotnet dotbump tools --debug true --logfile bump-tools-log.txt
@@ -191,6 +192,10 @@ OPTIONS:
     -c, --config     The nuget config file to use. Defaults to `./nuget.config`                             
     -m, --manifest   The tools manifest file to update. Defaults to                                        
                      `./dotnet-tools.json`, falling back to `./.config/dotnet-tools.json`                   
+        --skip-tool
+                     A tool id or pattern (`*` and `?` supported) to skip.
+                     Can be specified multiple times or as a comma-separated
+                     list
         --prerelease    Include pre-release versions when bumping. Only applies
                         to `major` bumps. Defaults to false
 
@@ -231,6 +236,28 @@ Bump to: 1.0.1-beta.2
 Current version: 1.5.0
 Available versions: 1.9.0, 2.0.0-preview.1
 Bump to (major with --prerelease): 2.0.0-preview.1
+```
+
+#### Skipping tools
+
+Tools can be excluded from a bump with `--skip-tool`. Skipped tools are left at their current version and are not
+looked up on the NuGet feeds at all.
+
+The option accepts exact tool ids and wildcard patterns. `*` matches zero or more characters and `?` matches exactly
+one character; matching is case-insensitive. Patterns can be specified multiple times or as a comma-separated list:
+
+```shell
+dotnet dotbump tools --type major --skip-tool "dotnet-*" --skip-tool "GitVersion.*"
+dotnet dotbump tools --type major --skip-tool "dotnet-*,GitVersion.*"
+```
+
+Quote patterns in bash/zsh so the shell does not expand them as file globs. Every skipped tool is listed under
+`warnings` in the output report, for example:
+
+```markdown
+### Warnings
+
+- Skipping tool 'dotnet-ef' because it matches --skip-tool pattern 'dotnet-*'.
 ```
 
 #### Private Feeds

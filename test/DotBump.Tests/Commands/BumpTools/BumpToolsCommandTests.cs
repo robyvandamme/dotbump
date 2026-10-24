@@ -236,7 +236,8 @@ public class BumpToolsCommandTests
                     It.IsAny<BumpType>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<bool>()))
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
                 .ReturnsAsync(new BumpReport(
                     new ToolsManifest
                     {
@@ -268,7 +269,8 @@ public class BumpToolsCommandTests
                     It.IsAny<BumpType>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<bool>()))
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
                 .ReturnsAsync(new BumpReport(
                     new ToolsManifest
                     {
@@ -300,7 +302,8 @@ public class BumpToolsCommandTests
                     It.IsAny<BumpType>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<bool>()))
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
                 .ReturnsAsync(new BumpReport(
                     new ToolsManifest
                     {
@@ -333,7 +336,8 @@ public class BumpToolsCommandTests
                     BumpType.Major,
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    true),
+                    true,
+                    It.IsAny<IReadOnlyCollection<string>>()),
                 Times.Once);
         }
 
@@ -386,6 +390,64 @@ public class BumpToolsCommandTests
             localDirectory.EnsureFileDeleted(filename);
             localDirectory.EnsureFileCreated(filename, content);
             return "nuget.config";
+        }
+    }
+
+    public class SkipToolOption
+    {
+        [Fact]
+        public async Task With_Repeated_And_Comma_Separated_Options_Forwards_Normalized_Patterns()
+        {
+            using var testConsole = new TestConsole();
+            var handler = new Mock<IBumpToolsHandler>();
+            handler
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
+                .ReturnsAsync(new BumpReport(
+                    new ToolsManifest
+                    {
+                        Version = 1,
+                        IsRoot = true,
+                        Tools = new Dictionary<string, ToolManifestEntry>(),
+                    },
+                    BumpType.Minor));
+
+            var locator = new Mock<IToolManifestLocator>();
+            locator.Setup(l => l.Resolve(It.IsAny<string?>())).Returns("./dotnet-tools.json");
+
+            IAnsiConsole console = testConsole;
+            var app = new CommandApp();
+            app.Configure(config =>
+            {
+                config.PropagateExceptions();
+                config.Settings.Registrar.RegisterInstance(console);
+                config.Settings.Registrar.RegisterInstance(Mock.Of<ILogger>());
+                config.Settings.Registrar.RegisterInstance(handler.Object);
+                config.Settings.Registrar.RegisterInstance(locator.Object);
+                config.AddCommand<BumpToolsCommand>("tools");
+            });
+
+            var result = await app.RunAsync(
+            [
+                "tools",
+                "--skip-tool", "dotnet-*",
+                "--skip-tool", "GitVersion.*, Amazon.* ",
+            ]);
+
+            result.ShouldBe(0);
+            handler.Verify(
+                h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>(),
+                    It.Is<IReadOnlyCollection<string>>(patterns =>
+                        patterns.SequenceEqual(new[] { "dotnet-*", "GitVersion.*", "Amazon.*" }))),
+                Times.Once);
         }
     }
 }

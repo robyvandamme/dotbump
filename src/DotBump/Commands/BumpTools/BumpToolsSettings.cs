@@ -28,6 +28,12 @@ internal class BumpToolsSettings : BumpSettings
     public string? ToolManifestPath { get; init; }
 
     [Description(
+        "A tool id or pattern (`*` and `?` supported) to skip when bumping. Can be specified multiple times or " +
+        "as a comma-separated list.")]
+    [CommandOption("--skip-tool")]
+    public string[]? SkipTools { get; init; }
+
+    [Description(
         "Include pre-release versions when bumping. Only applies to `major` bumps. Defaults to false.")]
     [CommandOption("--prerelease")]
     [DefaultValue(false)]
@@ -37,6 +43,7 @@ internal class BumpToolsSettings : BumpSettings
     {
         return ValidateFileExists(NuGetConfigPath)
             ?? ValidateFileExists(ToolManifestPath)
+            ?? ValidateSkipPatterns(SkipTools)
             ?? ValidationResult.Success();
     }
 }
