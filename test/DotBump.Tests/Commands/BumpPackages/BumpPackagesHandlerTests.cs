@@ -277,7 +277,7 @@ public class BumpPackagesHandlerTests
 
             report.Warnings.ShouldContain(warning =>
                 warning.Contains("Skip.Me", StringComparison.Ordinal)
-                && warning.Contains("--skip-packages", StringComparison.Ordinal));
+                && warning.Contains("--skip-package", StringComparison.Ordinal));
             manifest.Packages.ShouldSatisfyAllConditions(
                 () => manifest.Packages.Single(package => package.PackageId == "Skip.Me").Version.ShouldBe("1.0.0"),
                 () => manifest.Packages.Single(package => package.PackageId == "Keep.Me").Version.ShouldBe("1.1.0"));
@@ -343,7 +343,7 @@ public class BumpPackagesHandlerTests
 
             report.Warnings.ShouldSatisfyAllConditions(
                 () => report.Warnings.ShouldContain(warning =>
-                    warning.Contains("--skip-packages", StringComparison.Ordinal)),
+                    warning.Contains("--skip-package", StringComparison.Ordinal)),
                 () => report.Warnings.ShouldNotContain(warning =>
                     warning.Contains("cannot be parsed", StringComparison.Ordinal)));
             resolver.Verify(

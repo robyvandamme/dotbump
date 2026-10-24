@@ -480,7 +480,7 @@ public class BumpPackagesCommandTests
         }
     }
 
-    public class SkipPackagesOption
+    public class SkipPackageOption
     {
         [Fact]
         public async Task With_Repeated_And_Comma_Separated_Options_Forwards_Normalized_Patterns()
@@ -513,8 +513,8 @@ public class BumpPackagesCommandTests
             var exitCode = await app.RunAsync(
             [
                 "packages",
-                "--skip-packages", "Microsoft.*",
-                "--skip-packages", "System.*, Azure.* ",
+                "--skip-package", "Microsoft.*",
+                "--skip-package", "System.*, Azure.* ",
             ]);
 
             exitCode.ShouldBe(0);

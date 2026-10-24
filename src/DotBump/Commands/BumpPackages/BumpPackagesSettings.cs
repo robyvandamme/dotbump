@@ -34,7 +34,7 @@ internal class BumpPackagesSettings : BumpSettings
     [Description(
         "A package id or pattern (`*` and `?` supported) to skip when bumping. Can be specified multiple times or " +
         "as a comma-separated list.")]
-    [CommandOption("--skip-packages")]
+    [CommandOption("--skip-package")]
     public string[]? SkipPackages { get; init; }
 
     [Description(

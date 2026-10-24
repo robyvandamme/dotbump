@@ -91,7 +91,7 @@ internal class BumpPackagesHandler(
             if (skipMatcher.TryMatch(packageId, out var matchedPattern))
             {
                 var skipWarning =
-                    $"Skipping '{packageId}' because it matches --skip-packages pattern '{matchedPattern}'.";
+                    $"Skipping '{packageId}' because it matches --skip-package pattern '{matchedPattern}'.";
                 logger.Warning("{Warning}", skipWarning);
                 manifest.AddWarning(skipWarning);
                 continue;
