@@ -24,7 +24,7 @@ Key capabilities include:
 
 ### Technology Stack
 
-- **Target Framework**: .NET 8 (`net8.0`), C# 12
+- **Target Framework**: .NET 10 (`net10.0`), C# 14
 - **CLI Framework**: [Spectre.Console.Cli](https://spectreconsole.net/)
 - **Logging**: [Serilog](https://serilog.net/) (Console and File sinks, Destructurama attributed logging)
 - **Build System**: [NUKE Build](https://nuke.build/)
@@ -96,7 +96,7 @@ Always verify your changes before completing a task.
 
 ### Language & Project Settings
 
-- C# 12 with nullable reference types enabled (`<Nullable>enable</Nullable>`).
+- C# 14 with nullable reference types enabled (`<Nullable>enable</Nullable>`).
 - Implicit usings enabled (`<ImplicitUsings>enable</ImplicitUsings>`).
 - Enforce code style on build enabled (`<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>`).
 
@@ -118,7 +118,7 @@ Every `.cs` file must begin with the copyright header without a year:
 
 - **Indentation**: 4 spaces for C# files; 2 spaces for JSON, XML, `.props`, `.targets`, and shell scripts.
 - **Type Inference**: Prefer `var` when type is apparent or per `.editorconfig` rules.
-- **Constructors**: Prefer C# 12 primary constructors when declaring dependencies for classes.
+- **Constructors**: Prefer primary constructors when declaring dependencies for classes.
 - **Naming Conventions**:
     - Types, methods, properties, events: `PascalCase`.
     - Interfaces: `IPascalCase` (prefixed with `I`).

@@ -135,7 +135,7 @@ public class NuGetConfigFileServiceTests
                     () => result.Credentials.Count.ShouldBe(1),
                     () => result.PackageSources.First().Key.ShouldBe("nuget.org"),
                     () => result.PackageSources.ShouldContain(o => o.Key.Equals("myorg")),
-                    () => result.Credentials.ShouldContainKey("myorg"),
+                    () => result.Credentials.Keys.ShouldContain("myorg"),
                     () => result.Credentials.Values.ShouldContain(o => o.SourceName.Equals("myorg")),
                     () => result.Credentials.Values.First().Credentials.Count.ShouldBe(2),
                     () => result.Credentials.Values.First().Credentials
@@ -256,7 +256,7 @@ public class NuGetConfigFileServiceTests
                 var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
 
                 // Assert
-                result.Credentials.ShouldContainKey("myorg");
+                result.Credentials.Keys.ShouldContain("myorg");
                 result.Credentials["myorg"].Credentials.ShouldHaveSingleItem();
                 result.Credentials["myorg"].Credentials.First().ShouldSatisfyAllConditions(
                     () => result.Credentials["myorg"].Credentials.First().Key.ShouldBeEmpty(),
@@ -291,7 +291,7 @@ public class NuGetConfigFileServiceTests
                 var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
 
                 // Assert
-                result.Credentials.ShouldContainKey("myorg");
+                result.Credentials.Keys.ShouldContain("myorg");
                 result.Credentials["myorg"].Credentials.ShouldBeEmpty();
             }
             finally
@@ -361,7 +361,7 @@ public class NuGetConfigFileServiceTests
                 var rendered = string.Join("\n", sink.Events.Select(logEvent => logEvent.RenderMessage(null)));
 
                 // Assert
-                result.Credentials.ShouldContainKey("myorg");
+                result.Credentials.Keys.ShouldContain("myorg");
                 rendered.ShouldSatisfyAllConditions(
                     () => rendered.ShouldNotContain("mypassword"),
                     () => rendered.ShouldNotContain("myuser"),

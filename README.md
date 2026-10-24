@@ -9,7 +9,7 @@
 
 ## Requirements
 
-DotBump targets .NET 8 and requires .NET 8 or later.
+DotBump targets .NET 10 and requires .NET 10 or later.
 
 ## Installation
 

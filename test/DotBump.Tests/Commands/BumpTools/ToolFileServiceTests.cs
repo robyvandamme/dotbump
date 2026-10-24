@@ -64,7 +64,7 @@ public class ToolFileServiceTests
             result.ShouldSatisfyAllConditions(
                 () => result.ShouldNotBeNull(),
                 () => result.Version.ShouldBe(1),
-                () => result.Tools.ShouldContainKey("mytool"),
+                () => result.Tools.Keys.ShouldContain("mytool"),
                 () => result.Tools["mytool"].Version.ShouldBe("1.0.0"));
         }
 
