@@ -27,6 +27,9 @@ internal static class CommandConfiguration
     private const string LanguageCommandName = "language";
     private const string TypeOptionName = "--type";
     private const string PreReleaseOptionName = "--prerelease";
+    private const string OutputOptionName = "--output";
+    private const string DebugOptionName = "--debug";
+    private const string LogFileOptionName = "--logfile";
     private const string PatchBumpType = "patch";
     private const string MajorBumpType = "major";
 
@@ -62,8 +65,15 @@ internal static class CommandConfiguration
                 .WithExample(SdkCommandName, TypeOptionName, PatchBumpType)
                 .WithExample(SdkCommandName, TypeOptionName, MajorBumpType)
                 .WithExample(SdkCommandName, TypeOptionName, MajorBumpType, PreReleaseOptionName, "true")
-                .WithExample(SdkCommandName, "--file", "./other/global.json", "--output", "bump-sdk-report.json")
-                .WithExample(SdkCommandName, "--security-only", "true", "--debug", "true", "--logfile", "bump-sdk-log.txt");
+                .WithExample(SdkCommandName, "--file", "./other/global.json", OutputOptionName, "bump-sdk-report.json")
+                .WithExample(
+                    SdkCommandName,
+                    "--security-only",
+                    "true",
+                    DebugOptionName,
+                    "true",
+                    LogFileOptionName,
+                    "bump-sdk-log.txt");
 
             config.Settings.Registrar.Register<IToolFileService, ToolFileService>();
             config.Settings.Registrar.Register<IToolManifestLocator, ToolManifestLocator>();
@@ -86,8 +96,18 @@ internal static class CommandConfiguration
                 .WithExample(ToolsCommandName, TypeOptionName, MajorBumpType)
                 .WithExample(ToolsCommandName, TypeOptionName, MajorBumpType, PreReleaseOptionName, "true")
                 .WithExample(ToolsCommandName, "--manifest", "./other/dotnet-tools.json")
-                .WithExample(ToolsCommandName, "--config", "./custom-nuget.config", "--output", "bump-tools-report.json")
-                .WithExample(ToolsCommandName, "--debug", "true", "--logfile", "bump-tools-log.txt");
+                .WithExample(
+                    ToolsCommandName,
+                    "--config",
+                    "./custom-nuget.config",
+                    OutputOptionName,
+                    "bump-tools-report.json")
+                .WithExample(
+                    ToolsCommandName,
+                    DebugOptionName,
+                    "true",
+                    LogFileOptionName,
+                    "bump-tools-log.txt");
 
             config.Settings.Registrar.Register<IPackageFileService, PackageFileService>();
             config.Settings.Registrar.Register<IBumpPackagesHandler, BumpPackagesHandler>();
@@ -103,8 +123,18 @@ internal static class CommandConfiguration
                 .WithExample(PackagesCommandName, TypeOptionName, PatchBumpType)
                 .WithExample(PackagesCommandName, TypeOptionName, MajorBumpType)
                 .WithExample(PackagesCommandName, TypeOptionName, MajorBumpType, PreReleaseOptionName, "true")
-                .WithExample(PackagesCommandName, "--config", "./custom-nuget.config", "--output", "bump-packages-report.json")
-                .WithExample(PackagesCommandName, "--debug", "true", "--logfile", "bump-packages-log.txt");
+                .WithExample(
+                    PackagesCommandName,
+                    "--config",
+                    "./custom-nuget.config",
+                    OutputOptionName,
+                    "bump-packages-report.json")
+                .WithExample(
+                    PackagesCommandName,
+                    DebugOptionName,
+                    "true",
+                    LogFileOptionName,
+                    "bump-packages-log.txt");
 
             config.Settings.Registrar.Register<IFrameworkFileService, FrameworkFileService>();
             config.Settings.Registrar.Register<IBumpFrameworksHandler, BumpFrameworksHandler>();
@@ -122,8 +152,13 @@ internal static class CommandConfiguration
                     "Only explicit numeric LangVersion values in C# projects and shared MSBuild files are bumped.")
                 .WithExample(LanguageCommandName)
                 .WithExample(LanguageCommandName, "--file", "./other/global.json", "--path", "./src")
-                .WithExample(LanguageCommandName, "--output", "bump-language-report.json")
-                .WithExample(LanguageCommandName, "--debug", "true", "--logfile", "bump-language-log.txt");
+                .WithExample(LanguageCommandName, OutputOptionName, "bump-language-report.json")
+                .WithExample(
+                    LanguageCommandName,
+                    DebugOptionName,
+                    "true",
+                    LogFileOptionName,
+                    "bump-language-log.txt");
         });
     }
 }
