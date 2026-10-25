@@ -58,14 +58,7 @@ jobs:
       - name: Restore tools (bumped versions)
         run: dotnet tool restore
       - name: Bump language version
-        run: |
-          exclude_args=()
-          if [ -d ./test/DotBump.Tests/Data ]; then
-            exclude_args+=(--exclude ./test/DotBump.Tests/Data)
-          fi
-          dotnet dotbump language \
-            "${exclude_args[@]}" \
-            -o ./artifacts/results/bump-language-report.md
+        run: dotnet dotbump language -o ./artifacts/results/bump-language-report.md
       - name: Bump NuGet packages
         run: |
           exclude_args=()
