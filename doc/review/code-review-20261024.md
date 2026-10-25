@@ -22,7 +22,7 @@ No critical or high-severity issues. Two medium-severity maintainability finding
 | L4 | Low | Case-insensitive "did it change" comparisons copied from frameworks where they are meaningful; numeric versions have no case | Resolved |
 | L5 | Low | CI language step: speculative `if [ -d ./test/DotBump.Tests/Data ]` guard around `--exclude` | Resolved |
 | T1 | Low | Test gap: non-numeric entry reaching the handler is never asserted to be left unchanged | Resolved structurally |
-| T2 | Low | Test gap: `SaveLanguageManifest` skip paths (unregistered file text) uncovered | Open |
+| T2 | Low | Test gap: `SaveLanguageManifest` skip paths (unregistered file text) uncovered | Resolved |
 
 ### Resolution update (2026-10-25)
 
@@ -50,8 +50,9 @@ No critical or high-severity issues. Two medium-severity maintainability finding
   `<LangVersion>`, so `test/DotBump.Tests/Data` does not need to be excluded there. The frameworks and packages steps
   keep their guarded excludes because their fixtures do contain relevant values. If a future language fixture gains
   a numeric `<LangVersion>`, re-evaluate adding the exclude back.
-- **T2 remains open.**
-- Resolution verification: **522 tests passed**; Release build completed with **0 warnings and 0 errors**.
+- **T2 is resolved.** Added tests covering a changed file with no registered text and an invalid recorded span that
+  produces a warning while leaving the file unchanged.
+- Resolution verification: **524 tests passed**; Release build completed with **0 warnings and 0 errors**.
 
 ---
 
@@ -260,6 +261,9 @@ public async Task With_Non_Numeric_Entry_Leaves_It_Unchanged()
 
 ### T2. `SaveLanguageManifest` defensive branches uncovered
 
+**Status: Resolved.** Added `With_Missing_File_Text_Skips_File` and
+`With_Invalid_Span_Adds_Warning_And_Leaves_File_Unchanged` to `LanguageFileServiceTests`.
+
 `LanguageFileService.cs:60-65` (`GetFileText` returns `null` → skip) and `ApplyChanges`'s invalid-span guard (`LanguageFileService.cs:172-181`) are only guarded by construction today. If M2's shared machinery materializes, these become the *only* failure paths of a bookkeeping rewrite, so one test each — a manifest whose `ChangedFiles` contains an unregistered file and a manifest whose entry was constructed with a span outside the cached text — prevents a refactoring regression from becoming a silent skip.
 
 Minor test nits (non-blocking):
@@ -280,6 +284,6 @@ Minor test nits (non-blocking):
 
 ## Verdict
 
-Approve: M1 (single parser), L1 (command identity across all commands), L2, L4, L5 and T1 are resolved. M2 and L3 are
-accepted and deferred; revisit M2 if a third related value-bump command is introduced, and L3 for local or future
-parallel use. T2 remains independent polish.
+Approve: M1 (single parser), L1 (command identity across all commands), L2, L4, L5, T1 and T2 are resolved. M2 and L3
+are accepted and deferred; revisit M2 if a third related value-bump command is introduced, and L3 for local or future
+parallel use.
