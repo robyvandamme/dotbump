@@ -15,7 +15,9 @@ internal abstract class BumpPathSettings : BumpSettings
     [CommandOption("-p|--path")]
     public string? RepositoryPath { get; init; }
 
-    [Description("A directory to exclude from the scan. Can be specified multiple times.")]
+    [Description(
+        "A directory to exclude from the scan. Can be specified multiple times. Relative paths are resolved against " +
+        "the current directory, not the scan root given by --path.")]
     [CommandOption("-e|--exclude")]
     public string[]? Exclude { get; init; }
 

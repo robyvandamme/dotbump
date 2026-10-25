@@ -141,7 +141,9 @@ OPTIONS:
         --logfile    The file to send the log output to
     -f, --file       The global.json file used to determine the target versions. Defaults to `./global.json`
     -p, --path       The root directory to scan. Defaults to the current directory
-    -e, --exclude    A directory to exclude from the scan. Can be specified multiple times
+    -e, --exclude    A directory to exclude from the scan. Can be specified multiple
+                     times. Relative paths are resolved against the current
+                     directory, not the scan root given by --path
     -o, --output     Output file name. The name of the file to write the result to. The output format is inferred
                      from the file extension: `.json` or `.md`
 ```
@@ -187,7 +189,9 @@ OPTIONS:
         --logfile    The file to send the log output to
     -f, --file       The global.json file used to determine the target versions. Defaults to `./global.json`
     -p, --path       The root directory to scan. Defaults to the current directory
-    -e, --exclude    A directory to exclude from the scan. Can be specified multiple times
+    -e, --exclude    A directory to exclude from the scan. Can be specified multiple
+                     times. Relative paths are resolved against the current
+                     directory, not the scan root given by --path
     -o, --output     Output file name. The name of the file to write the result to. The output format is inferred
                      from the file extension: `.json` or `.md`
 ```
@@ -394,7 +398,8 @@ OPTIONS:
     -c, --config     The nuget config file to use. Defaults to `./nuget.config`
     -p, --path       The root directory to scan. Defaults to the current directory
     -e, --exclude    A directory to exclude from the scan. Can be specified
-                     multiple times
+                     multiple times. Relative paths are resolved against the
+                     current directory, not the scan root given by --path
         --skip-package
                      A package id or pattern (`*` and `?` supported) to skip.
                      Can be specified multiple times or as a comma-separated
