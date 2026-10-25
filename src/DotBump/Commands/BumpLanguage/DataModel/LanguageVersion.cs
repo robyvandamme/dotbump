@@ -64,6 +64,26 @@ internal readonly record struct LanguageVersion(int Major, int Minor) : ICompara
         return majorComparison != 0 ? majorComparison : Minor.CompareTo(other.Minor);
     }
 
+    public static bool operator <(LanguageVersion left, LanguageVersion right)
+    {
+        return left.CompareTo(right) < 0;
+    }
+
+    public static bool operator <=(LanguageVersion left, LanguageVersion right)
+    {
+        return left.CompareTo(right) <= 0;
+    }
+
+    public static bool operator >(LanguageVersion left, LanguageVersion right)
+    {
+        return left.CompareTo(right) > 0;
+    }
+
+    public static bool operator >=(LanguageVersion left, LanguageVersion right)
+    {
+        return left.CompareTo(right) >= 0;
+    }
+
     /// <inheritdoc />
     public override string ToString()
     {

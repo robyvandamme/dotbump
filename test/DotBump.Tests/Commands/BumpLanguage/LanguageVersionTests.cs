@@ -55,6 +55,30 @@ public class LanguageVersionTests
         }
     }
 
+    public class Operators
+    {
+        [Theory]
+        [InlineData(13, 0, 14, 0, -1)]
+        [InlineData(14, 0, 14, 0, 0)]
+        [InlineData(14, 1, 14, 0, 1)]
+        public void With_Versions_Returns_Expected_Ordering(
+            int leftMajor,
+            int leftMinor,
+            int rightMajor,
+            int rightMinor,
+            int expectedSign)
+        {
+            var left = new LanguageVersion(leftMajor, leftMinor);
+            var right = new LanguageVersion(rightMajor, rightMinor);
+
+            left.ShouldSatisfyAllConditions(
+                () => (left < right).ShouldBe(expectedSign < 0),
+                () => (left <= right).ShouldBe(expectedSign <= 0),
+                () => (left > right).ShouldBe(expectedSign > 0),
+                () => (left >= right).ShouldBe(expectedSign >= 0));
+        }
+    }
+
     public class CompareTo
     {
         [Theory]
