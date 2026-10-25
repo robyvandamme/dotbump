@@ -14,7 +14,7 @@ internal sealed class BumpFrameworksCommand(
     : SdkAlignmentCommand<BumpFrameworksSettings>(
         console,
         logger,
-        "frameworks",
+        BumpCommandNames.Frameworks,
         "target frameworks")
 {
     protected override Task<BumpReport> HandleAsync(

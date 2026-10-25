@@ -25,7 +25,7 @@ internal class BumpToolsCommand(
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(settings);
 
-        if (context.Name != "tools")
+        if (context.Name != BumpCommandNames.Tools)
         {
             throw new DotBumpException($"Unsupported command name {context.Name}");
         }

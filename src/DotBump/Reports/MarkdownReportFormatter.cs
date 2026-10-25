@@ -1,6 +1,7 @@
 // Copyright © Roby Van Damme.
 
 using System.Text;
+using DotBump.Commands;
 
 namespace DotBump.Reports;
 
@@ -60,7 +61,7 @@ internal static class MarkdownReportFormatter
 
     private static (string DisplayName, bool IncludeId) GetCommandPresentation(string commandName)
     {
-        if (string.Equals(commandName, "sdk", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(commandName, BumpCommandNames.Sdk, StringComparison.OrdinalIgnoreCase))
         {
             return ("SDK", false);
         }

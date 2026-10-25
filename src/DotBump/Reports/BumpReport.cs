@@ -37,7 +37,7 @@ internal class BumpReport
 
     public BumpReport(ToolsManifest toolsManifest, BumpType bumpType)
     {
-        CommandName = "tools";
+        CommandName = BumpCommandNames.Tools;
         BumpType = bumpType;
         foreach (var toolManifestEntry in toolsManifest.Tools)
         {
@@ -47,16 +47,16 @@ internal class BumpReport
 
     public BumpReport(Sdk sdk, BumpType bumpType)
     {
-        CommandName = "sdk";
+        CommandName = BumpCommandNames.Sdk;
         BumpType = bumpType;
-        _results.Add(new BumpResult("sdk", sdk.Version));
+        _results.Add(new BumpResult(BumpCommandNames.Sdk, sdk.Version));
     }
 
     public BumpReport(FrameworkManifest frameworkManifest, BumpType bumpType)
     {
         ArgumentNullException.ThrowIfNull(frameworkManifest);
 
-        CommandName = "frameworks";
+        CommandName = BumpCommandNames.Frameworks;
         BumpType = bumpType;
 
         foreach (var framework in frameworkManifest.Frameworks)
@@ -75,7 +75,7 @@ internal class BumpReport
     {
         ArgumentNullException.ThrowIfNull(languageManifest);
 
-        CommandName = "language";
+        CommandName = BumpCommandNames.Language;
         BumpType = bumpType;
 
         foreach (var language in languageManifest.Entries)
@@ -94,7 +94,7 @@ internal class BumpReport
     {
         ArgumentNullException.ThrowIfNull(packageManifest);
 
-        CommandName = "packages";
+        CommandName = BumpCommandNames.Packages;
         BumpType = bumpType;
 
         foreach (var packageId in packageManifest.GetPackageIds())

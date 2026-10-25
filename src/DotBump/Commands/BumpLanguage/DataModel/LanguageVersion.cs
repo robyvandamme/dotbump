@@ -10,6 +10,21 @@ namespace DotBump.Commands.BumpLanguage.DataModel;
 internal readonly record struct LanguageVersion(int Major, int Minor) : IComparable<LanguageVersion>
 {
     /// <summary>
+    /// The offset added to the SDK major version to determine the default C# language version.
+    /// </summary>
+    public const int SdkMajorOffset = 4;
+
+    /// <summary>
+    /// Creates the default C# language version for an SDK major version.
+    /// </summary>
+    /// <param name="sdkMajor">The SDK major version.</param>
+    /// <returns>The language version matching the SDK major.</returns>
+    public static LanguageVersion FromSdkMajor(int sdkMajor)
+    {
+        return new LanguageVersion(sdkMajor + SdkMajorOffset, 0);
+    }
+
+    /// <summary>
     /// Tries to parse a numeric language version such as <c>12</c> or <c>12.0</c>.
     /// </summary>
     /// <param name="value">The language version text.</param>

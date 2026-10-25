@@ -15,7 +15,6 @@ internal class BumpLanguageHandler(
     ILogger logger) : IBumpLanguageHandler
 {
     private const int MinimumSdkMajor = 5;
-    private const int LanguageVersionMajorOffset = 4;
 
     public Task<BumpReport> HandleAsync(
         string repositoryPath,
@@ -41,9 +40,7 @@ internal class BumpLanguageHandler(
                 $"SDK version '{currentSdk.Version}' cannot be mapped to a C# language version.");
         }
 
-        var targetVersion = new LanguageVersion(
-            currentSdk.SemanticVersion.Major + LanguageVersionMajorOffset,
-            0);
+        var targetVersion = LanguageVersion.FromSdkMajor(currentSdk.SemanticVersion.Major);
         var targetLanguageVersion = targetVersion.ToString();
         logger.Debug("Target language version: {LanguageVersion}", targetLanguageVersion);
 

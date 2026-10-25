@@ -38,6 +38,23 @@ public class LanguageVersionTests
         }
     }
 
+    public class FromSdkMajor
+    {
+        [Theory]
+        [InlineData(5, 9, 0)]
+        [InlineData(8, 12, 0)]
+        [InlineData(10, 14, 0)]
+        public void With_Sdk_Major_Returns_Offset_Language_Version(
+            int sdkMajor,
+            int expectedMajor,
+            int expectedMinor)
+        {
+            var result = LanguageVersion.FromSdkMajor(sdkMajor);
+
+            result.ShouldBe(new LanguageVersion(expectedMajor, expectedMinor));
+        }
+    }
+
     public class CompareTo
     {
         [Theory]

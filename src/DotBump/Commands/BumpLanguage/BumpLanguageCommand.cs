@@ -14,7 +14,7 @@ internal sealed class BumpLanguageCommand(
     : SdkAlignmentCommand<BumpLanguageSettings>(
         console,
         logger,
-        "language",
+        BumpCommandNames.Language,
         "language versions")
 {
     protected override Task<BumpReport> HandleAsync(
