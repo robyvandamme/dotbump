@@ -1,6 +1,6 @@
 # DotBump
 
-.NET tool to automate dependency upgrade tasks in .NET solutions.
+.NET tool to automate dependency upgrades and project file maintenance in .NET solutions.
 
 [![Release](https://github.com/robyvandamme/dotbump/actions/workflows/release.yml/badge.svg)](https://github.com/robyvandamme/dotbump/actions/workflows/release.yml)
 [![NuGet Version](https://img.shields.io/nuget/v/DotBump?color=004D81)](https://www.nuget.org/packages/DotBump/)
