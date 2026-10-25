@@ -19,7 +19,7 @@ No critical or high-severity issues. Two medium-severity maintainability finding
 | L1 | Low | `language` command knowledge duplicated in 4 places, mapping rule ("major + 4") drifts from hardcoded report name | Resolved |
 | L2 | Low | `TryParseVersion` uses `System.Version` as an int-pair comparator; two allocations and heavier than needed | Resolved with M1 |
 | L3 | Low | `SaveLanguageManifest` re-reads the file for encoding only; offsets applied to a snapshot can silently corrupt a concurrently changed file | Accepted (deferred) |
-| L4 | Low | Case-insensitive "did it change" comparisons copied from frameworks where they are meaningful; numeric versions have no case | Open |
+| L4 | Low | Case-insensitive "did it change" comparisons copied from frameworks where they are meaningful; numeric versions have no case | Resolved |
 | L5 | Low | CI language step: speculative `if [ -d ./test/DotBump.Tests/Data ]` guard around `--exclude` | Open |
 | T1 | Low | Test gap: non-numeric entry reaching the handler is never asserted to be left unchanged | Resolved structurally |
 | T2 | Low | Test gap: `SaveLanguageManifest` skip paths (unregistered file text) uncovered | Open |
@@ -44,7 +44,9 @@ No critical or high-severity issues. Two medium-severity maintainability finding
   external writer that the current use case does not have. The finding is retained as defensive hardening for local
   or future parallel use; if revisited, re-read and compare the file at save time (the suggested cached-text check
   alone does not detect an on-disk change), ideally in the M2 shared helper.
-- **L4, L5 and T2 remain open.**
+- **L4 is resolved.** Numeric language version comparisons now use `StringComparison.Ordinal`; case-insensitive
+  comparison is retained only for file names, extensions and paths where it is meaningful.
+- **L5 and T2 remain open.**
 - Resolution verification: **522 tests passed**; Release build completed with **0 warnings and 0 errors**.
 
 ---
@@ -189,7 +191,12 @@ if (!string.Equals(originalSpan, entry.OriginalVersion, StringComparison.Ordinal
 
 ### L4. Case-insensitive comparisons for numeric versions
 
-**Files:** `src/DotBump/Commands/BumpLanguage/LanguageManifest.cs:28-29,45`, `src/DotBump/Commands/BumpLanguage/LanguageFileService.cs:167`
+**Status: Resolved.** Version comparisons now use `StringComparison.Ordinal` in `LanguageManifest.HasChanges`,
+`LanguageManifest.SetVersion` and `LanguageFileService.ApplyChanges`. `OrdinalIgnoreCase` remains only for file
+names, extensions and paths.
+
+**Files:** `src/DotBump/Commands/BumpLanguage/LanguageManifest.cs:28-29,45`,
+`src/DotBump/Commands/BumpLanguage/LanguageFileService.cs:160-161`
 
 The framework code needs `OrdinalIgnoreCase` because `Net8.0` and `net8.0` are legitimately different spellings. Language versions (`12.0` vs `12.0`) are numeric and have no case, so the copied comparisons are dead flexibility — they cannot change behavior, but they imply a semantics that doesn't exist and make grep/reading harder. Use `StringComparison.Ordinal` in the language code, or extract a shared manifest so the comparison policy is set by the domain rather than copy-pasted per flavor.
 
@@ -265,6 +272,6 @@ Minor test nits (non-blocking):
 
 ## Verdict
 
-Approve: M1 (single parser), L1 (command identity across all commands), L2 and T1 are resolved. M2 and L3 are
+Approve: M1 (single parser), L1 (command identity across all commands), L2, L4 and T1 are resolved. M2 and L3 are
 accepted and deferred; revisit M2 if a third related value-bump command is introduced, and L3 for local or future
 parallel use. The remaining low-severity items are independent polish.
