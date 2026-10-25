@@ -23,7 +23,9 @@ internal class BumpToolsSettings : BumpSettings
     [CommandOption("-c|--config")]
     public string? NuGetConfigPath { get; init; }
 
-    [Description("The tools manifest file to update. Defaults to `./dotnet-tools.json`.")]
+    [Description(
+        "The tools manifest file to update. Defaults to `./dotnet-tools.json`, " +
+        "falling back to `./.config/dotnet-tools.json`.")]
     [CommandOption("-m|--manifest")]
     public string? ToolManifestPath { get; init; }
 
