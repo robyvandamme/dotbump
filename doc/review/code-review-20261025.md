@@ -31,12 +31,12 @@ Solid, well-tested feature. The final state is a clear improvement over the init
 No critical or high-severity findings. Two low-severity issues were found in the final state (one duplication the
 prior review did not call out, one path-resolution ordering caveat), plus two nits.
 
-| # | Severity | Finding |
-|---|----------|---------|
-| L6 | Low | SDK-major guard block duplicated between `BumpLanguageHandler` and `BumpFrameworksHandler` |
-| L7 | Low | Relative `--exclude` values are resolved against the current directory, not `--path` |
-| N1 | Nit | `parts.Length is < 1 or > 2` — the `< 1` branch is unreachable |
-| N2 | Nit | `LanguageVersionTests` does not cover overflow input (e.g. `"99999999999999999"`) |
+| # | Severity | Finding | Status |
+|---|----------|---------|--------|
+| L6 | Low | SDK-major guard block duplicated between `BumpLanguageHandler` and `BumpFrameworksHandler` | Open |
+| L7 | Low | Relative `--exclude` values are resolved against the current directory, not `--path` | Resolved (documented) |
+| N1 | Nit | `parts.Length is < 1 or > 2` — the `< 1` branch is unreachable | Open |
+| N2 | Nit | `LanguageVersionTests` does not cover overflow input (e.g. `"99999999999999999"`) | Open |
 
 Deferred items already accepted in the prior review are not re-reported here: **M2** (framework/language file-service
 machinery duplication — revisit with a third value-bump command) and **L3** (stale-snapshot span edits at save time —
@@ -107,6 +107,13 @@ the current messages differ slightly ("The frameworks command requires…" vs "T
 keep that variability in the parameter; if both messages should become identical, say so explicitly when applying.
 
 ### L7. Relative `--exclude` paths resolve against the current directory, not `--path`
+
+**Status: Resolved (documented).** Accepted as intended behavior and made explicit everywhere the option is
+presented: the shared `--exclude` description in `BumpPathSettings` now states that relative paths are resolved
+against the current directory, not the scan root given by `--path`, and the CLI help snapshots in the README
+(frameworks, language and packages sections) reproduce the updated wording. The packages prose section in the README
+already documented the same rule. One possible follow-up, in case the semantics ever change, now has a documented
+baseline to compare against.
 
 **Files:** `src/DotBump/Commands/SdkAlignmentCommand.cs:43-49`
 
@@ -199,6 +206,7 @@ No new test findings.
 
 ## Verdict
 
-**Approve.** No findings require changes before merge. L6 (shared SDK guard) and L7 (relative exclude resolution) are
-worth a follow-up commit — both are small; N1/N2 are optional polish. The previously accepted deferrals (M2, L3)
-remain trackable debt with a clear trigger condition (third value-bump command / concurrent-writer use case).
+**Approve.** No findings require changes before merge. L7 is resolved by documenting the current behavior in the
+option descriptions and README. L6 (shared SDK guard) and the nits N1/N2 are worth a follow-up commit — all are
+small. The previously accepted deferrals (M2, L3) remain trackable debt with a clear trigger condition (third
+value-bump command / concurrent-writer use case).
