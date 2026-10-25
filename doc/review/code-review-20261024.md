@@ -18,7 +18,7 @@ No critical or high-severity issues. Two medium-severity maintainability finding
 | M2 | Medium | `LanguageFileService` / `LanguageManifest` / `LanguageEntry` largely duplicating the framework file service machinery | Accepted (deferred) |
 | L1 | Low | `language` command knowledge duplicated in 4 places, mapping rule ("major + 4") drifts from hardcoded report name | Resolved |
 | L2 | Low | `TryParseVersion` uses `System.Version` as an int-pair comparator; two allocations and heavier than needed | Resolved with M1 |
-| L3 | Low | `SaveLanguageManifest` re-reads the file for encoding only; offsets applied to a snapshot can silently corrupt a concurrently changed file | Open |
+| L3 | Low | `SaveLanguageManifest` re-reads the file for encoding only; offsets applied to a snapshot can silently corrupt a concurrently changed file | Accepted (deferred) |
 | L4 | Low | Case-insensitive "did it change" comparisons copied from frameworks where they are meaningful; numeric versions have no case | Open |
 | L5 | Low | CI language step: speculative `if [ -d ./test/DotBump.Tests/Data ]` guard around `--exclude` | Open |
 | T1 | Low | Test gap: non-numeric entry reaching the handler is never asserted to be left unchanged | Resolved structurally |
@@ -40,7 +40,11 @@ No critical or high-severity issues. Two medium-severity maintainability finding
   generic `TManifest`/`TEntry` base now would couple them prematurely. Revisit if a third related value-bump command
   is introduced; prefer domain-agnostic helpers (XML occurrence scanner, span edit applier, file-text registry) over
   a generic base.
-- **L3, L4, L5 and T2 remain open.**
+- **L3 is accepted for now.** The CI workflow is isolated and sequential, so the stale-snapshot scenario requires an
+  external writer that the current use case does not have. The finding is retained as defensive hardening for local
+  or future parallel use; if revisited, re-read and compare the file at save time (the suggested cached-text check
+  alone does not detect an on-disk change), ideally in the M2 shared helper.
+- **L4, L5 and T2 remain open.**
 - Resolution verification: **522 tests passed**; Release build completed with **0 warnings and 0 errors**.
 
 ---
@@ -156,6 +160,16 @@ var targetVersion = new Version(
 
 ### L3. `SaveLanguageManifest` applies offsets to a stale snapshot and pays a second file read
 
+**Status: Accepted (deferred).** The CI workflow is isolated and sequential, so the stale-snapshot scenario
+requires an external writer that is not part of the current use case. This remains defensive hardening for local or
+future parallel execution.
+
+Two corrections to the original finding:
+
+- The flow performs **two reads**, not three: the manifest read and the encoding-detection read in `WriteText`.
+- The suggested cached-text check does not detect an on-disk change. A future fix must re-read the file at save time
+  and compare it with the cached snapshot (or move the check into the deferred M2 shared helper).
+
 **Files:** `src/DotBump/Commands/BumpLanguage/LanguageFileService.cs:53-73` (+ same shape in `FrameworkFileService.cs:54-74`)
 
 The flow is: `GetLanguageManifest` reads bytes → strips BOM → caches text + span offsets; `SaveLanguageManifest` → re-reads the file **only to re-detect the encoding** → applies edits to the *cached* text → `WriteText` re-reads bytes a third time for encoding. Between read and write, if the file changes on disk (another tool, a concurrent bump run), the cached offsets no longer describe the fresh content. The guard in `ApplyChanges` (`entry.VersionStart + entry.VersionLength > text.Length`) validates against the cached text, so it cannot catch this; the write can then splice a version into the wrong place or throw mid-file (leaving a partial state) — corrupting a project file that `dotbump` never bumped.
@@ -251,6 +265,6 @@ Minor test nits (non-blocking):
 
 ## Verdict
 
-Approve: M1 (single parser), L1 (command identity across all commands), L2 and T1 are resolved. M2 is accepted and
-deferred; revisit it if a third related value-bump command is introduced. The remaining low-severity items are
-independent polish.
+Approve: M1 (single parser), L1 (command identity across all commands), L2 and T1 are resolved. M2 and L3 are
+accepted and deferred; revisit M2 if a third related value-bump command is introduced, and L3 for local or future
+parallel use. The remaining low-severity items are independent polish.
