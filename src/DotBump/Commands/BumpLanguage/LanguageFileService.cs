@@ -158,7 +158,7 @@ internal sealed class LanguageFileService(ILogger logger) : ILanguageFileService
         foreach (var entry in manifest.Entries)
         {
             if (!string.Equals(entry.FilePath, filePath, StringComparison.Ordinal)
-                || string.Equals(entry.Version, entry.OriginalVersion, StringComparison.OrdinalIgnoreCase))
+                || string.Equals(entry.Version, entry.OriginalVersion, StringComparison.Ordinal))
             {
                 continue;
             }

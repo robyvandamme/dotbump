@@ -26,7 +26,7 @@ internal sealed class LanguageManifest
     /// Gets a value indicating whether any language version has been changed.
     /// </summary>
     public bool HasChanges => _entries.Any(entry =>
-        !string.Equals(entry.Version, entry.OriginalVersion, StringComparison.OrdinalIgnoreCase));
+        !string.Equals(entry.Version, entry.OriginalVersion, StringComparison.Ordinal));
 
     internal IReadOnlyCollection<string> ChangedFiles => _changedFiles;
 
@@ -42,7 +42,7 @@ internal sealed class LanguageManifest
 
         entry.Version = newVersion;
 
-        if (!string.Equals(entry.Version, entry.OriginalVersion, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(entry.Version, entry.OriginalVersion, StringComparison.Ordinal))
         {
             _changedFiles.Add(entry.FilePath);
         }
