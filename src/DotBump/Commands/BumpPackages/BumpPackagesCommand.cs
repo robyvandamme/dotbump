@@ -28,7 +28,7 @@ internal class BumpPackagesCommand(
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(settings);
 
-        if (context.Name != "packages")
+        if (context.Name != BumpCommandNames.Packages)
         {
             throw new DotBumpException($"Unsupported command name {context.Name}");
         }

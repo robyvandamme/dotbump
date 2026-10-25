@@ -1,7 +1,8 @@
 name: Update .NET Dependencies (Major)
 
-# Updates the .NET SDK, target frameworks, local tools and NuGet packages to their latest major versions
-# and opens a pull request. Build and test validation is handled by the compile-and-test workflow triggered by the PR.
+# Updates the .NET SDK, target frameworks, C# language version, local tools and NuGet packages to their latest major
+# versions and opens a pull request. Build and test validation is handled by the compile-and-test workflow triggered by
+# the PR.
 
 env:
   PRIVATE_GITHUB_FEED_USER: ${{ github.actor }}
@@ -56,6 +57,8 @@ jobs:
           dotnet dotbump tools --type major -o ./artifacts/results/bump-tools-report.md
       - name: Restore tools (bumped versions)
         run: dotnet tool restore
+      - name: Bump language version
+        run: dotnet dotbump language -o ./artifacts/results/bump-language-report.md
       - name: Bump NuGet packages
         run: |
           exclude_args=()
@@ -80,8 +83,8 @@ jobs:
       - name: Compose pull request body
         run: |
           : > artifacts/results/pr-body.md
-          printf '%s\n\n' "Update the .NET SDK and target frameworks, and bump local tools and NuGet packages to their latest major versions." >> artifacts/results/pr-body.md
-          for report in bump-sdk-report bump-frameworks-report bump-tools-report bump-packages-report; do
+          printf '%s\n\n' "Update the .NET SDK, target frameworks and C# language version, and bump local tools and NuGet packages to their latest major versions." >> artifacts/results/pr-body.md
+          for report in bump-sdk-report bump-frameworks-report bump-language-report bump-tools-report bump-packages-report; do
             file="artifacts/results/${report}.md"
             if [ -f "$file" ]; then
               cat "$file" >> artifacts/results/pr-body.md

@@ -24,7 +24,7 @@ internal class BumpSdkCommand(IAnsiConsole console, ILogger logger, IBumpSdkHand
 
         try
         {
-            if (context.Name != "sdk")
+            if (context.Name != BumpCommandNames.Sdk)
             {
                 throw new DotBumpException($"Unsupported command name {context.Name}");
             }

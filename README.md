@@ -28,6 +28,7 @@ COMMANDS:
     tools       Bump the local .NET tools versions
     packages    Bump the NuGet package versions
     frameworks  Bump the target framework versions
+    language    Bump the C# language version
 
 OPTIONS:
     -h, --help       Prints help information
@@ -57,8 +58,10 @@ All commands accept `--output` to write a report. The format is inferred from th
 ## Automated dependency updates
 
 See the
-[dependency-update workflow](https://github.com/robyvandamme/dotbump/blob/main/.github/workflows/dependency-update.yml)
-for an end-to-end example that bumps the SDK, tools and NuGet packages and opens a pull request from the markdown reports.
+[dependency-update](https://github.com/robyvandamme/dotbump/blob/main/.github/workflows/dependency-update.yml) and
+[major dependency-update](https://github.com/robyvandamme/dotbump/blob/main/.github/workflows/dependency-update-major.yml)
+workflows for end-to-end examples that bump the SDK, local tools and NuGet packages and open a pull request from the
+markdown reports. The major workflow additionally aligns target frameworks and the C# language version to the SDK.
 
 ## Features
 
@@ -136,9 +139,11 @@ OPTIONS:
     -h, --help       Prints help information
         --debug      Enable debug logging for troubleshooting. Includes response data
         --logfile    The file to send the log output to
-    -f, --file       The global.json file used to determine the target framework. Defaults to `./global.json`
+    -f, --file       The global.json file used to determine the target versions. Defaults to `./global.json`
     -p, --path       The root directory to scan. Defaults to the current directory
-    -e, --exclude    A directory to exclude from the scan. Can be specified multiple times
+    -e, --exclude    A directory to exclude from the scan. Can be specified multiple
+                     times. Relative paths are resolved against the current
+                     directory, not the scan root given by --path
     -o, --output     Output file name. The name of the file to write the result to. The output format is inferred
                      from the file extension: `.json` or `.md`
 ```
@@ -154,6 +159,49 @@ Only `<TargetFramework>` is supported for now. Files that contain `<TargetFramew
 multi-target projects are left untouched. `netstandard*`, `net4x`, `netcoreapp*`, MSBuild property expressions such as
 `$(TargetFramework)` and other unsupported values are also left unchanged. SDK versions below .NET 5 are rejected
 because those SDKs use `netcoreapp*` target frameworks rather than the modern `netX.0` format.
+
+### Bump the C# language version
+
+Bump the `<LangVersion>` values in C# projects and shared MSBuild files based on the SDK version in `global.json`.
+
+The command reads `sdk.version` from `--file` (defaults to `./global.json`) and derives the target language version as
+the SDK major plus four, formatted as `major.0`: .NET 5 maps to C# 9.0, .NET 8 to C# 12.0 and .NET 10 to C# 14.0. Only
+`*.csproj`, `Directory.Build.props` and `Directory.Build.targets` are scanned; F# and Visual Basic projects are
+ignored.
+
+Only existing numeric `<LangVersion>` values are considered, and they are bumped upward only. Values such as `latest`,
+`latestMajor`, `preview`, `default`, MSBuild property expressions such as `$(LangVersion)` and missing values are left
+unchanged. SDK versions below .NET 5 are rejected because the SDK major cannot be mapped reliably to a C# version.
+Only files that actually change are written back, and formatting, encoding, BOM and line endings are preserved.
+
+```text
+DESCRIPTION:
+Bump the C# language version. The language version is derived from the SDK major
+version in global.json as SDK major + 4. Only explicit numeric LangVersion values
+in C# projects and shared MSBuild files are bumped.
+
+USAGE:
+    dotnet dotbump language [OPTIONS]
+
+OPTIONS:
+    -h, --help       Prints help information
+        --debug      Enable debug logging for troubleshooting. Includes response data
+        --logfile    The file to send the log output to
+    -f, --file       The global.json file used to determine the target versions. Defaults to `./global.json`
+    -p, --path       The root directory to scan. Defaults to the current directory
+    -e, --exclude    A directory to exclude from the scan. Can be specified multiple
+                     times. Relative paths are resolved against the current
+                     directory, not the scan root given by --path
+    -o, --output     Output file name. The name of the file to write the result to. The output format is inferred
+                     from the file extension: `.json` or `.md`
+```
+
+Examples:
+
+```shell
+dotnet dotbump language
+dotnet dotbump language --file ./other/global.json --path ./src --output bump-language-report.md
+```
 
 ### Bump the Local .NET Tools versions
 
@@ -350,7 +398,8 @@ OPTIONS:
     -c, --config     The nuget config file to use. Defaults to `./nuget.config`
     -p, --path       The root directory to scan. Defaults to the current directory
     -e, --exclude    A directory to exclude from the scan. Can be specified
-                     multiple times
+                     multiple times. Relative paths are resolved against the
+                     current directory, not the scan root given by --path
         --skip-package
                      A package id or pattern (`*` and `?` supported) to skip.
                      Can be specified multiple times or as a comma-separated
