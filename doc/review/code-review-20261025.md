@@ -33,10 +33,10 @@ prior review did not call out, one path-resolution ordering caveat), plus two ni
 
 | # | Severity | Finding | Status |
 |---|----------|---------|--------|
-| L6 | Low | SDK-major guard block duplicated between `BumpLanguageHandler` and `BumpFrameworksHandler` | Open |
+| L6 | Low | SDK-major guard block duplicated between `BumpLanguageHandler` and `BumpFrameworksHandler` | Accepted (deferred) |
 | L7 | Low | Relative `--exclude` values are resolved against the current directory, not `--path` | Resolved (documented) |
-| N1 | Nit | `parts.Length is < 1 or > 2` — the `< 1` branch is unreachable | Open |
-| N2 | Nit | `LanguageVersionTests` does not cover overflow input (e.g. `"99999999999999999"`) | Open |
+| N1 | Nit | `parts.Length is < 1 or > 2` — the `< 1` branch is unreachable | Accepted (deferred) |
+| N2 | Nit | `LanguageVersionTests` does not cover overflow input (e.g. `"99999999999999999"`) | Accepted (deferred) |
 
 Deferred items already accepted in the prior review are not re-reported here: **M2** (framework/language file-service
 machinery duplication — revisit with a third value-bump command) and **L3** (stale-snapshot span edits at save time —
@@ -47,6 +47,11 @@ defensive hardening). Both remain valid deferrals at their stated severity.
 ## Low severity
 
 ### L6. Minimum-SDK-version guard is copy-pasted across both SDK-aligned handlers
+
+**Status: Accepted (deferred).** The duplication is small (one block per handler), the two implementations are
+verified in sync by near-identical "legacy SDK throws before scanning" tests in both handler suites, and the natural
+fix overlaps the deferred M2 helper extraction (where the shared guard could live). Revisit when M2 is taken up, or
+if a third SDK-aligned command materializes the guard again.
 
 **Files:** `src/DotBump/Commands/BumpLanguage/BumpLanguageHandler.cs:29-41`,
 `src/DotBump/Commands/BumpFrameworks/BumpFrameworksHandler.cs:28-40`
@@ -148,6 +153,10 @@ documenting it in the `--exclude` option description.
 
 ### N1. Unreachable pattern arm in `LanguageVersion.TryParse`
 
+**Status: Accepted (deferred).** Dead pattern arm in a private-parsing helper; it cannot change behavior today. Fold
+into any future change that touches `LanguageVersion` parsing (such as the N2/overflow or trim-entries cleanup) rather
+than a dedicated commit.
+
 **File:** `src/DotBump/Commands/BumpLanguage/DataModel/LanguageVersion.cs:42-47`
 
 ```csharp
@@ -163,6 +172,10 @@ element value before calling `TryParse` (`LanguageFileService.cs:116`), so behav
 struct's own contract is slightly narrower than the "numeric version" concept it exposes.
 
 ### N2. `LanguageVersion.TryParse` overflow input not covered by tests
+
+**Status: Accepted (deferred).** The rejection is guaranteed by `int.TryParse` with `NumberStyles.None`; the missing
+test is insurance rather than a verified gap. Add an `InlineData` overflow case whenever `LanguageVersion.TryParse`
+is next modified (for example alongside N1).
 
 **File:** `test/DotBump.Tests/Commands/BumpLanguage/LanguageVersionTests.cs:24-38`
 
@@ -206,7 +219,7 @@ No new test findings.
 
 ## Verdict
 
-**Approve.** No findings require changes before merge. L7 is resolved by documenting the current behavior in the
-option descriptions and README. L6 (shared SDK guard) and the nits N1/N2 are worth a follow-up commit — all are
-small. The previously accepted deferrals (M2, L3) remain trackable debt with a clear trigger condition (third
-value-bump command / concurrent-writer use case).
+**Approve — good to go.** L7 is resolved by documenting the current behavior in the option descriptions and README.
+L6, N1 and N2 are accepted and deferred; all are small and can be folded into future changes to the handlers
+(L6, ideally alongside M2) or `LanguageVersion` (N1/N2). The previously accepted deferrals (M2, L3) remain trackable
+debt with a clear trigger condition (third value-bump command / concurrent-writer use case).
