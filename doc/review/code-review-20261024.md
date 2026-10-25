@@ -20,7 +20,7 @@ No critical or high-severity issues. Two medium-severity maintainability finding
 | L2 | Low | `TryParseVersion` uses `System.Version` as an int-pair comparator; two allocations and heavier than needed | Resolved with M1 |
 | L3 | Low | `SaveLanguageManifest` re-reads the file for encoding only; offsets applied to a snapshot can silently corrupt a concurrently changed file | Accepted (deferred) |
 | L4 | Low | Case-insensitive "did it change" comparisons copied from frameworks where they are meaningful; numeric versions have no case | Resolved |
-| L5 | Low | CI language step: speculative `if [ -d ./test/DotBump.Tests/Data ]` guard around `--exclude` | Open |
+| L5 | Low | CI language step: speculative `if [ -d ./test/DotBump.Tests/Data ]` guard around `--exclude` | Resolved |
 | T1 | Low | Test gap: non-numeric entry reaching the handler is never asserted to be left unchanged | Resolved structurally |
 | T2 | Low | Test gap: `SaveLanguageManifest` skip paths (unregistered file text) uncovered | Open |
 
@@ -46,7 +46,11 @@ No critical or high-severity issues. Two medium-severity maintainability finding
   alone does not detect an on-disk change), ideally in the M2 shared helper.
 - **L4 is resolved.** Numeric language version comparisons now use `StringComparison.Ordinal`; case-insensitive
   comparison is retained only for file names, extensions and paths where it is meaningful.
-- **L5 and T2 remain open.**
+- **L5 is resolved by removing the exclude from the language step.** The current language fixtures contain no
+  `<LangVersion>`, so `test/DotBump.Tests/Data` does not need to be excluded there. The frameworks and packages steps
+  keep their guarded excludes because their fixtures do contain relevant values. If a future language fixture gains
+  a numeric `<LangVersion>`, re-evaluate adding the exclude back.
+- **T2 remains open.**
 - Resolution verification: **522 tests passed**; Release build completed with **0 warnings and 0 errors**.
 
 ---
@@ -202,19 +206,23 @@ The framework code needs `OrdinalIgnoreCase` because `Net8.0` and `net8.0` are l
 
 ### L5. CI language step: speculative directory guard
 
-**Files:** `.github/workflows/dependency-update-major.yml:60-67`
+**Status: Resolved.** The exclude and its guard were removed from the language step. Current language fixtures contain
+no `<LangVersion>`, so nothing under `test/DotBump.Tests/Data` can be modified. Frameworks and packages keep their
+guarded excludes because their fixtures do contain relevant values. Re-evaluate if a future language fixture gains a
+numeric `<LangVersion>`.
+
+**Files:** `.github/workflows/dependency-update-major.yml:60-61`
+
+Current step:
 
 ```yaml
 - name: Bump language version
-  run: |
-    exclude_args=()
-    if [ -d ./test/DotBump.Tests/Data ]; then
-      exclude_args+=(--exclude ./test/DotBump.Tests/Data)
-    fi
-    dotnet dotbump language \ ...
+  run: dotnet dotbump language -o ./artifacts/results/bump-language-report.md
 ```
 
-`Data/Packages/Sample.csproj` contains no `<LangVersion>`, so for the language step this exclusion is currently protective in theory only, and the `[ -d ... ]` guard cannot be false on a normal repo checkout (the data directory is committed). The packages step needs it (its `Sample.csproj` has `Version` attributes that must not be touched); the language step only scans `.csproj`/`Directory.Build.*`, of which only `Sample.csproj` exists in `Data/`. Keep the *pattern* consistent with the packages step if you want, but an unconditional `--exclude ./test/DotBump.Tests/Data` is honest, simpler, and stays safe even if a future test fixture gains a numeric `<LangVersion>`.
+The original finding flagged the guarded exclude. Because no fixture under `test/DotBump.Tests/Data` contains
+`<LangVersion>`, the exclude was removed from this step. Frameworks and packages keep their guarded excludes because
+their fixtures do contain relevant values.
 
 ---
 
@@ -272,6 +280,6 @@ Minor test nits (non-blocking):
 
 ## Verdict
 
-Approve: M1 (single parser), L1 (command identity across all commands), L2, L4 and T1 are resolved. M2 and L3 are
+Approve: M1 (single parser), L1 (command identity across all commands), L2, L4, L5 and T1 are resolved. M2 and L3 are
 accepted and deferred; revisit M2 if a third related value-bump command is introduced, and L3 for local or future
-parallel use. The remaining low-severity items are independent polish.
+parallel use. T2 remains independent polish.
