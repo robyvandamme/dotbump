@@ -16,7 +16,7 @@ No critical or high-severity issues. Two medium-severity maintainability finding
 |---|----------|---------|--------|
 | M1 | Medium | Version-number parsing exists in two mechanisms (handler text parser vs service regex) — single source of truth needed | Resolved |
 | M2 | Medium | `LanguageFileService` / `LanguageManifest` / `LanguageEntry` largely duplicating the framework file service machinery | Accepted (deferred) |
-| L1 | Low | `language` command knowledge duplicated in 4 places, mapping rule ("major + 4") drifts from hardcoded report name | Open |
+| L1 | Low | `language` command knowledge duplicated in 4 places, mapping rule ("major + 4") drifts from hardcoded report name | Resolved |
 | L2 | Low | `TryParseVersion` uses `System.Version` as an int-pair comparator; two allocations and heavier than needed | Resolved with M1 |
 | L3 | Low | `SaveLanguageManifest` re-reads the file for encoding only; offsets applied to a snapshot can silently corrupt a concurrently changed file | Open |
 | L4 | Low | Case-insensitive "did it change" comparisons copied from frameworks where they are meaningful; numeric versions have no case | Open |
@@ -33,12 +33,15 @@ No critical or high-severity issues. Two medium-severity maintainability finding
   invariant formatting directly.
 - **T1 is resolved structurally.** Non-numeric values are rejected by `LanguageVersion.TryParse` before an entry is
   created, so the handler cannot receive one.
+- **L1 is resolved across all commands.** Command names now come from `BumpCommandNames` and are reused by command
+  configuration, command classes and report constructors. For the language command, the mapping rule now lives in
+  `LanguageVersion.SdkMajorOffset`/`FromSdkMajor`, and the command description uses the same offset.
 - **M2 is accepted for now.** The duplication is tolerable for two related implementations, and extracting a
   generic `TManifest`/`TEntry` base now would couple them prematurely. Revisit if a third related value-bump command
   is introduced; prefer domain-agnostic helpers (XML occurrence scanner, span edit applier, file-text registry) over
   a generic base.
-- **L1, L3, L4, L5 and T2 remain open.**
-- Resolution verification: **519 tests passed**; Release build completed with **0 warnings and 0 errors**.
+- **L3, L4, L5 and T2 remain open.**
+- Resolution verification: **522 tests passed**; Release build completed with **0 warnings and 0 errors**.
 
 ---
 
@@ -121,6 +124,10 @@ That is roughly 140 duplicated lines (x2 including manifests), and the domain-mo
 ## Low severity
 
 ### L1. `language` command identity is hardcoded in four places
+
+**Status: Resolved across all commands.** `BumpCommandNames` is now the single source for command names used by
+command configuration, command classes and report constructors. The language mapping rule is centralized in
+`LanguageVersion.SdkMajorOffset`/`FromSdkMajor` and reused by the command description.
 
 **Files:** `src/DotBump/CommandConfiguration.cs:27,136-152`, `src/DotBump/Commands/BumpLanguage/BumpLanguageCommand.cs:17`, `src/DotBump/Commands/BumpLanguage/BumpLanguageHandler.cs:64`, `src/DotBump/Reports/BumpReport.cs:78`
 
@@ -244,5 +251,6 @@ Minor test nits (non-blocking):
 
 ## Verdict
 
-Approve: M1 (single parser), L2 and T1 are resolved. M2 is accepted and deferred; revisit it if a third related
-value-bump command is introduced. The remaining low-severity items are independent polish.
+Approve: M1 (single parser), L1 (command identity across all commands), L2 and T1 are resolved. M2 is accepted and
+deferred; revisit it if a third related value-bump command is introduced. The remaining low-severity items are
+independent polish.
