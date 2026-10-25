@@ -12,17 +12,29 @@ Solid, well-scoped feature. The refactoring commits are the strongest part of th
 
 No critical or high-severity issues. Two medium-severity maintainability findings (duplicated version-parsing logic and a large near-copy of the MSBuild edit machinery), plus several low-severity hardening and consistency items.
 
-| # | Severity | Finding |
-|---|----------|---------|
-| M1 | Medium | Version-number parsing exists in two mechanisms (handler text parser vs service regex) — single source of truth needed |
-| M2 | Medium | `LanguageFileService` / `LanguageManifest` / `LanguageEntry` largely duplicating the framework file service machinery |
-| L1 | Low | `language` command knowledge duplicated in 4 places, mapping rule ("major + 4") drifts from hardcoded report name |
-| L2 | Low | `TryParseVersion` uses `System.Version` as an int-pair comparator; two allocations and heavier than needed |
-| L3 | Low | `SaveLanguageManifest` re-reads the file for encoding only; offsets applied to a snapshot can silently corrupt a concurrently changed file |
-| L4 | Low | Case-insensitive "did it change" comparisons copied from frameworks where they are meaningful; numeric versions have no case |
-| L5 | Low | CI language step: speculative `if [ -d ./test/DotBump.Tests/Data ]` guard around `--exclude` |
-| T1 | Low | Test gap: non-numeric entry reaching the handler is never asserted to be left unchanged |
-| T2 | Low | Test gap: `SaveLanguageManifest` skip paths (unregistered file text) uncovered |
+| # | Severity | Finding | Status |
+|---|----------|---------|--------|
+| M1 | Medium | Version-number parsing exists in two mechanisms (handler text parser vs service regex) — single source of truth needed | Resolved |
+| M2 | Medium | `LanguageFileService` / `LanguageManifest` / `LanguageEntry` largely duplicating the framework file service machinery | Open |
+| L1 | Low | `language` command knowledge duplicated in 4 places, mapping rule ("major + 4") drifts from hardcoded report name | Open |
+| L2 | Low | `TryParseVersion` uses `System.Version` as an int-pair comparator; two allocations and heavier than needed | Resolved with M1 |
+| L3 | Low | `SaveLanguageManifest` re-reads the file for encoding only; offsets applied to a snapshot can silently corrupt a concurrently changed file | Open |
+| L4 | Low | Case-insensitive "did it change" comparisons copied from frameworks where they are meaningful; numeric versions have no case | Open |
+| L5 | Low | CI language step: speculative `if [ -d ./test/DotBump.Tests/Data ]` guard around `--exclude` | Open |
+| T1 | Low | Test gap: non-numeric entry reaching the handler is never asserted to be left unchanged | Resolved structurally |
+| T2 | Low | Test gap: `SaveLanguageManifest` skip paths (unregistered file text) uncovered | Open |
+
+### Resolution update (2026-10-25)
+
+- **M1 is resolved.** Parsing is now owned by the `LanguageVersion` value type. `LanguageFileService` parses each
+  `<LangVersion>` once and stores the result on `LanguageEntry.ParsedVersion`; `BumpLanguageHandler` only compares
+  parsed values. `TryParseVersion` and the separate file-service regex were removed.
+- **L2 is resolved with M1.** `System.Version` is no longer used; `LanguageVersion` provides the comparison and
+  invariant formatting directly.
+- **T1 is resolved structurally.** Non-numeric values are rejected by `LanguageVersion.TryParse` before an entry is
+  created, so the handler cannot receive one.
+- **M2, L1, L3, L4, L5 and T2 remain open.**
+- Resolution verification: **519 tests passed**; Release build completed with **0 warnings and 0 errors**.
 
 ---
 
@@ -30,7 +42,14 @@ No critical or high-severity issues. Two medium-severity maintainability finding
 
 ### M1. Version parsing lives in two components with independent rules
 
-**Files:** `src/DotBump/Commands/BumpLanguage/BumpLanguageHandler.cs:71-91`, `src/DotBump/Commands/BumpLanguage/LanguageFileService.cs:21-24,131-138`
+**Status: Resolved.** Parsing now lives in `LanguageVersion.TryParse`; `LanguageFileService` stores
+`ParsedVersion` on `LanguageEntry`, and `BumpLanguageHandler` compares parsed values only. `TryParseVersion` and the
+separate file-service regex were removed.
+
+**Files:** `src/DotBump/Commands/BumpLanguage/DataModel/LanguageVersion.cs:18-44`,
+`src/DotBump/Commands/BumpLanguage/DataModel/LanguageEntry.cs:45`,
+`src/DotBump/Commands/BumpLanguage/LanguageFileService.cs:125-144`,
+`src/DotBump/Commands/BumpLanguage/BumpLanguageHandler.cs:44-57`
 
 The file service decides *what counts as a version* with a regex:
 
@@ -106,7 +125,11 @@ A rename or a change to the mapping rule requires touching all of them, and noth
 
 ### L2. `TryParseVersion` leans on `System.Version` unnecessarily
 
-**Files:** `src/DotBump/Commands/BumpLanguage/BumpLanguageHandler.cs:44-47,71-91`
+**Status: Resolved with M1.** `System.Version` and `TryParseVersion` were removed; comparisons now use the
+`LanguageVersion` value type.
+
+**Files:** `src/DotBump/Commands/BumpLanguage/BumpLanguageHandler.cs:44-47`,
+`src/DotBump/Commands/BumpLanguage/DataModel/LanguageVersion.cs:46-49`
 
 ```csharp
 var targetVersion = new Version(
@@ -167,7 +190,10 @@ Gaps worth closing:
 
 ### T1. Non-numeric entries reaching the handler are never exercised
 
-**Files:** `test/DotBump.Tests/Commands/BumpLanguage/BumpLanguageHandlerTests.cs`
+**Status: Resolved structurally.** Non-numeric values are rejected by `LanguageVersion.TryParse` before an entry is
+created, so a non-numeric entry cannot reach the handler.
+
+**Files:** `test/DotBump.Tests/Commands/BumpLanguage/LanguageVersionTests.cs`
 
 All handler tests use parseable versions. Because the service filters them upstream today, the only ways a non-numeric value reaches `TryParseVersion` are a mocked manifest (test) or future code change (M1). One cheap theory/handlers-level test locks the contract in:
 
@@ -210,4 +236,6 @@ Minor test nits (non-blocking):
 
 ## Verdict
 
-Approve with comments: fix M1 (single parser) before merge if convenient — it is a mechanical, low-risk change — and plan M2 (shared MSBuild value-editing machinery) as an immediate follow-up so the next value-bump command stops the third copy from appearing. The low-severity items are polish and can ride along with M2.
+Approve: M1 (single parser), L2 and T1 are resolved. Plan M2 (shared MSBuild value-editing machinery) as an immediate
+follow-up so the next value-bump command stops the third copy from appearing. The remaining low-severity items are
+polish and can ride along with M2.
