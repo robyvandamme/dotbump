@@ -355,12 +355,27 @@ Quote patterns in bash/zsh so the shell does not expand them as file globs. Ever
 
 Private feeds are supported for `tools` and `packages` using environment variables.
 
+If the default `./nuget.config` file does not exist, the `tools` and `packages` commands use a default configuration
+with only the official nuget.org source (`https://api.nuget.org/v3/index.json`). User and machine-wide NuGet
+configuration are not consulted; a nuget.config passed explicitly via `--config` must exist.
+
 See [credentials in NuGet config files](https://learn.microsoft.com/en-us/nuget/consume-packages/consuming-packages-authenticated-feeds#credentials-in-nugetconfig-files)
 and [using environment variables](https://learn.microsoft.com/en-us/nuget/reference/nuget-config-file#using-environment-variables)
 for more information.
 
 The username and plain text password in a nuget.config file can use an environment variable by adding % to the
-beginning and end of the environment variable name you would like to use.
+beginning and end of the environment variable name you would like to use. Literal credentials are not supported.
+
+Before any feed is queried, the nuget.config file is validated and the command exits with code `1` when any of the
+following does not hold:
+
+* the configuration declares at least one package source;
+* every package source is an HTTPS URL and declares `protocolVersion="3"`;
+* every credential value is a `%ENV_VAR%` placeholder, as shown in the example below;
+* every credential key is `UserName` or `ClearTextPassword`.
+
+Validation errors are also written to the `errors` array of the report when `--output` is used; a configuration
+without any package sources aborts before a report is written.
 
 Example:
 
@@ -381,6 +396,13 @@ Example:
 </configuration>
 ```
 
+### Logging
+
+All commands accept `--debug` and `--logfile`.
+
+`--debug` enables debug logging for troubleshooting, which includes response data. The value must be passed
+explicitly, as in `--debug true`; a bare `--debug` is ignored.
+
 ### Scanning and file handling
 
 The repository-scanning commands (`packages`, `frameworks` and `language`) scan the directory passed via `--path`
@@ -397,13 +419,18 @@ quoting, entities, attribute layout, XML declaration, encoding, byte order mark 
 
 All commands accept `--output` to write a report. The format is inferred from the file extension:
 
-* `.json` — the full, machine-readable report, including every scanned entry, its old and new version, and the
-  `warnings` and `errors` arrays. This is the default for any other extension.
+* `.json` — the full, machine-readable report, including every entry, its old and new version, and the `warnings`
+  and `errors` arrays. For `packages` there is one entry per package id, using the highest currently referenced
+  version as the old version; all occurrences of that id are updated together. This is the default for any other
+  extension.
 * `.md` (or `.markdown`) — a concise markdown report intended as the content for an automated dependency-update pull
   request. It lists only what changed, plus any warnings and errors. When there is nothing to report, an existing
   markdown report at that path is removed, so a reused output path never yields stale content.
 
 All commands return exit code `1` when an error occurs (for example an invalid NuGet configuration).
+Invalid arguments — for example a nonexistent `--manifest`, `--config`, `--path` or `--exclude` path, an empty
+`--skip-tool`/`--skip-package` value, or an unknown option — are rejected before the command runs and return exit
+code `-1`.
 
 ```markdown
 ## Packages
