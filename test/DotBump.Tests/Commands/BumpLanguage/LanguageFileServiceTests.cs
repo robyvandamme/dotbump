@@ -218,6 +218,50 @@ public class LanguageFileServiceTests
                 () => bytes[1].ShouldBe((byte)0xBB),
                 () => bytes[2].ShouldBe((byte)0xBF));
         }
+
+        [Fact]
+        public void With_Missing_File_Text_Skips_File()
+        {
+            ResetTempDirectory();
+            var path = Path.Combine(TempDirectory.AbsolutePath, "App.csproj");
+            var manifest = new LanguageManifest();
+            var entry = new LanguageEntry("App.csproj", path, "12.0", new LanguageVersion(12, 0), 0, 4);
+            manifest.Add(entry);
+            manifest.SetVersion(entry, "14.0");
+            var service = CreateService();
+
+            Should.NotThrow(() => service.SaveLanguageManifest(manifest));
+
+            manifest.Warnings.ShouldBeEmpty();
+            File.Exists(path).ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Invalid_Span_Adds_Warning_And_Leaves_File_Unchanged()
+        {
+            ResetTempDirectory();
+            var original = CreateProject("12.0");
+            WriteFile("App.csproj", original);
+            var path = Path.Combine(TempDirectory.AbsolutePath, "App.csproj");
+            var manifest = new LanguageManifest();
+            var entry = new LanguageEntry(
+                "App.csproj",
+                path,
+                "12.0",
+                new LanguageVersion(12, 0),
+                original.Length + 10,
+                4);
+            manifest.Add(entry);
+            manifest.RegisterFileText(path, original);
+            manifest.SetVersion(entry, "14.0");
+            var service = CreateService();
+
+            service.SaveLanguageManifest(manifest);
+
+            manifest.Warnings.ShouldContain(warning =>
+                warning.Contains("recorded span is invalid", StringComparison.Ordinal));
+            File.ReadAllText(path).ShouldBe(original);
+        }
     }
 
     private static LocalDirectory TempDirectory => new("./temp/language");
