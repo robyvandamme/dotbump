@@ -15,7 +15,7 @@ No critical or high-severity issues. Two medium-severity maintainability finding
 | # | Severity | Finding | Status |
 |---|----------|---------|--------|
 | M1 | Medium | Version-number parsing exists in two mechanisms (handler text parser vs service regex) — single source of truth needed | Resolved |
-| M2 | Medium | `LanguageFileService` / `LanguageManifest` / `LanguageEntry` largely duplicating the framework file service machinery | Open |
+| M2 | Medium | `LanguageFileService` / `LanguageManifest` / `LanguageEntry` largely duplicating the framework file service machinery | Accepted (deferred) |
 | L1 | Low | `language` command knowledge duplicated in 4 places, mapping rule ("major + 4") drifts from hardcoded report name | Open |
 | L2 | Low | `TryParseVersion` uses `System.Version` as an int-pair comparator; two allocations and heavier than needed | Resolved with M1 |
 | L3 | Low | `SaveLanguageManifest` re-reads the file for encoding only; offsets applied to a snapshot can silently corrupt a concurrently changed file | Open |
@@ -33,7 +33,11 @@ No critical or high-severity issues. Two medium-severity maintainability finding
   invariant formatting directly.
 - **T1 is resolved structurally.** Non-numeric values are rejected by `LanguageVersion.TryParse` before an entry is
   created, so the handler cannot receive one.
-- **M2, L1, L3, L4, L5 and T2 remain open.**
+- **M2 is accepted for now.** The duplication is tolerable for two related implementations, and extracting a
+  generic `TManifest`/`TEntry` base now would couple them prematurely. Revisit if a third related value-bump command
+  is introduced; prefer domain-agnostic helpers (XML occurrence scanner, span edit applier, file-text registry) over
+  a generic base.
+- **L1, L3, L4, L5 and T2 remain open.**
 - Resolution verification: **519 tests passed**; Release build completed with **0 warnings and 0 errors**.
 
 ---
@@ -88,6 +92,10 @@ foreach (var entry in manifest.Entries.Where(e => e.ParsedVersion != null))
 That removes `TryParseVersion` entirely and makes the "entries are always numeric" invariant explicit in the model.
 
 ### M2. `LanguageFileService` is a ~90% copy of `FrameworkFileService`
+
+**Status: Accepted (deferred).** The duplication is intentionally accepted while there are only two related
+implementations. Revisit when a third value-bump command is introduced; at that point, extract domain-agnostic
+mechanics by composition rather than introducing a generic manifest/entry base.
 
 **Files:** `src/DotBump/Commands/BumpLanguage/LanguageFileService.cs` vs `src/DotBump/Commands/BumpFrameworks/FrameworkFileService.cs`
 
@@ -236,6 +244,5 @@ Minor test nits (non-blocking):
 
 ## Verdict
 
-Approve: M1 (single parser), L2 and T1 are resolved. Plan M2 (shared MSBuild value-editing machinery) as an immediate
-follow-up so the next value-bump command stops the third copy from appearing. The remaining low-severity items are
-polish and can ride along with M2.
+Approve: M1 (single parser), L2 and T1 are resolved. M2 is accepted and deferred; revisit it if a third related
+value-bump command is introduced. The remaining low-severity items are independent polish.
