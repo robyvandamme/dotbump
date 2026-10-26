@@ -8,8 +8,9 @@ where they describe the corresponding CLI behaviour.
 **Reviewer role:** .NET Tech Lead (code-only review).
 
 **Update (2026-10-26, post-review fixes):** M1 was addressed in follow-up commits; N1 and part of L1 were cleaned up
-in the same pass. The original findings are retained below with resolution notes, so the document still reflects what
-was first reported. L2 remains open.
+in the same pass. L2 was subsequently addressed with CLI-level theories on the `sdk` command; the existing
+`--prerelease true` integration tests were kept as regression guards for the explicit-value form. The original
+findings are retained below with resolution notes, so the document still reflects what was first reported.
 
 ---
 
@@ -32,7 +33,7 @@ they do not detect that mismatch.
 |---|----------|---------|--------|
 | M1 | Medium | `IsDebugMode` accepts arbitrary `--debug=<value>` and `LogFile` accepts `--logfile=` even though Spectre rejects both; tests codify these unreachable command outcomes | **Resolved** — pre-parser aligned with Spectre, fail closed; tests updated |
 | L1 | Low | Token matching and prefix literals are duplicated between `IsDebugMode` and `LogFile` | **Partially resolved** — shared constants added; a single token matcher was not extracted |
-| L2 | Low | No CLI-level tests for the newly documented syntaxes; existing integration tests still use `--prerelease true` | Open |
+| L2 | Low | No CLI-level tests for the newly documented syntaxes; existing integration tests still use `--prerelease true` | **Resolved** — CLI-level theories added on `sdk`; old-form tests kept as regression guards |
 | N1 | Nit | Comment claims a null check that is not performed | **Resolved** — comments corrected |
 
 ---
@@ -161,7 +162,27 @@ forms are implemented once.
 
 ---
 
-## L2. New flag syntax is not covered by CLI-level tests — **OPEN**
+## L2. New flag syntax is not covered by CLI-level tests — **RESOLVED**
+
+> **Resolution.** Two `[Theory]` tests were added to `ExecuteAsync` in
+> `test/DotBump.Tests/Commands/BumpSdk/BumpSdkCommandTests.cs`, exercising the real `CommandApp.RunAsync` parser with
+> `PropagateExceptions`, so any drift between `ArgumentHandler`-style syntax and the Spectre option declarations fails
+> loudly:
+>
+> - `With_Debug_Syntax_Accepted_By_Spectre_Returns_0`: `["sdk", "--debug"]`, `["sdk", "--debug=true"]`,
+>   `["sdk", "--debug=false"]` — Spectre accepts each form and the run exits `0`.
+> - `With_PreRelease_Syntax_Sets_PreRelease_To_True`: `["sdk", "--type", "major", "--prerelease"]` (bare) and
+>   `["sdk", "--type", "major", "--prerelease", "true"]` (explicit value) — both accepted and both forward
+>   `prerelease: true` to the handler, verified via Moq.
+>
+> The existing `--prerelease true` integration tests (`BumpSdkCommandTests`,
+> `BumpToolsCommandTests`, `BumpPackagesCommandTests`) were deliberately **not** replaced: the explicit-value form is
+> still a valid documented syntax, so those tests act as regression guards for it. Because `--debug` and
+> `--prerelease` are declared once on the shared `BumpSettings`, the `sdk` command acts as the representative
+> command; repeating the theories per command would add little assurance. Verification: `BumpSdkCommandTests`
+> passes 12/12.
+>
+> The original finding is retained below.
 
 **Files:** `test/DotBump.Tests/Commands/BumpSdk/BumpSdkCommandTests.cs:427`,
 `test/DotBump.Tests/Commands/BumpTools/BumpToolsCommandTests.cs:331`,
@@ -218,8 +239,9 @@ independently. The same applies to `LogFile` (`ArgumentHandler.cs:42-45`).
   another option, and both `=` forms.
 - **Update:** the M1 gaps are addressed — unrecognized/empty inline values now assert fail-closed results, and the
   symmetric `--debug=` (empty inline value) case has been added.
-- Remaining gap (L2): the actual CLI parsing path is not exercised, and the existing `--prerelease true` integration
-  tests were not updated to the newly documented bare syntax.
+- **Update:** the L2 gap is addressed — CLI-level theories on `sdk` lock in the bare and `=`/explicit-value forms for
+  `--debug` and `--prerelease` through the real Spectre parser; the existing `--prerelease true` integration tests
+  were kept as regression guards for the old form.
 
 ---
 
@@ -236,8 +258,8 @@ independently. The same applies to `LogFile` (`ArgumentHandler.cs:42-45`).
 ## Verdict
 
 **Approve.** ~~Approve with minor changes.~~ Valid documented usage (`--debug`, `--debug=true`, `--debug=false`,
-`--logfile=path`) behaves correctly, and there is no blocking production defect. The blocking-for-merge item is
-resolved: the pre-parser now agrees with Spectre on invalid values, the tests no longer assert unreachable command
-outcomes, and the fail-open branch documented in M1 is gone. The end-to-end coverage from L2 remains a low-severity
-follow-up for a later change. L1's remaining matcher-extraction suggestion and N1's guard alternative are optional
-clean-ups.
+`--logfile=path`) behaves correctly, and there is no blocking production defect. All findings are now addressed: the
+pre-parser agrees with Spectre on invalid values (M1), the newly documented bare/`=value` syntaxes are locked in by
+CLI-level tests through the real Spectre parser (L2), and the duplicated literals are shared constants (L1,
+partially). L1's remaining matcher-extraction suggestion and N1's guard alternative are optional clean-ups for a
+later change.
