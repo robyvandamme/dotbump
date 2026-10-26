@@ -92,6 +92,7 @@ internal static class CommandConfiguration
                 .WithExample(BumpCommandNames.Tools, TypeOptionName, PatchBumpType)
                 .WithExample(BumpCommandNames.Tools, TypeOptionName, MajorBumpType)
                 .WithExample(BumpCommandNames.Tools, TypeOptionName, MajorBumpType, PreReleaseOptionName, "true")
+                .WithExample(BumpCommandNames.Tools, TypeOptionName, MajorBumpType, "--skip-tool", "dotnet-*")
                 .WithExample(BumpCommandNames.Tools, "--manifest", "./other/dotnet-tools.json")
                 .WithExample(
                     BumpCommandNames.Tools,
@@ -122,10 +123,21 @@ internal static class CommandConfiguration
                 .WithExample(BumpCommandNames.Packages, TypeOptionName, MajorBumpType, PreReleaseOptionName, "true")
                 .WithExample(
                     BumpCommandNames.Packages,
+                    TypeOptionName,
+                    MajorBumpType,
+                    PreReleaseOptionName,
+                    "true",
+                    "--skip-package",
+                    "Microsoft.*")
+                .WithExample(
+                    BumpCommandNames.Packages,
+                    "--path",
+                    "./src",
                     "--config",
                     "./custom-nuget.config",
                     OutputOptionName,
                     "bump-packages-report.json")
+                .WithExample(BumpCommandNames.Packages, "--exclude", "./test/DotBump.Tests/Data")
                 .WithExample(
                     BumpCommandNames.Packages,
                     DebugOptionName,
@@ -137,7 +149,23 @@ internal static class CommandConfiguration
             config.Settings.Registrar.Register<IBumpFrameworksHandler, BumpFrameworksHandler>();
 
             config.AddCommand<BumpFrameworksCommand>(name: BumpCommandNames.Frameworks)
-                .WithDescription("Bump the target framework versions.");
+                .WithDescription(
+                    "Bump the target framework versions. " +
+                    "Aligns `<TargetFramework>` values to the SDK major version in global.json.")
+                .WithExample(BumpCommandNames.Frameworks)
+                .WithExample(BumpCommandNames.Frameworks, "--file", "./other/global.json", "--path", "./src")
+                .WithExample(
+                    BumpCommandNames.Frameworks,
+                    "--exclude",
+                    "./test",
+                    OutputOptionName,
+                    "bump-frameworks-report.md")
+                .WithExample(
+                    BumpCommandNames.Frameworks,
+                    DebugOptionName,
+                    "true",
+                    LogFileOptionName,
+                    "bump-frameworks-log.txt");
 
             config.Settings.Registrar.Register<ILanguageFileService, LanguageFileService>();
             config.Settings.Registrar.Register<IBumpLanguageHandler, BumpLanguageHandler>();
