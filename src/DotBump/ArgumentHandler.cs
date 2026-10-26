@@ -44,7 +44,7 @@ internal static class ArgumentHandler
             return string.Empty;
         }
 
-        for (int i = 0; i < args.Length; i++)
+        for (var i = 0; i < args.Length; i++)
         {
             if (args[i].Equals("--logfile", StringComparison.OrdinalIgnoreCase))
             {
@@ -56,6 +56,12 @@ internal static class ArgumentHandler
                 }
 
                 return args[i + 1];
+            }
+
+            // The "--logfile=value" form carries its value in the same token.
+            if (args[i].StartsWith("--logfile=", StringComparison.OrdinalIgnoreCase))
+            {
+                return args[i]["--logfile=".Length..];
             }
         }
 

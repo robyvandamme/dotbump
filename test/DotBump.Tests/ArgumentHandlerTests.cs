@@ -210,5 +210,37 @@ public class ArgumentHandlerTests
             var result = ArgumentHandler.LogFile(args);
             result.ShouldBe("/var/logs/application.log");
         }
+
+        [Fact]
+        public void With_LogFile_Equals_Value_Returns_LogFile_Value()
+        {
+            var args = new[] { "--verbose", "--logfile=app.log", "--config", "config.json" };
+            var result = ArgumentHandler.LogFile(args);
+            result.ShouldBe("app.log");
+        }
+
+        [Fact]
+        public void With_Uppercase_LogFile_Equals_Value_Returns_LogFile_Value()
+        {
+            var args = new[] { "--LOGFILE=uppercase.log" };
+            var result = ArgumentHandler.LogFile(args);
+            result.ShouldBe("uppercase.log");
+        }
+
+        [Fact]
+        public void With_LogFile_Equals_Path_And_Extension_Returns_LogFile_Value()
+        {
+            var args = new[] { "--logfile=/var/logs/application.log" };
+            var result = ArgumentHandler.LogFile(args);
+            result.ShouldBe("/var/logs/application.log");
+        }
+
+        [Fact]
+        public void With_LogFile_Equals_Empty_Value_Returns_Empty_String()
+        {
+            var args = new[] { "--logfile=" };
+            var result = ArgumentHandler.LogFile(args);
+            result.ShouldBe(string.Empty);
+        }
     }
 }
