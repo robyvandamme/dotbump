@@ -63,9 +63,9 @@ EXAMPLES:
     dotnet dotbump sdk
     dotnet dotbump sdk --type patch
     dotnet dotbump sdk --type major
-    dotnet dotbump sdk --type major --prerelease true
+    dotnet dotbump sdk --type major --prerelease
     dotnet dotbump sdk --file ./other/global.json --output bump-sdk-report.json
-    dotnet dotbump sdk --security-only true --debug true --logfile bump-sdk-log.txt
+    dotnet dotbump sdk --security-only --debug --logfile bump-sdk-log.txt
 
 OPTIONS:
     -h, --help             Prints help information
@@ -103,11 +103,11 @@ EXAMPLES:
     dotnet dotbump tools
     dotnet dotbump tools --type patch
     dotnet dotbump tools --type major
-    dotnet dotbump tools --type major --prerelease true
+    dotnet dotbump tools --type major --prerelease
     dotnet dotbump tools --type major --skip-tool "dotnet-*"
     dotnet dotbump tools --manifest ./other/dotnet-tools.json
     dotnet dotbump tools --config ./custom-nuget.config --output bump-tools-report.json
-    dotnet dotbump tools --debug true --logfile bump-tools-log.txt
+    dotnet dotbump tools --debug --logfile bump-tools-log.txt
 
 OPTIONS:
     -h, --help       Prints help information
@@ -148,11 +148,11 @@ EXAMPLES:
     dotnet dotbump packages
     dotnet dotbump packages --type patch
     dotnet dotbump packages --type major
-    dotnet dotbump packages --type major --prerelease true
-    dotnet dotbump packages --type major --prerelease true --skip-package "Microsoft.*"
+    dotnet dotbump packages --type major --prerelease
+    dotnet dotbump packages --type major --prerelease --skip-package "Microsoft.*"
     dotnet dotbump packages --path ./src --config ./custom-nuget.config --output bump-packages-report.json
     dotnet dotbump packages --exclude ./test/DotBump.Tests/Data
-    dotnet dotbump packages --debug true --logfile bump-packages-log.txt
+    dotnet dotbump packages --debug --logfile bump-packages-log.txt
 
 OPTIONS:
     -h, --help           Prints help information
@@ -210,7 +210,7 @@ untouched:
 
 Skipped packages are listed under `warnings` in the output report, so automated runs (for example a dependency-update
 PR that embeds the report) can surface them without extra debugging. They are also logged at warning level; run with
-`--debug true` to see them in the log.
+`--debug` to see them in the log.
 
 Other current limitations:
 
@@ -238,7 +238,7 @@ EXAMPLES:
     dotnet dotbump frameworks
     dotnet dotbump frameworks --file ./other/global.json --path ./src
     dotnet dotbump frameworks --exclude ./test --output bump-frameworks-report.md
-    dotnet dotbump frameworks --debug true --logfile bump-frameworks-log.txt
+    dotnet dotbump frameworks --debug --logfile bump-frameworks-log.txt
 
 OPTIONS:
     -h, --help       Prints help information
@@ -284,7 +284,7 @@ EXAMPLES:
     dotnet dotbump language
     dotnet dotbump language --file ./other/global.json --path ./src
     dotnet dotbump language --output bump-language-report.json
-    dotnet dotbump language --debug true --logfile bump-language-log.txt
+    dotnet dotbump language --debug --logfile bump-language-log.txt
 
 OPTIONS:
     -h, --help       Prints help information
@@ -338,7 +338,7 @@ character; matching is case-insensitive. Patterns can be specified multiple time
 ```shell
 dotnet dotbump tools --type major --skip-tool "dotnet-*" --skip-tool "GitVersion.*"
 dotnet dotbump tools --type major --skip-tool "dotnet-*,GitVersion.*"
-dotnet dotbump packages --type major --prerelease true --skip-package "Microsoft.*,System.*"
+dotnet dotbump packages --type major --prerelease --skip-package "Microsoft.*,System.*"
 ```
 
 Quote patterns in bash/zsh so the shell does not expand them as file globs. Every skipped entry is listed under
@@ -400,8 +400,8 @@ Example:
 
 All commands accept `--debug` and `--logfile`.
 
-`--debug` enables debug logging for troubleshooting, which includes response data. The value must be passed
-explicitly, as in `--debug true`; a bare `--debug` is ignored.
+`--debug` enables debug logging for troubleshooting, which includes response data. It can be passed as a bare
+flag; `--debug false` explicitly disables it.
 
 ### Scanning and file handling
 

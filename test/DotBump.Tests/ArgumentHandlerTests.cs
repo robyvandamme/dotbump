@@ -25,11 +25,11 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void With_Debug_Flag_As_Last_Arg_Returns_False()
+        public void With_Bare_Debug_Flag_As_Last_Arg_Returns_True()
         {
             var args = new[] { "--other", "--debug" };
             var result = ArgumentHandler.IsDebugMode(args);
-            result.ShouldBeFalse();
+            result.ShouldBeTrue();
         }
 
         [Fact]
@@ -49,7 +49,23 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void With_Debug_Flag_And_Non_True_Value_Returns_False()
+        public void With_Debug_Flag_And_False_Value_Returns_False()
+        {
+            var args = new[] { "--debug", "false" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Debug_Flag_And_Uppercase_False_Value_Returns_False()
+        {
+            var args = new[] { "--debug", "FALSE" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Debug_Flag_And_Unrecognized_Value_Returns_False()
         {
             var args = new[] { "--debug", "yes" };
             var result = ArgumentHandler.IsDebugMode(args);
@@ -65,11 +81,59 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
+        public void With_Debug_Flag_Followed_By_Option_Returns_True()
+        {
+            var args = new[] { "--debug", "--logfile", "app.log" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeTrue();
+        }
+
+        [Fact]
         public void With_Debug_Flag_In_Middle_Of_Args_And_True_Value_Returns_True()
         {
             var args = new[] { "--first", "value", "--debug", "true", "--other", "flag" };
             var result = ArgumentHandler.IsDebugMode(args);
             result.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Debug_Equals_True_Value_Returns_True()
+        {
+            var args = new[] { "--debug=true" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Debug_Equals_False_Value_Returns_False()
+        {
+            var args = new[] { "--debug=false" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Uppercase_Debug_Equals_False_Value_Returns_False()
+        {
+            var args = new[] { "--DEBUG=FALSE" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Debug_Equals_Unrecognized_Value_Returns_False()
+        {
+            var args = new[] { "--debug=yes" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Debug_Equals_Empty_Value_Returns_False()
+        {
+            var args = new[] { "--debug=" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
         }
     }
 
@@ -153,6 +217,38 @@ public class ArgumentHandlerTests
             var args = new[] { "--logfile", "/var/logs/application.log" };
             var result = ArgumentHandler.LogFile(args);
             result.ShouldBe("/var/logs/application.log");
+        }
+
+        [Fact]
+        public void With_LogFile_Equals_Value_Returns_LogFile_Value()
+        {
+            var args = new[] { "--verbose", "--logfile=app.log", "--config", "config.json" };
+            var result = ArgumentHandler.LogFile(args);
+            result.ShouldBe("app.log");
+        }
+
+        [Fact]
+        public void With_Uppercase_LogFile_Equals_Value_Returns_LogFile_Value()
+        {
+            var args = new[] { "--LOGFILE=uppercase.log" };
+            var result = ArgumentHandler.LogFile(args);
+            result.ShouldBe("uppercase.log");
+        }
+
+        [Fact]
+        public void With_LogFile_Equals_Path_And_Extension_Returns_LogFile_Value()
+        {
+            var args = new[] { "--logfile=/var/logs/application.log" };
+            var result = ArgumentHandler.LogFile(args);
+            result.ShouldBe("/var/logs/application.log");
+        }
+
+        [Fact]
+        public void With_LogFile_Equals_Empty_Value_Returns_Empty_String()
+        {
+            var args = new[] { "--logfile=" };
+            var result = ArgumentHandler.LogFile(args);
+            result.ShouldBe(string.Empty);
         }
     }
 }

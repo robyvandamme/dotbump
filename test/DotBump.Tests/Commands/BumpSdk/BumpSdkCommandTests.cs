@@ -431,5 +431,71 @@ public class BumpSdkCommandTests
                 h => h.HandleAsync(BumpType.Major, It.IsAny<string>(), false, true),
                 Times.Once);
         }
+
+        [Theory]
+        [InlineData("--debug")]
+        [InlineData("--debug=true")]
+        [InlineData("--debug=false")]
+        public async Task With_Debug_Syntax_Accepted_By_Spectre_Returns_0(string debugArgument)
+        {
+            using var testConsole = new TestConsole();
+            var handler = new Mock<IBumpSdkHandler>();
+            handler
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync(new BumpReport(new Sdk("8.0.405", "disable"), BumpType.Minor));
+
+            IAnsiConsole console = testConsole;
+            var app = new CommandApp();
+            app.Configure(config =>
+            {
+                config.PropagateExceptions();
+                config.Settings.Registrar.RegisterInstance(console);
+                config.Settings.Registrar.RegisterInstance(Mock.Of<ILogger>());
+                config.Settings.Registrar.RegisterInstance(handler.Object);
+                config.AddCommand<BumpSdkCommand>("sdk");
+            });
+
+            var result = await app.RunAsync(["sdk", debugArgument]);
+
+            result.ShouldBe(0);
+        }
+
+        [Theory]
+        [InlineData("--type", "major", "--prerelease")]
+        [InlineData("--type", "major", "--prerelease", "true")]
+        public async Task With_PreRelease_Syntax_Sets_PreRelease_To_True(params string[] optionArguments)
+        {
+            using var testConsole = new TestConsole();
+            var handler = new Mock<IBumpSdkHandler>();
+            handler
+                .Setup(h => h.HandleAsync(
+                    It.IsAny<BumpType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync(new BumpReport(new Sdk("8.0.405", "disable"), BumpType.Major));
+
+            IAnsiConsole console = testConsole;
+            var app = new CommandApp();
+            app.Configure(config =>
+            {
+                config.PropagateExceptions();
+                config.Settings.Registrar.RegisterInstance(console);
+                config.Settings.Registrar.RegisterInstance(Mock.Of<ILogger>());
+                config.Settings.Registrar.RegisterInstance(handler.Object);
+                config.AddCommand<BumpSdkCommand>("sdk");
+            });
+
+            var result = await app.RunAsync(["sdk", ..optionArguments]);
+
+            result.ShouldBe(0);
+            handler.Verify(
+                h => h.HandleAsync(BumpType.Major, It.IsAny<string>(), false, true),
+                Times.Once);
+        }
     }
 }

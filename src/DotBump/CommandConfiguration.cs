@@ -61,14 +61,12 @@ internal static class CommandConfiguration
                 .WithExample(BumpCommandNames.Sdk)
                 .WithExample(BumpCommandNames.Sdk, TypeOptionName, PatchBumpType)
                 .WithExample(BumpCommandNames.Sdk, TypeOptionName, MajorBumpType)
-                .WithExample(BumpCommandNames.Sdk, TypeOptionName, MajorBumpType, PreReleaseOptionName, "true")
+                .WithExample(BumpCommandNames.Sdk, TypeOptionName, MajorBumpType, PreReleaseOptionName)
                 .WithExample(BumpCommandNames.Sdk, "--file", "./other/global.json", OutputOptionName, "bump-sdk-report.json")
                 .WithExample(
                     BumpCommandNames.Sdk,
                     "--security-only",
-                    "true",
                     DebugOptionName,
-                    "true",
                     LogFileOptionName,
                     "bump-sdk-log.txt");
 
@@ -91,7 +89,7 @@ internal static class CommandConfiguration
                 .WithExample(BumpCommandNames.Tools)
                 .WithExample(BumpCommandNames.Tools, TypeOptionName, PatchBumpType)
                 .WithExample(BumpCommandNames.Tools, TypeOptionName, MajorBumpType)
-                .WithExample(BumpCommandNames.Tools, TypeOptionName, MajorBumpType, PreReleaseOptionName, "true")
+                .WithExample(BumpCommandNames.Tools, TypeOptionName, MajorBumpType, PreReleaseOptionName)
                 .WithExample(BumpCommandNames.Tools, TypeOptionName, MajorBumpType, "--skip-tool", "dotnet-*")
                 .WithExample(BumpCommandNames.Tools, "--manifest", "./other/dotnet-tools.json")
                 .WithExample(
@@ -103,7 +101,6 @@ internal static class CommandConfiguration
                 .WithExample(
                     BumpCommandNames.Tools,
                     DebugOptionName,
-                    "true",
                     LogFileOptionName,
                     "bump-tools-log.txt");
 
@@ -120,13 +117,12 @@ internal static class CommandConfiguration
                 .WithExample(BumpCommandNames.Packages)
                 .WithExample(BumpCommandNames.Packages, TypeOptionName, PatchBumpType)
                 .WithExample(BumpCommandNames.Packages, TypeOptionName, MajorBumpType)
-                .WithExample(BumpCommandNames.Packages, TypeOptionName, MajorBumpType, PreReleaseOptionName, "true")
+                .WithExample(BumpCommandNames.Packages, TypeOptionName, MajorBumpType, PreReleaseOptionName)
                 .WithExample(
                     BumpCommandNames.Packages,
                     TypeOptionName,
                     MajorBumpType,
                     PreReleaseOptionName,
-                    "true",
                     "--skip-package",
                     "Microsoft.*")
                 .WithExample(
@@ -141,7 +137,6 @@ internal static class CommandConfiguration
                 .WithExample(
                     BumpCommandNames.Packages,
                     DebugOptionName,
-                    "true",
                     LogFileOptionName,
                     "bump-packages-log.txt");
 
@@ -163,7 +158,6 @@ internal static class CommandConfiguration
                 .WithExample(
                     BumpCommandNames.Frameworks,
                     DebugOptionName,
-                    "true",
                     LogFileOptionName,
                     "bump-frameworks-log.txt");
 
@@ -181,7 +175,6 @@ internal static class CommandConfiguration
                 .WithExample(
                     BumpCommandNames.Language,
                     DebugOptionName,
-                    "true",
                     LogFileOptionName,
                     "bump-language-log.txt");
         });
