@@ -95,6 +95,38 @@ public class ArgumentHandlerTests
             var result = ArgumentHandler.IsDebugMode(args);
             result.ShouldBeTrue();
         }
+
+        [Fact]
+        public void With_Debug_Equals_True_Value_Returns_True()
+        {
+            var args = new[] { "--debug=true" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Debug_Equals_False_Value_Returns_False()
+        {
+            var args = new[] { "--debug=false" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Uppercase_Debug_Equals_False_Value_Returns_False()
+        {
+            var args = new[] { "--DEBUG=FALSE" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Debug_Equals_Unrecognized_Value_Returns_True()
+        {
+            var args = new[] { "--debug=yes" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeTrue();
+        }
     }
 
     public class LogFile

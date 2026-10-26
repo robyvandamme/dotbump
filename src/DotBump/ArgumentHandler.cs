@@ -25,6 +25,12 @@ internal static class ArgumentHandler
                 // "--debug" is present with no value, an unrecognized value or "true"
                 return true;
             }
+
+            // The "--debug=value" form carries its value in the same token.
+            if (args[i].StartsWith("--debug=", StringComparison.OrdinalIgnoreCase))
+            {
+                return !args[i]["--debug=".Length..].Equals("false", StringComparison.OrdinalIgnoreCase);
+            }
         }
 
         // "--debug" not found in arguments
