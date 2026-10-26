@@ -65,11 +65,11 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void With_Debug_Flag_And_Unrecognized_Value_Returns_True()
+        public void With_Debug_Flag_And_Unrecognized_Value_Returns_False()
         {
             var args = new[] { "--debug", "yes" };
             var result = ArgumentHandler.IsDebugMode(args);
-            result.ShouldBeTrue();
+            result.ShouldBeFalse();
         }
 
         [Fact]
@@ -121,11 +121,19 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void With_Debug_Equals_Unrecognized_Value_Returns_True()
+        public void With_Debug_Equals_Unrecognized_Value_Returns_False()
         {
             var args = new[] { "--debug=yes" };
             var result = ArgumentHandler.IsDebugMode(args);
-            result.ShouldBeTrue();
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Debug_Equals_Empty_Value_Returns_False()
+        {
+            var args = new[] { "--debug=" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
         }
     }
 
