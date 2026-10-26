@@ -63,9 +63,9 @@ EXAMPLES:
     dotnet dotbump sdk
     dotnet dotbump sdk --type patch
     dotnet dotbump sdk --type major
-    dotnet dotbump sdk --type major --prerelease true
+    dotnet dotbump sdk --type major --prerelease
     dotnet dotbump sdk --file ./other/global.json --output bump-sdk-report.json
-    dotnet dotbump sdk --security-only true --debug --logfile bump-sdk-log.txt
+    dotnet dotbump sdk --security-only --debug --logfile bump-sdk-log.txt
 
 OPTIONS:
     -h, --help             Prints help information
@@ -103,7 +103,7 @@ EXAMPLES:
     dotnet dotbump tools
     dotnet dotbump tools --type patch
     dotnet dotbump tools --type major
-    dotnet dotbump tools --type major --prerelease true
+    dotnet dotbump tools --type major --prerelease
     dotnet dotbump tools --type major --skip-tool "dotnet-*"
     dotnet dotbump tools --manifest ./other/dotnet-tools.json
     dotnet dotbump tools --config ./custom-nuget.config --output bump-tools-report.json
@@ -148,8 +148,8 @@ EXAMPLES:
     dotnet dotbump packages
     dotnet dotbump packages --type patch
     dotnet dotbump packages --type major
-    dotnet dotbump packages --type major --prerelease true
-    dotnet dotbump packages --type major --prerelease true --skip-package "Microsoft.*"
+    dotnet dotbump packages --type major --prerelease
+    dotnet dotbump packages --type major --prerelease --skip-package "Microsoft.*"
     dotnet dotbump packages --path ./src --config ./custom-nuget.config --output bump-packages-report.json
     dotnet dotbump packages --exclude ./test/DotBump.Tests/Data
     dotnet dotbump packages --debug --logfile bump-packages-log.txt
@@ -338,7 +338,7 @@ character; matching is case-insensitive. Patterns can be specified multiple time
 ```shell
 dotnet dotbump tools --type major --skip-tool "dotnet-*" --skip-tool "GitVersion.*"
 dotnet dotbump tools --type major --skip-tool "dotnet-*,GitVersion.*"
-dotnet dotbump packages --type major --prerelease true --skip-package "Microsoft.*,System.*"
+dotnet dotbump packages --type major --prerelease --skip-package "Microsoft.*,System.*"
 ```
 
 Quote patterns in bash/zsh so the shell does not expand them as file globs. Every skipped entry is listed under
