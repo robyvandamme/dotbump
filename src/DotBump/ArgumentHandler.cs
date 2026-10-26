@@ -12,25 +12,18 @@ internal static class ArgumentHandler
             return false;
         }
 
-        for (int i = 0; i < args.Length; i++)
+        for (var i = 0; i < args.Length; i++)
         {
             if (args[i].Equals("--debug", StringComparison.OrdinalIgnoreCase))
             {
-                // Check if this is the last argument or if the next argument isn't "true"
-                if (i == args.Length - 1)
+                // The flag enables debug logging unless it is explicitly disabled with a "false" value.
+                if (i < args.Length - 1 && args[i + 1].Equals("false", StringComparison.OrdinalIgnoreCase))
                 {
-                    // "--debug" is the last argument with no value
                     return false;
                 }
 
-                // Check if the next argument is "true"
-                if (args[i + 1].Equals("true", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-
-                // "--debug" is present but followed by something other than "true"
-                return false;
+                // "--debug" is present with no value, an unrecognized value or "true"
+                return true;
             }
         }
 

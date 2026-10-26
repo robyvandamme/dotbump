@@ -68,7 +68,6 @@ internal static class CommandConfiguration
                     "--security-only",
                     "true",
                     DebugOptionName,
-                    "true",
                     LogFileOptionName,
                     "bump-sdk-log.txt");
 
@@ -103,7 +102,6 @@ internal static class CommandConfiguration
                 .WithExample(
                     BumpCommandNames.Tools,
                     DebugOptionName,
-                    "true",
                     LogFileOptionName,
                     "bump-tools-log.txt");
 
@@ -141,7 +139,6 @@ internal static class CommandConfiguration
                 .WithExample(
                     BumpCommandNames.Packages,
                     DebugOptionName,
-                    "true",
                     LogFileOptionName,
                     "bump-packages-log.txt");
 
@@ -163,7 +160,6 @@ internal static class CommandConfiguration
                 .WithExample(
                     BumpCommandNames.Frameworks,
                     DebugOptionName,
-                    "true",
                     LogFileOptionName,
                     "bump-frameworks-log.txt");
 
@@ -181,7 +177,6 @@ internal static class CommandConfiguration
                 .WithExample(
                     BumpCommandNames.Language,
                     DebugOptionName,
-                    "true",
                     LogFileOptionName,
                     "bump-language-log.txt");
         });

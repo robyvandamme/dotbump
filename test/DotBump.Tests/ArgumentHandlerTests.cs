@@ -25,11 +25,11 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void With_Debug_Flag_As_Last_Arg_Returns_False()
+        public void With_Bare_Debug_Flag_As_Last_Arg_Returns_True()
         {
             var args = new[] { "--other", "--debug" };
             var result = ArgumentHandler.IsDebugMode(args);
-            result.ShouldBeFalse();
+            result.ShouldBeTrue();
         }
 
         [Fact]
@@ -49,17 +49,41 @@ public class ArgumentHandlerTests
         }
 
         [Fact]
-        public void With_Debug_Flag_And_Non_True_Value_Returns_False()
+        public void With_Debug_Flag_And_False_Value_Returns_False()
+        {
+            var args = new[] { "--debug", "false" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Debug_Flag_And_Uppercase_False_Value_Returns_False()
+        {
+            var args = new[] { "--debug", "FALSE" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void With_Debug_Flag_And_Unrecognized_Value_Returns_True()
         {
             var args = new[] { "--debug", "yes" };
             var result = ArgumentHandler.IsDebugMode(args);
-            result.ShouldBeFalse();
+            result.ShouldBeTrue();
         }
 
         [Fact]
         public void With_Uppercase_Debug_Flag_And_True_Value_Returns_True()
         {
             var args = new[] { "--DEBUG", "true" };
+            var result = ArgumentHandler.IsDebugMode(args);
+            result.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void With_Debug_Flag_Followed_By_Option_Returns_True()
+        {
+            var args = new[] { "--debug", "--logfile", "app.log" };
             var result = ArgumentHandler.IsDebugMode(args);
             result.ShouldBeTrue();
         }
