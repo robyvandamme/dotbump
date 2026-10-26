@@ -7,6 +7,10 @@
 where they describe the corresponding CLI behaviour.  
 **Reviewer role:** .NET Tech Lead (code-only review).
 
+**Update (2026-10-26, post-review fixes):** M1 was addressed in follow-up commits; N1 and part of L1 were cleaned up
+in the same pass. The original findings are retained below with resolution notes, so the document still reflects what
+was first reported. L2 remains open.
+
 ---
 
 ## Summary
@@ -24,16 +28,47 @@ No critical or high-severity defects were found for valid CLI input. The main is
 pre-parser and the actual parser for some invalid forms, and the fact that the tests exercise only the pre-parser, so
 they do not detect that mismatch.
 
-| # | Severity | Finding |
-|---|----------|---------|
-| M1 | Medium | `IsDebugMode` accepts arbitrary `--debug=<value>` and `LogFile` accepts `--logfile=` even though Spectre rejects both; tests codify these unreachable command outcomes |
-| L1 | Low | Token matching and prefix literals are duplicated between `IsDebugMode` and `LogFile` |
-| L2 | Low | No CLI-level tests for the newly documented syntaxes; existing integration tests still use `--prerelease true` |
-| N1 | Nit | Comment claims a null check that is not performed |
+| # | Severity | Finding | Status |
+|---|----------|---------|--------|
+| M1 | Medium | `IsDebugMode` accepts arbitrary `--debug=<value>` and `LogFile` accepts `--logfile=` even though Spectre rejects both; tests codify these unreachable command outcomes | **Resolved** — pre-parser aligned with Spectre, fail closed; tests updated |
+| L1 | Low | Token matching and prefix literals are duplicated between `IsDebugMode` and `LogFile` | **Partially resolved** — shared constants added; a single token matcher was not extracted |
+| L2 | Low | No CLI-level tests for the newly documented syntaxes; existing integration tests still use `--prerelease true` | Open |
+| N1 | Nit | Comment claims a null check that is not performed | **Resolved** — comments corrected |
 
 ---
 
-## M1. Pre-parser accepts forms that Spectre.Console.Cli rejects
+## M1. Pre-parser accepts forms that Spectre.Console.Cli rejects — **RESOLVED**
+
+> **Resolution.** `src/DotBump/ArgumentHandler.cs` was updated so the pre-parser agrees with Spectre's grammar and
+> fails closed:
+>
+> - `--debug=<value>`: only `true` (case-insensitive) enables debug logging. `false`, empty and any unrecognized value
+>   return `false`.
+> - Bare `--debug`: an explicit `true`/`false` value token sets the result; a following option token (or nothing) means
+>   the flag was used bare and enables debug logging; any *other* following non-option token returns `false`, since
+>   Spectre rejects such a value for a flag.
+> - This removes the fail-open behaviour: an unknown value such as `--debug=yes` no longer enables debug logging for a
+>   run that Spectre is about to abort, and a future positional argument can no longer be shadowed into the previous
+>   always-true branch.
+> - While editing, the option literals were extracted into shared constants (`DebugOption`, `DebugOptionPrefix`,
+>   `LogFileOption`, `LogFileOptionPrefix`), which also removes the literal-vs-slice drift risk flagged in L1, and the
+>   erroneous "null" comments from N1 were corrected.
+> - For `--logfile=` the empty inline value is still treated as "no log file". This is the safe outcome: Spectre
+>   rejects the form, so the helper value only matters for logging configured during a run that immediately fails. The
+>   rationale is now documented on the `LogFile` method.
+>
+> Tests updated in `test/DotBump.Tests/ArgumentHandlerTests.cs`:
+>
+> - `With_Debug_Flag_And_Unrecognized_Value_Returns_True` → `With_Debug_Flag_And_Unrecognized_Value_Returns_False`
+>   (`--debug yes` → `false`).
+> - `With_Debug_Equals_Unrecognized_Value_Returns_True` → `With_Debug_Equals_Unrecognized_Value_Returns_False`
+>   (`--debug=yes` → `false`).
+> - Added `With_Debug_Equals_Empty_Value_Returns_False` (`--debug=` → `false`), closing the symmetric-case gap noted
+>   in the original test review.
+>
+> Verification: full solution build succeeds with no problems; the `ArgumentHandlerTests` suite passes (30/30).
+>
+> The original finding is retained below.
 
 **Files:** `src/DotBump/ArgumentHandler.cs:15-33`, `src/DotBump/ArgumentHandler.cs:60-65`,
 `test/DotBump.Tests/ArgumentHandlerTests.cs:123-129`, `test/DotBump.Tests/ArgumentHandlerTests.cs:238-244`
@@ -88,52 +123,20 @@ Consequences:
   positional argument, a typo like `--debug fals` could be consumed as that positional and the debug session would
   succeed, contrary to the previous fail-closed behaviour.
 
-**Suggestion:** align the pre-parser with Spectre's grammar — treat only `true`/`false` as explicit values, and return
-`false` for anything else. For a bare flag followed by a separate value token, only `true` should enable and `false`
-should disable:
-
-```csharp
-private const string DebugOption = "--debug";
-private const string DebugPrefix = "--debug=";
-
-if (args[i].Equals(DebugOption, StringComparison.OrdinalIgnoreCase))
-{
-    if (i < args.Length - 1)
-    {
-        if (args[i + 1].Equals("false", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        if (args[i + 1].Equals("true", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        // A following option means the flag was used bare; any other token is a
-        // value Spectre will reject.
-        if (!args[i + 1].StartsWith("--", StringComparison.Ordinal))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-if (args[i].StartsWith(DebugPrefix, StringComparison.OrdinalIgnoreCase))
-{
-    return args[i][DebugPrefix.Length..].Equals("true", StringComparison.OrdinalIgnoreCase);
-}
-```
-
-For `--logfile=`, decide explicitly whether the empty value should be treated as "no log file" (current helper
-behaviour) or rejected. If the helper keeps returning `string.Empty`, add a CLI-level test asserting the parser error so
-the two behaviours are documented together. Update the two unit tests flagged above accordingly.
+**Original suggestion:** align the pre-parser with Spectre's grammar — treat only `true`/`false` as explicit values,
+and return `false` for anything else. For a bare flag followed by a separate value token, only `true` should enable
+and `false` should disable. For `--logfile=`, decide explicitly whether the empty value should be treated as "no log
+file" (current helper behaviour) or rejected. If the helper keeps returning `string.Empty`, add a CLI-level test
+asserting the parser error so the two behaviours are documented together.
 
 ---
 
-## L1. Option matching is duplicated between the two pre-parser methods
+## L1. Option matching is duplicated between the two pre-parser methods — **PARTIALLY RESOLVED**
+
+> **Resolution.** Shared constants (`DebugOption`, `DebugOptionPrefix`, `LogFileOption`, `LogFileOptionPrefix`) were
+> introduced during the M1 fix, so the literals are no longer written twice and the slices are derived from a
+> constant. The "extract one token matcher" idea remains open and was deliberately deferred; at current size a
+> matcher is not warranted.
 
 **File:** `src/DotBump/ArgumentHandler.cs:15-68`
 
@@ -158,7 +161,7 @@ forms are implemented once.
 
 ---
 
-## L2. New flag syntax is not covered by CLI-level tests
+## L2. New flag syntax is not covered by CLI-level tests — **OPEN**
 
 **Files:** `test/DotBump.Tests/Commands/BumpSdk/BumpSdkCommandTests.cs:427`,
 `test/DotBump.Tests/Commands/BumpTools/BumpToolsCommandTests.cs:331`,
@@ -189,7 +192,10 @@ option declarations stay in sync.
 
 ## Nits
 
-### N1. Comment says "null or empty" but null is not checked
+### N1. Comment says "null or empty" but null is not checked — **RESOLVED**
+
+> **Resolution.** Both comments in `ArgumentHandler.cs` (`IsDebugMode` and `LogFile`) now say "empty" only; no null
+> guard was added, matching the callers (`args` is never null from `Main`).
 
 **File:** `src/DotBump/ArgumentHandler.cs:9-13`
 
@@ -210,26 +216,28 @@ independently. The same applies to `LogFile` (`ArgumentHandler.cs:42-45`).
   Shouldly consistently.
 - Coverage is good for the normal forms: bare flag, explicit `true`/`false`, mixed casing, bare flag followed by
   another option, and both `=` forms.
-- Gaps are the ones described in M1 and L2: unreachable/invalid inputs are asserted as if they were valid, and the
-  actual CLI parsing path is not exercised. The existing `--prerelease true` integration tests were not updated to the
-  newly documented bare syntax.
-- Minor: `--debug=` (empty inline value) has no unit test, while `--logfile=` does. If `--debug=` remains supported as
-  "enabled", add the symmetric case; if it is treated as invalid, add a CLI-level rejection test.
+- **Update:** the M1 gaps are addressed — unrecognized/empty inline values now assert fail-closed results, and the
+  symmetric `--debug=` (empty inline value) case has been added.
+- Remaining gap (L2): the actual CLI parsing path is not exercised, and the existing `--prerelease true` integration
+  tests were not updated to the newly documented bare syntax.
 
 ---
 
 ## Security
 
-- Debug logging includes response data (per the option description). The current fail-open branch is limited to runs
-  that Spectre subsequently aborts, so there is no demonstrated leak today. Tightening the pre-parser as suggested in
-  M1 removes the risk that a future positional argument turns a typo into a successful debug-enabled run.
+- The fail-open behaviour described in the original M1 is now removed: `--debug yes`, `--debug=yes`, `--debug=` and
+  similar invalid forms all fail closed before `CommandApp.RunAsync(args)`, so debug logging is never enabled for a
+  run that Spectre proceeds to reject. The residual risk that a future positional argument shadows a typo'd value is
+  also gone, since any unknown token after a bare `--debug` now prevents debug logging.
 - No new secret handling, shell invocation or network surface was introduced by these changes.
 
 ---
 
 ## Verdict
 
-**Approve with minor changes.** Valid documented usage (`--debug`, `--debug=true`, `--debug=false`,
-`--logfile=path`) behaves correctly, and there is no blocking production defect. Before merging, fix M1 so the
-pre-parser and Spectre agree on invalid values and the tests stop asserting unreachable command outcomes; add the
-end-to-end coverage from L2. L1 and N1 are optional clean-ups.
+**Approve.** ~~Approve with minor changes.~~ Valid documented usage (`--debug`, `--debug=true`, `--debug=false`,
+`--logfile=path`) behaves correctly, and there is no blocking production defect. The blocking-for-merge item is
+resolved: the pre-parser now agrees with Spectre on invalid values, the tests no longer assert unreachable command
+outcomes, and the fail-open branch documented in M1 is gone. The end-to-end coverage from L2 remains a low-severity
+follow-up for a later change. L1's remaining matcher-extraction suggestion and N1's guard alternative are optional
+clean-ups.
