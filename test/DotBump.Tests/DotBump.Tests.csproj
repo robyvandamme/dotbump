@@ -96,6 +96,10 @@
     <Content Include="Data\NuGet\DotBumpGitHub\service-index.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Remove="Data\Packages\AppHost.csproj" />
+    <Content Include="Data\Packages\AppHost.csproj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Remove="Data\Packages\Sample.csproj" />
     <Content Include="Data\Packages\Sample.csproj">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

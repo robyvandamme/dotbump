@@ -46,6 +46,107 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_AppHost_Sdk_Attribute_Returns_Sdk_Entry()
+        {
+            ResetTempDirectory();
+            CopyFixture("AppHost.csproj", TempPath("AppHost.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.GetPackageIds().ShouldBe(
+                    ["Aspire.AppHost.Sdk", "Aspire.Hosting.AppHost"],
+                    ignoreOrder: true),
+                () => manifest.Packages.ShouldContain(package =>
+                    package.PackageId == "Aspire.AppHost.Sdk"
+                    && package.Version == "13.0.1"
+                    && package.SourceKind == PackageSourceKind.Project
+                    && package.ElementName == "Sdk"));
+        }
+
+        [Fact]
+        public void With_Multiple_Sdk_References_Returns_Only_The_Versioned_Entry()
+        {
+            ResetTempDirectory();
+            var content = "<Project Sdk=\"Microsoft.NET.Sdk;Aspire.AppHost.Sdk/13.0.1\">\n</Project>\n";
+            File.WriteAllText(TempPath("MultiSdk.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Count.ShouldBe(1),
+                () => manifest.Packages.Single().PackageId.ShouldBe("Aspire.AppHost.Sdk"),
+                () => manifest.Packages.Single().Version.ShouldBe("13.0.1"),
+                () => manifest.Warnings.ShouldBeEmpty());
+        }
+
+        [Fact]
+        public void With_Whitespace_In_Sdk_Attribute_Returns_Trimmed_Version()
+        {
+            ResetTempDirectory();
+            var content = "<Project Sdk=\"Microsoft.NET.Sdk ; Aspire.AppHost.Sdk / 13.0.1 \">\n</Project>\n";
+            File.WriteAllText(TempPath("WhitespaceSdk.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldContain(package =>
+                package.PackageId == "Aspire.AppHost.Sdk" && package.Version == "13.0.1");
+        }
+
+        [Fact]
+        public void With_Unversioned_Sdk_Attribute_Skips_Without_Warning()
+        {
+            ResetTempDirectory();
+            var content = "<Project Sdk=\"Microsoft.NET.Sdk\">\n</Project>\n";
+            File.WriteAllText(TempPath("UnversionedSdk.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Packages.ShouldBeEmpty(),
+                () => manifest.Warnings.ShouldBeEmpty());
+        }
+
+        [Fact]
+        public void With_Sdk_Element_Returns_Sdk_Entry()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <Sdk Name=\"Aspire.AppHost.Sdk\" Version=\"13.0.1\" />\n</Project>\n";
+            File.WriteAllText(TempPath("SdkElement.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldContain(package =>
+                package.PackageId == "Aspire.AppHost.Sdk"
+                && package.Version == "13.0.1"
+                && package.SourceKind == PackageSourceKind.Project
+                && package.ElementName == "Sdk");
+        }
+
+        [Fact]
+        public void With_Unsupported_Sdk_Attribute_Version_Skips_And_Warns()
+        {
+            ResetTempDirectory();
+            var content = "<Project Sdk=\"Aspire.AppHost.Sdk/$(AspireVersion)\">\n</Project>\n";
+            File.WriteAllText(TempPath("UnsupportedSdk.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Packages.ShouldBeEmpty(),
+                () => manifest.Warnings.ShouldContain(warning =>
+                    warning.Contains("Aspire.AppHost.Sdk", StringComparison.Ordinal)
+                    && warning.Contains("not supported", StringComparison.Ordinal)));
+        }
+
+        [Fact]
         public void With_Central_Package_Management_Returns_Central_Entries()
         {
             ResetTempDirectory();
@@ -486,6 +587,48 @@ public class PackageFileServiceTests
             packageFileService.SavePackageManifest(manifest);
 
             File.ReadAllText(TempPath("Sample.csproj")).ShouldContain("<Version>3.1.0</Version>");
+        }
+
+        [Fact]
+        public void With_Changed_Sdk_Reference_Updates_Only_The_Version()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project Sdk=\"Microsoft.NET.Sdk;Aspire.AppHost.Sdk/13.0.1\">\n  <ItemGroup>\n    <PackageReference Include=\"Aspire.Hosting.AppHost\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            var path = TempPath("AppHost.csproj");
+            File.WriteAllText(path, content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Aspire.AppHost.Sdk", "13.6.4");
+            packageFileService.SavePackageManifest(manifest);
+
+            var expected = content.Replace(
+                "Aspire.AppHost.Sdk/13.0.1",
+                "Aspire.AppHost.Sdk/13.6.4",
+                StringComparison.Ordinal);
+            File.ReadAllText(path).ShouldBe(expected);
+        }
+
+        [Fact]
+        public void With_Changed_Sdk_Element_Updates_Value()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <Sdk Name=\"Aspire.AppHost.Sdk\" Version=\"13.0.1\" />\n</Project>\n";
+            var path = TempPath("SdkElement.csproj");
+            File.WriteAllText(path, content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Aspire.AppHost.Sdk", "13.6.4");
+            packageFileService.SavePackageManifest(manifest);
+
+            var expected = content.Replace(
+                "Name=\"Aspire.AppHost.Sdk\" Version=\"13.0.1\"",
+                "Name=\"Aspire.AppHost.Sdk\" Version=\"13.6.4\"",
+                StringComparison.Ordinal);
+            File.ReadAllText(path).ShouldBe(expected);
         }
 
         [Fact]

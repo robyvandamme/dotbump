@@ -1,5 +1,6 @@
 // Copyright © Roby Van Damme.
 
+using System.Net;
 using System.Xml;
 using System.Xml.Linq;
 using DotBump.Commands.BumpPackages.DataModel;
@@ -171,6 +172,60 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         return version.IndexOfAny(['[', ']', '(', ')', ',']) < 0;
     }
 
+    /// <summary>
+    /// Splits a raw Sdk attribute value on semicolons and returns each versioned SDK reference with
+    /// the span of its version, so only the version part is rewritten.
+    /// </summary>
+    private static IEnumerable<(string PackageId, string Version, int VersionStart, int VersionLength)>
+        ParseSdkAttributeReferences(string text, int valueStart, int valueLength)
+    {
+        var valueEnd = valueStart + valueLength;
+        var referenceStart = valueStart;
+
+        while (referenceStart < valueEnd)
+        {
+            var separatorIndex = text.IndexOf(';', referenceStart, valueEnd - referenceStart);
+            var referenceEnd = separatorIndex < 0 ? valueEnd : separatorIndex;
+
+            // MSBuild SDK references are written as <id>/<version>. The id itself never contains a slash.
+            var slashIndex = referenceEnd > referenceStart
+                ? text.LastIndexOf('/', referenceEnd - 1, referenceEnd - referenceStart)
+                : -1;
+
+            if (slashIndex >= referenceStart)
+            {
+                var packageId = WebUtility.HtmlDecode(text[referenceStart..slashIndex].Trim()).Trim();
+                var versionStart = slashIndex + 1;
+                while (versionStart < referenceEnd && char.IsWhiteSpace(text[versionStart]))
+                {
+                    versionStart++;
+                }
+
+                var versionEnd = referenceEnd;
+                while (versionEnd > versionStart && char.IsWhiteSpace(text[versionEnd - 1]))
+                {
+                    versionEnd--;
+                }
+
+                if (packageId.Length > 0 && versionEnd > versionStart)
+                {
+                    yield return (
+                        packageId,
+                        WebUtility.HtmlDecode(text[versionStart..versionEnd]),
+                        versionStart,
+                        versionEnd - versionStart);
+                }
+            }
+
+            if (separatorIndex < 0)
+            {
+                yield break;
+            }
+
+            referenceStart = separatorIndex + 1;
+        }
+    }
+
     private void ReadPackageVersions(string filePath, PackageManifest manifest)
     {
         var text = XmlFileText.ReadText(filePath);
@@ -223,38 +278,22 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
-            if (!IsSupportedVersion(version))
+            if (TryAddVersion(
+                    manifest,
+                    filePath,
+                    sourceKind,
+                    elementName,
+                    packageId,
+                    version,
+                    () => GetVersionSpan(text, lineStartOffsets, versionSource)))
             {
-                var warning =
-                    $"Skipping {elementName} '{packageId}' in '{filePath}' because version '{version}' is not supported.";
-                logger.Warning("{Warning}", warning);
-                manifest.AddWarning(warning);
-                continue;
+                packageFound = true;
             }
+        }
 
-            var (versionStart, versionLength) = GetVersionSpan(text, lineStartOffsets, versionSource);
-            if (versionStart < 0)
-            {
-                var warning =
-                    $"Skipping {elementName} '{packageId}' in '{filePath}' because its version value could not be located.";
-                logger.Warning("{Warning}", warning);
-                manifest.AddWarning(warning);
-                continue;
-            }
-
-            manifest.Add(
-                new PackageVersionEntry
-                {
-                    PackageId = packageId,
-                    OriginalVersion = version,
-                    Version = version,
-                    FilePath = filePath,
-                    SourceKind = sourceKind,
-                    ElementName = elementName,
-                    VersionStart = versionStart,
-                    VersionLength = versionLength,
-                });
-
+        if (sourceKind == PackageSourceKind.Project
+            && ReadSdkReferences(root, text, lineStartOffsets, manifest, filePath))
+        {
             packageFound = true;
         }
 
@@ -262,6 +301,130 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         {
             manifest.RegisterFileText(filePath, text);
         }
+    }
+
+    /// <summary>
+    /// Reads versioned MSBuild project SDK references from the root Sdk attribute and Sdk elements,
+    /// for example <c>Sdk="Aspire.AppHost.Sdk/13.0.1"</c>.
+    /// </summary>
+    private bool ReadSdkReferences(
+        XElement root,
+        string text,
+        int[] lineStartOffsets,
+        PackageManifest manifest,
+        string filePath)
+    {
+        var sdkReferenceFound = false;
+
+        var sdkAttribute = root.Attributes()
+            .FirstOrDefault(attribute => attribute.Name.LocalName.Equals("Sdk", StringComparison.Ordinal));
+
+        if (sdkAttribute != null)
+        {
+            var (valueStart, valueLength) = XmlFileText.GetAttributeValueSpan(text, lineStartOffsets, sdkAttribute);
+            if (valueStart < 0)
+            {
+                var warning =
+                    $"Skipping SDK references in '{filePath}' because the Sdk attribute value could not be located.";
+                logger.Warning("{Warning}", warning);
+                manifest.AddWarning(warning);
+            }
+            else
+            {
+                foreach (var reference in ParseSdkAttributeReferences(text, valueStart, valueLength))
+                {
+                    if (TryAddVersion(
+                            manifest,
+                            filePath,
+                            PackageSourceKind.Project,
+                            "Sdk",
+                            reference.PackageId,
+                            reference.Version,
+                            () => (reference.VersionStart, reference.VersionLength)))
+                    {
+                        sdkReferenceFound = true;
+                    }
+                }
+            }
+        }
+
+        foreach (var element in root.Descendants().Where(element =>
+                     element.Name.LocalName.Equals("Sdk", StringComparison.Ordinal)))
+        {
+            var packageId = ReadAttribute(element, "Name");
+            if (string.IsNullOrWhiteSpace(packageId))
+            {
+                continue;
+            }
+
+            var (version, versionSource) = ReadVersion(element);
+            if (version == null || versionSource == null)
+            {
+                logger.Debug(
+                    "Skipping Sdk {PackageId} in {File} because it has no version",
+                    packageId,
+                    filePath);
+                continue;
+            }
+
+            if (TryAddVersion(
+                    manifest,
+                    filePath,
+                    PackageSourceKind.Project,
+                    "Sdk",
+                    packageId,
+                    version,
+                    () => GetVersionSpan(text, lineStartOffsets, versionSource)))
+            {
+                sdkReferenceFound = true;
+            }
+        }
+
+        return sdkReferenceFound;
+    }
+
+    private bool TryAddVersion(
+        PackageManifest manifest,
+        string filePath,
+        PackageSourceKind sourceKind,
+        string elementName,
+        string packageId,
+        string version,
+        Func<(int Start, int Length)> getVersionSpan)
+    {
+        if (!IsSupportedVersion(version))
+        {
+            var warning =
+                $"Skipping {elementName} '{packageId}' in '{filePath}' because version '{version}' is not supported.";
+            logger.Warning("{Warning}", warning);
+            manifest.AddWarning(warning);
+            return false;
+        }
+
+        var (versionStart, versionLength) = getVersionSpan();
+        if (versionStart < 0)
+        {
+            var warning =
+                $"Skipping {elementName} '{packageId}' in '{filePath}' because its version value could not be located.";
+            logger.Warning("{Warning}", warning);
+            manifest.AddWarning(warning);
+            return false;
+        }
+
+        manifest.Add(
+            new PackageVersionEntry
+            {
+                PackageId = packageId,
+                OriginalVersion = version,
+                Version = version,
+                FilePath = filePath,
+                SourceKind = sourceKind,
+                ElementName = elementName,
+                VersionStart = versionStart,
+                VersionLength = versionLength,
+            });
+
+        return true;
     }
 
     private string ApplyChanges(PackageManifest manifest, string filePath, string text)
