@@ -187,34 +187,10 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             var separatorIndex = text.IndexOf(';', referenceStart, valueEnd - referenceStart);
             var referenceEnd = separatorIndex < 0 ? valueEnd : separatorIndex;
 
-            // MSBuild SDK references are written as <id>/<version>. The id itself never contains a slash.
-            var slashIndex = referenceEnd > referenceStart
-                ? text.LastIndexOf('/', referenceEnd - 1, referenceEnd - referenceStart)
-                : -1;
-
-            if (slashIndex >= referenceStart)
+            var reference = TryParseSdkReference(text, referenceStart, referenceEnd);
+            if (reference != null)
             {
-                var packageId = WebUtility.HtmlDecode(text[referenceStart..slashIndex].Trim()).Trim();
-                var versionStart = slashIndex + 1;
-                while (versionStart < referenceEnd && char.IsWhiteSpace(text[versionStart]))
-                {
-                    versionStart++;
-                }
-
-                var versionEnd = referenceEnd;
-                while (versionEnd > versionStart && char.IsWhiteSpace(text[versionEnd - 1]))
-                {
-                    versionEnd--;
-                }
-
-                if (packageId.Length > 0 && versionEnd > versionStart)
-                {
-                    yield return (
-                        packageId,
-                        WebUtility.HtmlDecode(text[versionStart..versionEnd]),
-                        versionStart,
-                        versionEnd - versionStart);
-                }
+                yield return reference.Value;
             }
 
             if (separatorIndex < 0)
@@ -224,6 +200,38 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
             referenceStart = separatorIndex + 1;
         }
+    }
+
+    private static (string PackageId, string Version, int VersionStart, int VersionLength)?
+        TryParseSdkReference(string text, int referenceStart, int referenceEnd)
+    {
+        // MSBuild SDK references are written as <id>/<version>. The id itself never contains a slash.
+        var slashIndex = referenceEnd > referenceStart
+            ? text.LastIndexOf('/', referenceEnd - 1, referenceEnd - referenceStart)
+            : -1;
+
+        if (slashIndex < referenceStart)
+        {
+            return null;
+        }
+
+        var packageId = WebUtility.HtmlDecode(text[referenceStart..slashIndex].Trim()).Trim();
+        if (packageId.Length == 0)
+        {
+            return null;
+        }
+
+        var (versionStart, versionLength) = XmlFileText.TrimSpan(text, slashIndex + 1, referenceEnd);
+        if (versionLength <= 0)
+        {
+            return null;
+        }
+
+        return (
+            packageId,
+            WebUtility.HtmlDecode(text.Substring(versionStart, versionLength)),
+            versionStart,
+            versionLength);
     }
 
     private void ReadPackageVersions(string filePath, PackageManifest manifest)
