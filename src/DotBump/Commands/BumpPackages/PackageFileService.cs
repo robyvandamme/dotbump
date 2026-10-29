@@ -322,39 +322,65 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         PackageManifest manifest,
         string filePath)
     {
-        var sdkReferenceFound = false;
+        var attributeReferenceFound =
+            ReadSdkAttributeReferences(root, text, lineStartOffsets, manifest, filePath);
+        var elementReferenceFound =
+            ReadSdkElementReferences(root, text, lineStartOffsets, manifest, filePath);
 
+        return attributeReferenceFound || elementReferenceFound;
+    }
+
+    private bool ReadSdkAttributeReferences(
+        XElement root,
+        string text,
+        int[] lineStartOffsets,
+        PackageManifest manifest,
+        string filePath)
+    {
         var sdkAttribute = root.Attributes()
             .FirstOrDefault(attribute => attribute.Name.LocalName.Equals("Sdk", StringComparison.Ordinal));
-
-        if (sdkAttribute != null)
+        if (sdkAttribute == null)
         {
-            var (valueStart, valueLength) = XmlFileText.GetAttributeValueSpan(text, lineStartOffsets, sdkAttribute);
-            if (valueStart < 0)
+            return false;
+        }
+
+        var (valueStart, valueLength) = XmlFileText.GetAttributeValueSpan(text, lineStartOffsets, sdkAttribute);
+        if (valueStart < 0)
+        {
+            var warning =
+                $"Skipping SDK references in '{filePath}' because the Sdk attribute value could not be located.";
+            logger.Warning("{Warning}", warning);
+            manifest.AddWarning(warning);
+            return false;
+        }
+
+        var sdkReferenceFound = false;
+        foreach (var reference in ParseSdkAttributeReferences(text, valueStart, valueLength))
+        {
+            if (TryAddVersion(
+                    manifest,
+                    filePath,
+                    PackageSourceKind.Project,
+                    "Sdk",
+                    reference.PackageId,
+                    reference.Version,
+                    () => (reference.VersionStart, reference.VersionLength)))
             {
-                var warning =
-                    $"Skipping SDK references in '{filePath}' because the Sdk attribute value could not be located.";
-                logger.Warning("{Warning}", warning);
-                manifest.AddWarning(warning);
-            }
-            else
-            {
-                foreach (var reference in ParseSdkAttributeReferences(text, valueStart, valueLength))
-                {
-                    if (TryAddVersion(
-                            manifest,
-                            filePath,
-                            PackageSourceKind.Project,
-                            "Sdk",
-                            reference.PackageId,
-                            reference.Version,
-                            () => (reference.VersionStart, reference.VersionLength)))
-                    {
-                        sdkReferenceFound = true;
-                    }
-                }
+                sdkReferenceFound = true;
             }
         }
+
+        return sdkReferenceFound;
+    }
+
+    private bool ReadSdkElementReferences(
+        XElement root,
+        string text,
+        int[] lineStartOffsets,
+        PackageManifest manifest,
+        string filePath)
+    {
+        var sdkReferenceFound = false;
 
         foreach (var element in root.Descendants().Where(element =>
                      element.Name.LocalName.Equals("Sdk", StringComparison.Ordinal)))
