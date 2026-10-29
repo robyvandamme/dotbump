@@ -206,7 +206,8 @@ Project SDK references are supported in both forms:
 
 The SDK id is resolved as a NuGet package, so `--skip-package` applies to SDK references too. Only SDK references with
 an explicit version are bumped; unversioned SDKs such as `Microsoft.NET.Sdk` are ignored. The version is the only part
-of the SDK reference that is rewritten.
+of the SDK reference that is rewritten. SDK references declared on `<Import ... />` elements are not detected yet; use
+the `Sdk` attribute or an `<Sdk>` element.
 
 #### Version resolution
 
@@ -233,7 +234,9 @@ Other current limitations:
 
 * MSBuild `Condition` attributes are ignored, so conditionally referenced packages are treated as active.
 * Explicit `<Import ... />` elements are not followed; only the conventional `Directory.Build.props`,
-  `Directory.Build.targets`, `Directory.Packages.props` and project files are scanned.
+  `Directory.Build.targets`, `Directory.Packages.props` and project files are scanned. Versioned SDK references
+  declared on `<Import ... />` elements (for example
+  `<Import Project="Sdk.props" Sdk="My.Custom.Sdk" Version="1.2.3" />`) are not bumped yet either.
 * `packages.lock.json` files are not updated.
 * A `<PackageReference>` without a version (the usual Central Package Management setup) is ignored, because its
   version is defined by the corresponding `<PackageVersion>` in `Directory.Packages.props`, which is scanned instead.
