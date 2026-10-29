@@ -147,6 +147,53 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Entity_Encoded_Sdk_Attribute_Version_Returns_Decoded_Version()
+        {
+            ResetTempDirectory();
+            var content = "<Project Sdk=\"Aspire.AppHost.Sdk/13&#46;0&#46;1\">\n</Project>\n";
+            File.WriteAllText(TempPath("EntitySdk.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldContain(package =>
+                package.PackageId == "Aspire.AppHost.Sdk"
+                && package.OriginalVersion == "13.0.1"
+                && package.Version == "13.0.1");
+        }
+
+        [Fact]
+        public void With_Entity_Encoded_Sdk_Id_Returns_Decoded_Id()
+        {
+            ResetTempDirectory();
+            var content = "<Project Sdk=\"Aspire&#46;AppHost&#46;Sdk/13.0.1\">\n</Project>\n";
+            File.WriteAllText(TempPath("EntitySdkId.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldContain(package =>
+                package.PackageId == "Aspire.AppHost.Sdk" && package.Version == "13.0.1");
+        }
+
+        [Fact]
+        public void With_Entity_Encoded_Sdk_Element_Version_Returns_Decoded_Version()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <Sdk Name=\"Aspire.AppHost.Sdk\" Version=\"13&#46;0&#46;1\" />\n</Project>\n";
+            File.WriteAllText(TempPath("EntitySdkElement.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldContain(package =>
+                package.PackageId == "Aspire.AppHost.Sdk"
+                && package.OriginalVersion == "13.0.1"
+                && package.Version == "13.0.1");
+        }
+
+        [Fact]
         public void With_Central_Package_Management_Returns_Central_Entries()
         {
             ResetTempDirectory();
@@ -629,6 +676,23 @@ public class PackageFileServiceTests
                 "Name=\"Aspire.AppHost.Sdk\" Version=\"13.6.4\"",
                 StringComparison.Ordinal);
             File.ReadAllText(path).ShouldBe(expected);
+        }
+
+        [Fact]
+        public void With_Entity_Encoded_Sdk_Attribute_Version_Normalizes_Value_On_Bump()
+        {
+            ResetTempDirectory();
+            var content = "<Project Sdk=\"Aspire.AppHost.Sdk/13&#46;0&#46;1\">\n</Project>\n";
+            var path = TempPath("EntitySdk.csproj");
+            File.WriteAllText(path, content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion("Aspire.AppHost.Sdk", "13.6.4");
+            packageFileService.SavePackageManifest(manifest);
+
+            File.ReadAllText(path).ShouldBe(
+                content.Replace("13&#46;0&#46;1", "13.6.4", StringComparison.Ordinal));
         }
 
         [Fact]

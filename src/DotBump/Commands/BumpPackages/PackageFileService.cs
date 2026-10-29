@@ -16,6 +16,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
     private const string DirectoryBuildPropsFileName = "Directory.Build.props";
     private const string DirectoryBuildTargetsFileName = "Directory.Build.targets";
     private const string WarningMessageTemplate = "{Warning}";
+    private const string SdkName = "Sdk";
 
     private static readonly string[] s_projectExtensions = [".csproj", ".fsproj", ".vbproj"];
 
@@ -185,7 +186,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
         while (referenceStart < valueEnd)
         {
-            var separatorIndex = text.IndexOf(';', referenceStart, valueEnd - referenceStart);
+            var separatorIndex = FindReferenceSeparator(text, referenceStart, valueEnd);
             var referenceEnd = separatorIndex < 0 ? valueEnd : separatorIndex;
 
             var reference = TryParseSdkReference(text, referenceStart, referenceEnd);
@@ -203,10 +204,47 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         }
     }
 
+    /// <summary>
+    /// Finds the next SDK reference separator (a semicolon) that is not part of an XML entity
+    /// reference. Numeric entities such as <c>&amp;#46;</c> contain a semicolon of their own, so a
+    /// plain semicolon search would split the attribute in the middle of a version.
+    /// </summary>
+    private static int FindReferenceSeparator(string text, int start, int end)
+    {
+        var index = start;
+        while (index < end)
+        {
+            if (text[index] == '&')
+            {
+                var entityEnd = text.IndexOf(';', index + 1, end - index - 1);
+                if (entityEnd < 0)
+                {
+                    return -1;
+                }
+
+                index = entityEnd + 1;
+                continue;
+            }
+
+            if (text[index] == ';')
+            {
+                return index;
+            }
+
+            index++;
+        }
+
+        return -1;
+    }
+
     private static (string PackageId, string Version, int VersionStart, int VersionLength)?
         TryParseSdkReference(string text, int referenceStart, int referenceEnd)
     {
         // MSBuild SDK references are written as <id>/<version>. The id itself never contains a slash.
+        // This parses the raw attribute text, so the '/' separator must be literal and a ';' only
+        // separates references outside an XML entity. An encoded slash (for example &#47;) hides the
+        // reference, which is then skipped like an unversioned SDK; an encoded semicolon is treated
+        // as part of the value. Only the id and version are decoded.
         var slashIndex = referenceEnd > referenceStart
             ? text.LastIndexOf('/', referenceEnd - 1, referenceEnd - referenceStart)
             : -1;
@@ -315,6 +353,8 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
     /// <summary>
     /// Reads versioned MSBuild project SDK references from the root Sdk attribute and Sdk elements,
     /// for example <c>Sdk="Aspire.AppHost.Sdk/13.0.1"</c>.
+    /// Versioned SDK references declared on <c>&lt;Import /&gt;</c> elements are not recognized yet
+    /// (see the README limitations).
     /// </summary>
     private bool ReadSdkReferences(
         XElement root,
@@ -339,7 +379,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         string filePath)
     {
         var sdkAttribute = root.Attributes()
-            .FirstOrDefault(attribute => attribute.Name.LocalName.Equals("Sdk", StringComparison.Ordinal));
+            .FirstOrDefault(attribute => attribute.Name.LocalName.Equals(SdkName, StringComparison.Ordinal));
         if (sdkAttribute == null)
         {
             return false;
@@ -362,7 +402,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 manifest,
                 filePath,
                 PackageSourceKind.Project,
-                "Sdk",
+                SdkName,
                 reference.PackageId,
                 reference.Version,
                 () => (reference.VersionStart, reference.VersionLength));
@@ -381,7 +421,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         var sdkReferenceFound = false;
 
         foreach (var element in root.Descendants().Where(element =>
-                     element.Name.LocalName.Equals("Sdk", StringComparison.Ordinal)))
+                     element.Name.LocalName.Equals(SdkName, StringComparison.Ordinal)))
         {
             var packageId = ReadAttribute(element, "Name");
             if (string.IsNullOrWhiteSpace(packageId))
@@ -403,7 +443,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 manifest,
                 filePath,
                 PackageSourceKind.Project,
-                "Sdk",
+                SdkName,
                 packageId,
                 version,
                 () => GetVersionSpan(text, lineStartOffsets, versionSource));
