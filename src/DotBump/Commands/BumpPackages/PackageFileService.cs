@@ -358,17 +358,14 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         var sdkReferenceFound = false;
         foreach (var reference in ParseSdkAttributeReferences(text, valueStart, valueLength))
         {
-            if (TryAddVersion(
-                    manifest,
-                    filePath,
-                    PackageSourceKind.Project,
-                    "Sdk",
-                    reference.PackageId,
-                    reference.Version,
-                    () => (reference.VersionStart, reference.VersionLength)))
-            {
-                sdkReferenceFound = true;
-            }
+            sdkReferenceFound |= TryAddVersion(
+                manifest,
+                filePath,
+                PackageSourceKind.Project,
+                "Sdk",
+                reference.PackageId,
+                reference.Version,
+                () => (reference.VersionStart, reference.VersionLength));
         }
 
         return sdkReferenceFound;
@@ -402,17 +399,14 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
-            if (TryAddVersion(
-                    manifest,
-                    filePath,
-                    PackageSourceKind.Project,
-                    "Sdk",
-                    packageId,
-                    version,
-                    () => GetVersionSpan(text, lineStartOffsets, versionSource)))
-            {
-                sdkReferenceFound = true;
-            }
+            sdkReferenceFound |= TryAddVersion(
+                manifest,
+                filePath,
+                PackageSourceKind.Project,
+                "Sdk",
+                packageId,
+                version,
+                () => GetVersionSpan(text, lineStartOffsets, versionSource));
         }
 
         return sdkReferenceFound;
