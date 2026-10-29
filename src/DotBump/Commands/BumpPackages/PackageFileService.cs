@@ -15,6 +15,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
     private const string DirectoryPackagesPropsFileName = "Directory.Packages.props";
     private const string DirectoryBuildPropsFileName = "Directory.Build.props";
     private const string DirectoryBuildTargetsFileName = "Directory.Build.targets";
+    private const string WarningMessageTemplate = "{Warning}";
 
     private static readonly string[] s_projectExtensions = [".csproj", ".fsproj", ".vbproj"];
 
@@ -349,7 +350,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         {
             var warning =
                 $"Skipping SDK references in '{filePath}' because the Sdk attribute value could not be located.";
-            logger.Warning("{Warning}", warning);
+            logger.Warning(WarningMessageTemplate, warning);
             manifest.AddWarning(warning);
             return false;
         }
@@ -430,7 +431,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         {
             var warning =
                 $"Skipping {elementName} '{packageId}' in '{filePath}' because version '{version}' is not supported.";
-            logger.Warning("{Warning}", warning);
+            logger.Warning(WarningMessageTemplate, warning);
             manifest.AddWarning(warning);
             return false;
         }
@@ -440,7 +441,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         {
             var warning =
                 $"Skipping {elementName} '{packageId}' in '{filePath}' because its version value could not be located.";
-            logger.Warning("{Warning}", warning);
+            logger.Warning(WarningMessageTemplate, warning);
             manifest.AddWarning(warning);
             return false;
         }
@@ -484,7 +485,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             {
                 var warning =
                     $"Skipping version '{package.OriginalVersion}' for '{package.PackageId}' in '{filePath}' because its recorded span is invalid.";
-                logger.Warning("{Warning}", warning);
+                logger.Warning(WarningMessageTemplate, warning);
                 manifest.AddWarning(warning);
                 continue;
             }
