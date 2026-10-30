@@ -190,7 +190,9 @@ following files into account:
 | `Directory.Build.props`, `Directory.Build.targets` | Shared `<PackageReference>`, `<PackageVersion>` and `<GlobalPackageReference>` entries. |
 
 The package id is read from the `Include` attribute, or, for override entries, the `Update` attribute. The version is
-read from a `Version` attribute, a `<Version>` child element or a `VersionOverride` attribute.
+read from a `Version` attribute, a `<Version>` child element or a `VersionOverride` attribute. The effective
+`Condition` is the element's own `Condition` combined with the conditions of its enclosing elements; occurrences with
+different conditions are treated as independent package variants.
 
 Project SDK references are supported in both forms:
 
@@ -211,11 +213,14 @@ the `Sdk` attribute or an `<Sdk>` element.
 
 #### Version resolution
 
-* All occurrences of the same package id across the repository are bumped to a single target version.
-* The **highest** currently referenced version is used as the starting point for resolving a newer version, so an
-  occurrence is never downgraded. If an occurrence happens to be below the resolved target it is upgraded to the
-  target as well.
-* If no newer version is found, the package is left unchanged.
+* Occurrences of the same package id are grouped by their effective MSBuild `Condition` and each group is bumped
+  independently. Occurrences with the same condition are bumped to a single target version; occurrences with different
+  conditions (for example per-target-framework `PackageReference` entries) are resolved against their own current
+  version and never collapsed into one version.
+* The **highest** currently referenced version within a group is used as the starting point for resolving a newer
+  version, so an occurrence is never downgraded. If an occurrence in the same group happens to be below the resolved
+  target it is upgraded to the target as well.
+* If no newer version is found, the package group is left unchanged.
 
 #### Limitations
 
@@ -232,7 +237,8 @@ PR that embeds the report) can surface them without extra debugging. They are al
 
 Other current limitations:
 
-* MSBuild `Condition` attributes are ignored, so conditionally referenced packages are treated as active.
+* MSBuild `Condition` expressions are not evaluated, so conditionally referenced packages are treated as active.
+  Conditions are still used as part of the package identity, which keeps per-target-framework versions independent.
 * Explicit `<Import ... />` elements are not followed; only the conventional `Directory.Build.props`,
   `Directory.Build.targets`, `Directory.Packages.props` and project files are scanned. Versioned SDK references
   declared on `<Import ... />` elements (for example
@@ -241,8 +247,8 @@ Other current limitations:
 * A `<PackageReference>` without a version (the usual Central Package Management setup) is ignored, because its
   version is defined by the corresponding `<PackageVersion>` in `Directory.Packages.props`, which is scanned instead.
 * `Update=` override entries are currently treated the same as `Include` entries: all occurrences of the same package
-  id are unified to a single target version. The intended semantics — in particular overriding a package that is also
-  referenced with `Include` — are not decided yet, so treat `Update=` as unsupported for now.
+  id and effective condition are unified to a single target version. The intended semantics — in particular overriding
+  a package that is also referenced with `Include` — are not decided yet, so treat `Update=` as unsupported for now.
 
 ### frameworks
 
@@ -440,9 +446,9 @@ quoting, entities, attribute layout, XML declaration, encoding, byte order mark 
 All commands accept `--output` to write a report. The format is inferred from the file extension:
 
 * `.json` — the full, machine-readable report, including every entry, its old and new version, and the `warnings`
-  and `errors` arrays. For `packages` there is one entry per package id, using the highest currently referenced
-  version as the old version; all occurrences of that id are updated together. This is the default for any other
-  extension.
+  and `errors` arrays. For `packages` there is one entry per package id and effective condition, using the highest
+  currently referenced version in that group as the old version; all occurrences in the group are updated together.
+  Conditional entries include a `condition` property. This is the default for any other extension.
 * `.md` (or `.markdown`) — a concise markdown report intended as the content for an automated dependency-update pull
   request. It lists only what changed, plus any warnings and errors. When there is nothing to report, an existing
   markdown report at that path is removed, so a reused output path never yields stale content.

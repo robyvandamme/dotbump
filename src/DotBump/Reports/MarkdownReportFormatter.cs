@@ -28,6 +28,7 @@ internal static class MarkdownReportFormatter
         var changedResults = report.Results
             .Where(result => result.WasBumped)
             .OrderBy(result => result.Id, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(result => result.Condition, StringComparer.Ordinal)
             .ToList();
 
         if (changedResults.Count == 0 && report.Warnings.Count == 0 && report.Errors.Count == 0)
@@ -71,9 +72,16 @@ internal static class MarkdownReportFormatter
 
     private static string FormatResult(BumpResult result, bool includeId)
     {
-        return includeId
-            ? $"{EscapeInline(result.Id)}: {EscapeInline(result.OldVersion)} → {EscapeInline(result.NewVersion)}"
-            : $"{EscapeInline(result.OldVersion)} → {EscapeInline(result.NewVersion)}";
+        if (!includeId)
+        {
+            return $"{EscapeInline(result.OldVersion)} → {EscapeInline(result.NewVersion)}";
+        }
+
+        var id = result.Condition == null
+            ? EscapeInline(result.Id)
+            : $"{EscapeInline(result.Id)} (when {EscapeInline(result.Condition)})";
+
+        return $"{id}: {EscapeInline(result.OldVersion)} → {EscapeInline(result.NewVersion)}";
     }
 
     private static void AppendSection(StringBuilder builder, string heading, IReadOnlyCollection<string> lines)

@@ -37,6 +37,35 @@ public class BumpReportTests
         }
 
         [Fact]
+        public void With_Conditional_Package_Manifest_Reports_One_Result_Per_Variant()
+        {
+            const string net10Condition = "'$(TargetFramework)' == 'net10.0'";
+            const string net11Condition = "'$(TargetFramework)' == 'net11.0'";
+            var manifest = CreateManifestWithConditions(
+                ("Microsoft.AspNetCore.OpenApi", "10.0.14", net10Condition),
+                ("Microsoft.AspNetCore.OpenApi", "11.0.0-rc.3", net11Condition));
+            manifest.SetVersion(
+                manifest.GetVariants().Single(variant => variant.Condition == net10Condition),
+                "10.0.15");
+
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+
+            var results = report.Results.ToList();
+            results.Count.ShouldBe(2);
+            results.ShouldContain(result =>
+                result.Id == "Microsoft.AspNetCore.OpenApi"
+                && result.Condition == net10Condition
+                && result.OldVersion == "10.0.14"
+                && result.NewVersion == "10.0.15");
+            results.ShouldContain(result =>
+                result.Id == "Microsoft.AspNetCore.OpenApi"
+                && result.Condition == net11Condition
+                && result.OldVersion == "11.0.0-rc.3"
+                && result.NewVersion == "11.0.0-rc.3");
+        }
+
+        [Fact]
         public void With_Language_Manifest_Reports_Language_Command_And_Results()
         {
             var manifest = new LanguageManifest();
@@ -128,6 +157,57 @@ public class BumpReportTests
                 warnings.EnumerateArray()
                     .Select(entry => entry.GetString())
                     .ShouldContain(warning);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task With_Conditional_Package_Serializes_Condition_On_Each_Result()
+        {
+            const string condition = "'$(TargetFramework)' == 'net10.0'";
+            var manifest = CreateManifestWithConditions(("MyPackage", "1.0.0", condition));
+            manifest.SetVersion(manifest.GetVariants().ShouldHaveSingleItem(), "1.1.0");
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "conditional-report.json");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                using var document = JsonDocument.Parse(await File.ReadAllTextAsync(path));
+                var result = document.RootElement.GetProperty("results").EnumerateArray().ShouldHaveSingleItem();
+                result.GetProperty("condition").GetString().ShouldBe(condition);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task With_Unconditional_Package_Does_Not_Serialize_Condition()
+        {
+            var manifest = CreateManifest(("MyPackage", "1.0.0"));
+            manifest.SetVersion("MyPackage", "1.1.0");
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+            var outputDirectory = new LocalDirectory("./temp/report");
+            Directory.CreateDirectory(outputDirectory.AbsolutePath);
+            var path = Path.Combine(outputDirectory.AbsolutePath, "unconditional-report.json");
+
+            try
+            {
+                await report.WriteToFileAsync(path);
+
+                using var document = JsonDocument.Parse(await File.ReadAllTextAsync(path));
+                var result = document.RootElement.GetProperty("results").EnumerateArray().ShouldHaveSingleItem();
+                result.TryGetProperty("condition", out _).ShouldBeFalse();
             }
             finally
             {

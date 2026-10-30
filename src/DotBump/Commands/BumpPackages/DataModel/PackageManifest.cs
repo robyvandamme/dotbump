@@ -43,17 +43,46 @@ internal sealed class PackageManifest
     }
 
     /// <summary>
-    /// Sets the version of every occurrence of the specified package.
+    /// Gets the package variants: occurrences of the same package id are grouped together only when
+    /// they share the same effective MSBuild condition.
     /// </summary>
-    /// <param name="packageId">The package identifier.</param>
-    /// <param name="newVersion">The new version.</param>
-    public void SetVersion(string packageId, string newVersion)
+    /// <returns>The package variants in discovery order.</returns>
+    public IReadOnlyList<PackageVariant> GetVariants()
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
+        var variants = new List<(string PackageId, string? Condition, List<PackageVersionEntry> Occurrences)>();
+
+        foreach (var package in _packages)
+        {
+            var condition = string.IsNullOrWhiteSpace(package.Condition) ? null : package.Condition;
+            var variant = variants.FirstOrDefault(candidate =>
+                string.Equals(candidate.PackageId, package.PackageId, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(candidate.Condition, condition, StringComparison.Ordinal));
+
+            if (variant.Occurrences == null)
+            {
+                variant = (package.PackageId, condition, []);
+                variants.Add(variant);
+            }
+
+            variant.Occurrences.Add(package);
+        }
+
+        return variants
+            .Select(variant => new PackageVariant(variant.PackageId, variant.Condition, variant.Occurrences))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Sets the version of every occurrence in the specified package variant.
+    /// </summary>
+    /// <param name="variant">The package variant to update.</param>
+    /// <param name="newVersion">The new version.</param>
+    public void SetVersion(PackageVariant variant, string newVersion)
+    {
+        ArgumentNullException.ThrowIfNull(variant);
         ArgumentException.ThrowIfNullOrWhiteSpace(newVersion);
 
-        foreach (var package in _packages.Where(package =>
-                     string.Equals(package.PackageId, packageId, StringComparison.OrdinalIgnoreCase)))
+        foreach (var package in variant.Occurrences)
         {
             package.Version = newVersion;
             _changedFiles.Add(package.FilePath);

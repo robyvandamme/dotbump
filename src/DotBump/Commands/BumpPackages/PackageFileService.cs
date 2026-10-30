@@ -131,6 +131,33 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             ?.Value;
     }
 
+    /// <summary>
+    /// Returns the effective condition for an element: its own <c>Condition</c> attribute combined
+    /// with the conditions of all enclosing elements, in root-to-element order. Conditions are not
+    /// evaluated; they are only used to distinguish independent occurrences of the same package.
+    /// </summary>
+    private static string? ReadEffectiveCondition(XElement element)
+    {
+        var conditions = new List<string>();
+
+        for (var current = element; current != null; current = current.Parent)
+        {
+            var condition = ReadAttribute(current, "Condition");
+            if (!string.IsNullOrWhiteSpace(condition))
+            {
+                conditions.Add(condition.Trim());
+            }
+        }
+
+        if (conditions.Count == 0)
+        {
+            return null;
+        }
+
+        conditions.Reverse();
+        return string.Join(" && ", conditions);
+    }
+
     // The returned version is the XML-decoded value (XAttribute.Value / XElement.Value). The matching
     // span captured by GetVersionSpan addresses the raw text instead, so the two can legitimately
     // differ for entity-encoded values (e.g. "13&#46;0&#46;1" decodes to "13.0.1"). This is why a
@@ -332,6 +359,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                     elementName,
                     packageId,
                     version,
+                    ReadEffectiveCondition(element),
                     () => GetVersionSpan(text, lineStartOffsets, versionSource)))
             {
                 packageFound = true;
@@ -405,6 +433,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 SdkName,
                 reference.PackageId,
                 reference.Version,
+                ReadEffectiveCondition(root),
                 () => (reference.VersionStart, reference.VersionLength));
         }
 
@@ -446,6 +475,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 SdkName,
                 packageId,
                 version,
+                ReadEffectiveCondition(element),
                 () => GetVersionSpan(text, lineStartOffsets, versionSource));
         }
 
@@ -459,6 +489,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         string elementName,
         string packageId,
         string version,
+        string? condition,
         Func<(int Start, int Length)> getVersionSpan)
     {
         if (!IsSupportedVersion(version))
@@ -489,6 +520,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 FilePath = filePath,
                 SourceKind = sourceKind,
                 ElementName = elementName,
+                Condition = condition,
                 VersionStart = versionStart,
                 VersionLength = versionLength,
             });

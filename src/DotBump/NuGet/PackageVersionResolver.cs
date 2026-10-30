@@ -15,7 +15,7 @@ internal class PackageVersionResolver(
     INuGetReleaseFinder nuGetReleaseFinder,
     ILogger logger) : IPackageVersionResolver
 {
-    public async Task<IReadOnlyDictionary<string, SemanticVersion>> ResolveAsync(
+    public async Task<IReadOnlyDictionary<PackageToBump, SemanticVersion>> ResolveAsync(
         IReadOnlyCollection<PackageToBump> packages,
         BumpType bumpType,
         NuGetConfig nuGetConfiguration,
@@ -27,7 +27,7 @@ internal class PackageVersionResolver(
         ArgumentNullException.ThrowIfNull(nuGetConfiguration);
 
         var usePreRelease = preRelease && bumpType == BumpType.Major;
-        var bestVersions = new Dictionary<string, SemanticVersion>();
+        var bestVersions = new Dictionary<PackageToBump, SemanticVersion>();
 
         if (packages.Count == 0 || nuGetConfiguration.PackageSources.Count == 0)
         {
@@ -47,7 +47,7 @@ internal class PackageVersionResolver(
 
             foreach (var package in packageList)
             {
-                bestVersions.TryGetValue(package.PackageId, out var currentBest);
+                bestVersions.TryGetValue(package, out var currentBest);
 
                 var candidateVersion = await ResolvePackageVersionAsync(
                         nuGetClient,
@@ -59,7 +59,7 @@ internal class PackageVersionResolver(
 
                 if (candidateVersion != null && IsBetterCandidate(candidateVersion, currentBest, usePreRelease))
                 {
-                    bestVersions[package.PackageId] = candidateVersion;
+                    bestVersions[package] = candidateVersion;
                 }
             }
         }

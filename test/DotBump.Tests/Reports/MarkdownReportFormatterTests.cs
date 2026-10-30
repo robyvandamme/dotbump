@@ -7,6 +7,7 @@ using DotBump.Commands.BumpLanguage.DataModel;
 using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Commands.BumpTools.DataModel.LocalTools;
 using DotBump.Reports;
+using DotBump.Tests.TestHelpers;
 using Shouldly;
 using static DotBump.Tests.TestHelpers.TestPackageManifestFactory;
 
@@ -34,6 +35,24 @@ public class MarkdownReportFormatterTests
                 "\n" +
                 "- dotnet-outdated-tool: 4.6.0 → 4.6.1\n" +
                 "- Newtonsoft.Json: 12.0.1 → 13.0.3\n" +
+                "\n");
+        }
+
+        [Fact]
+        public void With_Conditional_Package_Change_Includes_Condition()
+        {
+            const string condition = "'$(TargetFramework)' == 'net10.0'";
+            var manifest = CreateManifestWithConditions(("Newtonsoft.Json", "12.0.1", condition));
+            manifest.SetVersion(manifest.GetVariants().ShouldHaveSingleItem(), "13.0.3");
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+
+            var markdown = MarkdownReportFormatter.Format(report);
+
+            markdown.ShouldBe(
+                "## Packages\n" +
+                "\n" +
+                "- Newtonsoft.Json (when '$(TargetFramework)' == 'net10.0'): 12.0.1 → 13.0.3\n" +
                 "\n");
         }
 

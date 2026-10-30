@@ -540,6 +540,63 @@ public class PackageFileServiceTests
         }
 
         [Fact]
+        public void With_Per_Tfm_Conditions_Returns_Separate_Entries_With_Their_Conditions()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n" +
+                "  <ItemGroup>\n" +
+                "    <PackageReference Include=\"Microsoft.AspNetCore.OpenApi\" Version=\"10.0.14\" Condition=\"'$(TargetFramework)' == 'net10.0'\" />\n" +
+                "    <PackageReference Include=\"Microsoft.AspNetCore.OpenApi\" Version=\"11.0.0-rc.3.26522.148\" Condition=\"'$(TargetFramework)' == 'net11.0'\" />\n" +
+                "  </ItemGroup>\n" +
+                "</Project>\n";
+            File.WriteAllText(TempPath("PerTfm.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Count.ShouldBe(2),
+                () => manifest.Packages.ShouldContain(package =>
+                    package.PackageId == "Microsoft.AspNetCore.OpenApi"
+                    && package.Version == "10.0.14"
+                    && package.Condition == "'$(TargetFramework)' == 'net10.0'"),
+                () => manifest.Packages.ShouldContain(package =>
+                    package.PackageId == "Microsoft.AspNetCore.OpenApi"
+                    && package.Version == "11.0.0-rc.3.26522.148"
+                    && package.Condition == "'$(TargetFramework)' == 'net11.0'"),
+                () => manifest.GetVariants().Count.ShouldBe(2));
+        }
+
+        [Fact]
+        public void With_Enclosing_ItemGroup_Condition_Returns_Effective_Condition()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n  <ItemGroup Condition=\"'$(TargetFramework)' == 'net10.0'\">\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.1\" />\n  </ItemGroup>\n</Project>\n";
+            File.WriteAllText(TempPath("ItemGroupCondition.csproj"), content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldContain(package =>
+                package.PackageId == "Newtonsoft.Json"
+                && package.Condition == "'$(TargetFramework)' == 'net10.0'");
+        }
+
+        [Fact]
+        public void With_No_Condition_Returns_Null_Condition()
+        {
+            ResetTempDirectory();
+            CopyFixture("Sample.csproj", TempPath("Sample.csproj"));
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.Packages.ShouldAllBe(package => package.Condition == null);
+        }
+
+        [Fact]
         public void With_Missing_Directory_Throws_DotBumpException()
         {
             ResetTempDirectory();
@@ -1040,6 +1097,36 @@ public class PackageFileServiceTests
             manifest.HasChanges.ShouldBeTrue();
             manifest.Warnings.ShouldContain(warning =>
                 warning.Contains("recorded span is invalid", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void With_Per_Tfm_Conditions_Updates_Each_Occurrence_Independently()
+        {
+            ResetTempDirectory();
+            var content =
+                "<Project>\n" +
+                "  <ItemGroup>\n" +
+                "    <PackageReference Include=\"Microsoft.AspNetCore.OpenApi\" Version=\"10.0.14\" Condition=\"'$(TargetFramework)' == 'net10.0'\" />\n" +
+                "    <PackageReference Include=\"Microsoft.AspNetCore.OpenApi\" Version=\"11.0.0-rc.3.26522.148\" Condition=\"'$(TargetFramework)' == 'net11.0'\" />\n" +
+                "  </ItemGroup>\n" +
+                "</Project>\n";
+            var path = TempPath("PerTfmSave.csproj");
+            File.WriteAllText(path, content);
+            var packageFileService = new PackageFileService(new Mock<ILogger>().Object);
+            var manifest = packageFileService.GetPackageManifest(TempDirectory.AbsolutePath);
+
+            manifest.SetVersion(
+                manifest.GetVariants().Single(variant => variant.Condition == "'$(TargetFramework)' == 'net10.0'"),
+                "10.0.15");
+            manifest.SetVersion(
+                manifest.GetVariants().Single(variant => variant.Condition == "'$(TargetFramework)' == 'net11.0'"),
+                "11.0.0-rc.4");
+            packageFileService.SavePackageManifest(manifest);
+
+            var expected = content
+                .Replace("Version=\"10.0.14\"", "Version=\"10.0.15\"", StringComparison.Ordinal)
+                .Replace("Version=\"11.0.0-rc.3.26522.148\"", "Version=\"11.0.0-rc.4\"", StringComparison.Ordinal);
+            File.ReadAllText(path).ShouldBe(expected);
         }
 
         /// <summary>

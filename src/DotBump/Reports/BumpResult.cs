@@ -12,9 +12,18 @@ internal class BumpResult(string id, string oldVersion)
 
     public string? NewVersion { get; set; }
 
+    /// <summary>
+    /// Gets the effective MSBuild condition for a conditional package occurrence. <see langword="null"/>
+    /// for unconditional packages and for commands other than <c>packages</c>.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Condition { get; init; }
+
     public override string ToString()
     {
-        return Id + ": " + OldVersion + " > " + NewVersion;
+        var condition = Condition == null ? string.Empty : $" (when {Condition})";
+
+        return Id + condition + ": " + OldVersion + " > " + NewVersion;
     }
 
     [JsonIgnore]

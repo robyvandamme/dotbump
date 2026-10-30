@@ -88,7 +88,7 @@ public class BumpPackagesHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(new Dictionary<string, SemanticVersion>());
+                .ReturnsAsync(new Dictionary<PackageToBump, SemanticVersion>());
             var handler = CreateHandler(fileService, resolver);
 
             await handler.HandleAsync(BumpType.Major, "./repo", "nuget.config", preRelease: true);
@@ -118,6 +118,66 @@ public class BumpPackagesHandlerTests
                         packages.Count == 1
                         && packages.Single().PackageId == "MyPackage"
                         && packages.Single().CurrentVersion.Version == "1.2.0"),
+                    BumpType.Minor,
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task With_Per_Tfm_Conditions_Resolves_Each_Variant_Independently()
+        {
+            const string net10Condition = "'$(TargetFramework)' == 'net10.0'";
+            const string net11Condition = "'$(TargetFramework)' == 'net11.0'";
+            var manifest = TestPackageManifestFactory.CreateManifestWithConditions(
+                ("Microsoft.AspNetCore.OpenApi", "10.0.14", net10Condition),
+                ("Microsoft.AspNetCore.OpenApi", "11.0.0-rc.3.26522.148", net11Condition));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolverForVersions(
+                ("Microsoft.AspNetCore.OpenApi", "10.0.14", "10.0.15"),
+                ("Microsoft.AspNetCore.OpenApi", "11.0.0-rc.3.26522.148", "11.0.0-rc.4"));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+
+            report.HasChanges.ShouldBeTrue();
+            manifest.Packages.ShouldSatisfyAllConditions(
+                () => manifest.Packages.Single(package => package.Condition == net10Condition).Version.ShouldBe("10.0.15"),
+                () => manifest.Packages.Single(package => package.Condition == net11Condition).Version.ShouldBe("11.0.0-rc.4"));
+            resolver.Verify(
+                r => r.ResolveAsync(
+                    It.Is<IReadOnlyCollection<PackageToBump>>(packages =>
+                        packages.Count == 2
+                        && packages.Any(package =>
+                            package.PackageId == "Microsoft.AspNetCore.OpenApi"
+                            && package.CurrentVersion.Version == "10.0.14")
+                        && packages.Any(package =>
+                            package.PackageId == "Microsoft.AspNetCore.OpenApi"
+                            && package.CurrentVersion.Version == "11.0.0-rc.3.26522.148")),
+                    BumpType.Minor,
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task With_Different_Conditions_And_Same_Reference_Version_Resolves_Once_And_Bumps_Both()
+        {
+            const string net10Condition = "'$(TargetFramework)' == 'net10.0'";
+            const string net11Condition = "'$(TargetFramework)' == 'net11.0'";
+            var manifest = TestPackageManifestFactory.CreateManifestWithConditions(
+                ("MyPackage", "1.0.0", net10Condition),
+                ("MyPackage", "1.0.0", net11Condition));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(("MyPackage", "1.1.0"));
+            var handler = CreateHandler(fileService, resolver);
+
+            await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+
+            manifest.Packages.ShouldAllBe(package => package.Version == "1.1.0");
+            resolver.Verify(
+                r => r.ResolveAsync(
+                    It.Is<IReadOnlyCollection<PackageToBump>>(packages => packages.Count == 1),
                     BumpType.Minor,
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()),
@@ -395,14 +455,49 @@ public class BumpPackagesHandlerTests
                     It.IsAny<bool>()))
                 .Returns((IReadOnlyCollection<PackageToBump> packages, BumpType _, NuGetConfig _, bool _) =>
                 {
-                    var bestVersions = resolved
-                        .Where(item => packages.Any(package => string.Equals(
+                    var bestVersions = new Dictionary<PackageToBump, SemanticVersion>();
+                    foreach (var package in packages)
+                    {
+                        var match = resolved.FirstOrDefault(item => string.Equals(
                             package.PackageId,
                             item.Id,
-                            StringComparison.OrdinalIgnoreCase)))
-                        .ToDictionary(item => item.Id, item => new SemanticVersion(item.Version));
+                            StringComparison.OrdinalIgnoreCase));
+                        if (match.Id != null)
+                        {
+                            bestVersions[package] = new SemanticVersion(match.Version);
+                        }
+                    }
 
-                    return Task.FromResult<IReadOnlyDictionary<string, SemanticVersion>>(bestVersions);
+                    return Task.FromResult<IReadOnlyDictionary<PackageToBump, SemanticVersion>>(bestVersions);
+                });
+            return resolver;
+        }
+
+        private static Mock<IPackageVersionResolver> CreateResolverForVersions(
+            params (string Id, string CurrentVersion, string ResolvedVersion)[] resolved)
+        {
+            var resolver = new Mock<IPackageVersionResolver>();
+            resolver
+                .Setup(r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()))
+                .Returns((IReadOnlyCollection<PackageToBump> packages, BumpType _, NuGetConfig _, bool _) =>
+                {
+                    var bestVersions = new Dictionary<PackageToBump, SemanticVersion>();
+                    foreach (var package in packages)
+                    {
+                        var match = resolved.FirstOrDefault(item =>
+                            string.Equals(package.PackageId, item.Id, StringComparison.OrdinalIgnoreCase)
+                            && new SemanticVersion(item.CurrentVersion) == package.CurrentVersion);
+                        if (match.Id != null)
+                        {
+                            bestVersions[package] = new SemanticVersion(match.ResolvedVersion);
+                        }
+                    }
+
+                    return Task.FromResult<IReadOnlyDictionary<PackageToBump, SemanticVersion>>(bestVersions);
                 });
             return resolver;
         }
