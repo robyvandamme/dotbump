@@ -20,7 +20,8 @@ internal sealed class PackageVariant(
 
     /// <summary>
     /// Gets the effective MSBuild condition shared by all occurrences, or <see langword="null"/> when
-    /// the variant is unconditional.
+    /// the variant is unconditional. Conditions are compared as exact strings after trimming and
+    /// joining enclosing conditions; they are not evaluated or simplified.
     /// </summary>
     public string? Condition { get; } = condition;
 

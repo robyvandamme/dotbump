@@ -194,6 +194,11 @@ read from a `Version` attribute, a `<Version>` child element or a `VersionOverri
 `Condition` is the element's own `Condition` combined with the conditions of its enclosing elements; occurrences with
 different conditions are treated as independent package variants.
 
+Condition matching is textual. Values are trimmed, enclosing conditions are joined with `&&`, and the result is
+compared ordinally. Semantically equivalent expressions with different formatting or structure — for example
+`'$(TargetFramework)'=='net10.0'` versus `'$(TargetFramework)' == 'net10.0'` — are therefore separate variants.
+Conditions using `||`, negation, or implied conditions are not simplified.
+
 Project SDK references are supported in both forms:
 
 ```xml

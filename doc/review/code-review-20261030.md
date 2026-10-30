@@ -141,7 +141,7 @@ Each currently formats slightly differently (leading space inside the parenthese
 `ToString()` and markdown. The invalid-version warning intentionally keeps its different `under condition '...'`
 diagnostic wording. Covered by `BumpResultTests`.
 
-### 5. Document the (deliberate) exact-string condition semantics *(Documentation · Low)*
+### 5. Document the (deliberate) exact-string condition semantics *(Documentation · Low)* — ✅ Fixed
 
 Effective conditions are compared with `string.Equals(..., StringComparison.Ordinal)` after per-element `Trim()` and joining with `" && "`. Consequences worth stating explicitly (in the `PackageVariant`/`PackageVersionEntry.Condition` XML docs or the FAQ/README):
 
@@ -150,6 +150,9 @@ Effective conditions are compared with `string.Equals(..., StringComparison.Ordi
 - `||`, negations, and logical equivalences are not considered.
 
 The doc comment on `ReadEffectiveCondition` already says "conditions are not evaluated", which is good; adding a sentence on the grouping consequences would help future maintainers distinguish design from oversight. No functional change requested.
+
+**Status: fixed.** `README.md` now explains that condition matching is textual and that formatting, logical structure,
+`||`, and negation are not normalized. `PackageVariant.Condition` documents the same rule.
 
 ### 6. Variant with mixed valid/invalid versions bumps its invalid occurrences too *(Behavioral observation · Low)*
 
@@ -201,9 +204,9 @@ This follows from `SemanticVersion`'s `CompareTo`-based record equality and `Ord
 | 2 | Medium-Low | Duplication | Highest-version selection logic duplicated between handler and report | ✅ Fixed |
 | 3 | Low | Readability | `!(a > b)` → `a <= b` | ✅ Fixed |
 | 4 | Low | Duplication | `(when ...)` formatting repeated in three places | ✅ Fixed |
-| 5 | Low | Docs | Document exact-string condition grouping consequences | Open |
+| 5 | Low | Docs | Document exact-string condition grouping consequences | ✅ Fixed |
 | 6 | Low | Behavior | Mixed valid/invalid variant bumps invalid occurrences (matches old behavior; make it explicit + test) | Open |
 | 7 | Info | Robustness | Report matching depends on condition normalization consistency | Open |
 | 8 | Info | Docs | Document equality-based dedupe contract on `IPackageVersionResolver` | Open |
 
-No blocking issues. Findings 1–4 are fixed; the rest are optional polish.
+No blocking issues. Findings 1–5 are fixed; the rest are optional polish.
