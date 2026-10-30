@@ -167,7 +167,7 @@ public class BumpPackagesHandlerTests
             const string net11Condition = "'$(TargetFramework)' == 'net11.0'";
             var manifest = TestPackageManifestFactory.CreateManifestWithConditions(
                 ("MyPackage", "1.0.0", net10Condition),
-                ("MyPackage", "1.0.0", net11Condition));
+                ("mypackage", "1.0.0", net11Condition));
             var fileService = CreateFileService(manifest);
             var resolver = CreateResolver(("MyPackage", "1.1.0"));
             var handler = CreateHandler(fileService, resolver);

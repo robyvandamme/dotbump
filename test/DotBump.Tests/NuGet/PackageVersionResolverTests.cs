@@ -258,6 +258,28 @@ public class PackageVersionResolverTests
         }
 
         [Fact]
+        public async Task With_Same_Id_Different_Casing_And_Same_Version_Returns_One_Result()
+        {
+            var nugetConfig = CreateConfig(("stable-feed", "https://feeds.example.com/stable"));
+            var resolver = CreateResolver(new Dictionary<string, (string Url, string[] Versions)>
+            {
+                ["stable-feed"] = ("https://feeds.example.com/stable", ["1.0.1"]),
+            });
+
+            var result = await resolver.ResolveAsync(
+                [
+                    new PackageToBump("MyPackage", new SemanticVersion("1.0.0")),
+                    new PackageToBump("mypackage", new SemanticVersion("1.0.0")),
+                ],
+                BumpType.Patch,
+                nugetConfig);
+
+            result.ShouldSatisfyAllConditions(
+                () => result.Count.ShouldBe(1),
+                () => GetVersion(result, "mypackage").Version.ShouldBe("1.0.1"));
+        }
+
+        [Fact]
         public async Task With_Empty_Package_List_Returns_Empty()
         {
             var nugetConfig = CreateConfig(("stable-feed", "https://feeds.example.com/stable"));

@@ -176,13 +176,18 @@ Those are consistent today because the production read path is the only source o
 **Status: fixed.** `PackageVariant.NormalizeCondition` is now the single normalization point (`Trim`, whitespace→null), used by
 both `ReadEffectiveCondition` and `GetVariants`. Covered by `With_Untrimmed_Conditions_Groups_By_Trimmed_Value`.
 
-### 8. Interface contract: equality is now load-bearing for `IPackageVersionResolver` *(Documentation · Info)*
+### 8. Interface contract: equality is now load-bearing for `IPackageVersionResolver` *(Documentation · Info)* — ✅ Fixed
 
 Changing the return type to `IReadOnlyDictionary<PackageToBump, SemanticVersion>` is a genuine improvement — it decouples "which input was resolved" from "package id". One subtlety worth capturing in the interface doc comment (the implementation's behavior relies on it):
 
 > Inputs with an equal package id (case-insensitive) and an equal current version (`1.0.0` == `1.0.0.0`, pre-release labels compared per NuGet semantics) are treated as one resolution input and appear once in the result.
 
 This follows from `SemanticVersion`'s `CompareTo`-based record equality and `OrdinalIgnoreCase` id hashing, but a reader of `IPackageVersionResolver` cannot know it without also reading `SemanticVersion`.
+
+**Status: fixed.** `PackageToBump` now implements equality and hashing with an `OrdinalIgnoreCase` package id and
+`SemanticVersion` version equality, and `IPackageVersionResolver` documents the resulting dedupe contract. Covered by
+`With_Same_Id_Different_Casing_And_Same_Version_Returns_One_Result` and the casing variation in
+`With_Different_Conditions_And_Same_Reference_Version_Resolves_Once_And_Bumps_Both`.
 
 ---
 
@@ -214,6 +219,6 @@ This follows from `SemanticVersion`'s `CompareTo`-based record equality and `Ord
 | 5 | Low | Docs | Document exact-string condition grouping consequences | ✅ Fixed |
 | 6 | Low | Behavior | Mixed valid/invalid variant bumps invalid occurrences (matches old behavior; make it explicit + test) | ✅ Fixed |
 | 7 | Info | Robustness | Report matching depends on condition normalization consistency | ✅ Fixed |
-| 8 | Info | Docs | Document equality-based dedupe contract on `IPackageVersionResolver` | Open |
+| 8 | Info | Docs | Document equality-based dedupe contract on `IPackageVersionResolver` | ✅ Fixed |
 
-No blocking issues. Findings 1–7 are fixed; the remaining finding is optional documentation polish.
+No blocking issues. All findings are fixed.
