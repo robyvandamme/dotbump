@@ -7,6 +7,8 @@ namespace DotBump.Commands.BumpPackages.DataModel;
 /// </summary>
 internal sealed class PackageManifest
 {
+    private static readonly VariantKeyComparer s_variantKeyComparer = new();
+
     private readonly List<PackageVersionEntry> _packages = [];
     private readonly List<string> _warnings = [];
     private readonly Dictionary<string, string> _fileTexts = new(StringComparer.Ordinal);
@@ -50,21 +52,21 @@ internal sealed class PackageManifest
     public IReadOnlyList<PackageVariant> GetVariants()
     {
         var variants = new List<(string PackageId, string? Condition, List<PackageVersionEntry> Occurrences)>();
+        var indexes = new Dictionary<(string PackageId, string? Condition), int>(s_variantKeyComparer);
 
         foreach (var package in _packages)
         {
             var condition = string.IsNullOrWhiteSpace(package.Condition) ? null : package.Condition;
-            var variant = variants.FirstOrDefault(candidate =>
-                string.Equals(candidate.PackageId, package.PackageId, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(candidate.Condition, condition, StringComparison.Ordinal));
+            var key = (package.PackageId, condition);
 
-            if (variant.Occurrences == null)
+            if (!indexes.TryGetValue(key, out var index))
             {
-                variant = (package.PackageId, condition, []);
-                variants.Add(variant);
+                index = variants.Count;
+                variants.Add((package.PackageId, condition, []));
+                indexes[key] = index;
             }
 
-            variant.Occurrences.Add(package);
+            variants[index].Occurrences.Add(package);
         }
 
         return variants
@@ -107,5 +109,23 @@ internal sealed class PackageManifest
     internal string? GetFileText(string filePath)
     {
         return _fileTexts.GetValueOrDefault(filePath);
+    }
+
+    private sealed class VariantKeyComparer : IEqualityComparer<(string PackageId, string? Condition)>
+    {
+        public bool Equals(
+            (string PackageId, string? Condition) x,
+            (string PackageId, string? Condition) y)
+        {
+            return string.Equals(x.PackageId, y.PackageId, StringComparison.OrdinalIgnoreCase)
+                   && string.Equals(x.Condition, y.Condition, StringComparison.Ordinal);
+        }
+
+        public int GetHashCode((string PackageId, string? Condition) obj)
+        {
+            return HashCode.Combine(
+                StringComparer.OrdinalIgnoreCase.GetHashCode(obj.PackageId),
+                obj.Condition == null ? 0 : StringComparer.Ordinal.GetHashCode(obj.Condition));
+        }
     }
 }

@@ -70,6 +70,23 @@ public class PackageManifestTests
         }
 
         [Fact]
+        public void With_Multiple_Variants_Returns_First_Seen_Order()
+        {
+            var manifest = new PackageManifest();
+            manifest.Add(CreateEntry("/repo/A.csproj", "Package.A", "1.0.0", "condition-1"));
+            manifest.Add(CreateEntry("/repo/B.csproj", "Package.B", "1.0.0"));
+            manifest.Add(CreateEntry("/repo/A.csproj", "Package.A", "2.0.0", "condition-2"));
+            manifest.Add(CreateEntry("/repo/C.csproj", "package.a", "1.2.0", "condition-1"));
+
+            var variants = manifest.GetVariants();
+
+            variants
+                .Select(variant => $"{variant.PackageId}|{variant.Condition}")
+                .ShouldBe(["Package.A|condition-1", "Package.B|", "Package.A|condition-2"]);
+            variants[0].Occurrences.Count.ShouldBe(2);
+        }
+
+        [Fact]
         public void With_No_Packages_Returns_Empty_List()
         {
             var manifest = new PackageManifest();
