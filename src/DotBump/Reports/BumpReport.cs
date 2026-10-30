@@ -100,7 +100,7 @@ internal class BumpReport
         foreach (var variant in packageManifest.GetVariants())
         {
             _results.Add(
-                new BumpResult(variant.PackageId, GetReferenceVersion(variant.Occurrences, useCurrentVersion: false))
+                new BumpResult(variant.PackageId, GetReferenceVersion(variant, useCurrentVersion: false))
                 {
                     Condition = variant.Condition,
                 });
@@ -162,7 +162,7 @@ internal class BumpReport
                 && string.Equals(o.Condition, variant.Condition, StringComparison.Ordinal));
             if (reportItem != null)
             {
-                reportItem.NewVersion = GetReferenceVersion(variant.Occurrences, useCurrentVersion: true);
+                reportItem.NewVersion = GetReferenceVersion(variant, useCurrentVersion: true);
             }
         }
 
@@ -234,20 +234,19 @@ internal class BumpReport
     /// Gets the reference version for a package variant: the highest semantic version across its
     /// occurrences, falling back to the first occurrence when none is a valid semantic version.
     /// </summary>
-    private static string GetReferenceVersion(
-        IReadOnlyList<PackageVersionEntry> entries,
-        bool useCurrentVersion)
+    private static string GetReferenceVersion(PackageVariant variant, bool useCurrentVersion)
     {
-        var versions = entries
-            .Select(entry => new SemanticVersion(useCurrentVersion ? entry.Version : entry.OriginalVersion))
-            .Where(version => version.IsValid)
-            .ToList();
+        var highestVersion = useCurrentVersion
+            ? variant.HighestCurrentVersion
+            : variant.HighestOriginalVersion;
 
-        if (versions.Count > 0)
+        if (highestVersion != null)
         {
-            return versions.OrderByDescending(version => version).First().Version;
+            return highestVersion.Version;
         }
 
-        return useCurrentVersion ? entries[0].Version : entries[0].OriginalVersion;
+        var firstOccurrence = variant.Occurrences[0];
+
+        return useCurrentVersion ? firstOccurrence.Version : firstOccurrence.OriginalVersion;
     }
 }

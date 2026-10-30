@@ -78,7 +78,7 @@ Note this changes id matching from `OrdinalIgnoreCase` to the default ordinal tu
 `OrdinalIgnoreCase` package-id matching and `Ordinal` condition matching. This removes the default-tuple sentinel and
 makes grouping linear. Verified by `With_Multiple_Variants_Returns_First_Seen_Order`.
 
-### 2. Duplicated "highest valid semantic version" logic *(Duplication · Medium-Low)*
+### 2. Duplicated "highest valid semantic version" logic *(Duplication · Medium-Low)* — ✅ Fixed
 
 Two near-identical implementations of "pick the highest valid semantic version across occurrences" now live in:
 
@@ -98,6 +98,10 @@ public SemanticVersion? HighestVersion => ValidVersions.Count > 0
 ```
 
 The handler then reads `variant.HighestVersion` and skips when null; the report keeps its small display fallback in one place. This makes the "one true selection rule" explicit and halves the surface for future divergence.
+
+**Status: fixed.** `PackageVariant` now exposes `HighestOriginalVersion` and `HighestCurrentVersion`, both backed by one
+private selection method. The handler uses `HighestCurrentVersion`; the report uses the appropriate property and keeps
+its existing display fallback for invalid versions. Covered by `PackageVariantTests`.
 
 ### 3. Negated version comparison is harder to read than the positive form *(Readability · Low)*
 
@@ -187,7 +191,7 @@ This follows from `SemanticVersion`'s `CompareTo`-based record equality and `Ord
 | # | Severity | Area | Finding | Status |
 |---|----------|------|---------|--------|
 | 1 | Medium | Quality | `GetVariants` default-tuple sentinel check; O(n²) grouping — use a composite-key dictionary | ✅ Fixed (`c50d747`) |
-| 2 | Medium-Low | Duplication | Highest-version selection logic duplicated between handler and report | Open |
+| 2 | Medium-Low | Duplication | Highest-version selection logic duplicated between handler and report | ✅ Fixed |
 | 3 | Low | Readability | `!(a > b)` → `a <= b` | Open |
 | 4 | Low | Duplication | `(when ...)` formatting repeated in three places | Open |
 | 5 | Low | Docs | Document exact-string condition grouping consequences | Open |
@@ -195,5 +199,5 @@ This follows from `SemanticVersion`'s `CompareTo`-based record equality and `Ord
 | 7 | Info | Robustness | Report matching depends on condition normalization consistency | Open |
 | 8 | Info | Docs | Document equality-based dedupe contract on `IPackageVersionResolver` | Open |
 
-No blocking issues. Finding 1 is fixed; findings 2–3 are quick, worthwhile refactors that can land before or shortly
-after merge; the rest are optional polish.
+No blocking issues. Findings 1 and 2 are fixed; finding 3 is a quick, worthwhile readability change that can land
+before or shortly after merge; the rest are optional polish.

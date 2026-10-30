@@ -105,12 +105,8 @@ internal class BumpPackagesHandler(
                 continue;
             }
 
-            var versions = variant.Occurrences
-                .Select(package => package.SemanticVersion)
-                .Where(version => version.IsValid)
-                .ToList();
-
-            if (versions.Count == 0)
+            var referenceVersion = variant.HighestCurrentVersion;
+            if (referenceVersion == null)
             {
                 var invalidVersions = string.Join(", ", variant.Occurrences.Select(package => $"'{package.Version}'"));
                 var condition = variant.Condition == null ? string.Empty : $" under condition '{variant.Condition}'";
@@ -121,9 +117,7 @@ internal class BumpPackagesHandler(
                 continue;
             }
 
-            var packageToBump = new PackageToBump(
-                variant.PackageId,
-                versions.OrderByDescending(version => version).First());
+            var packageToBump = new PackageToBump(variant.PackageId, referenceVersion);
 
             if (!variantsByPackage.TryGetValue(packageToBump, out var variants))
             {
