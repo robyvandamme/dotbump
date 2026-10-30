@@ -23,6 +23,13 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
     private static readonly string[] s_packageElementNames =
         ["PackageReference", "PackageVersion", "GlobalPackageReference"];
 
+    private readonly record struct PackageVersionCandidate(
+        string ElementName,
+        string PackageId,
+        string Version,
+        string? Condition,
+        Func<(int Start, int Length)> GetVersionSpan);
+
     public PackageManifest GetPackageManifest(
         string repositoryPath,
         IReadOnlyCollection<string>? excludedPaths = null)
@@ -356,11 +363,12 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                     manifest,
                     filePath,
                     sourceKind,
-                    elementName,
-                    packageId,
-                    version,
-                    ReadEffectiveCondition(element),
-                    () => GetVersionSpan(text, lineStartOffsets, versionSource)))
+                    new PackageVersionCandidate(
+                        elementName,
+                        packageId,
+                        version,
+                        ReadEffectiveCondition(element),
+                        () => GetVersionSpan(text, lineStartOffsets, versionSource))))
             {
                 packageFound = true;
             }
@@ -430,11 +438,12 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 manifest,
                 filePath,
                 PackageSourceKind.Project,
-                SdkName,
-                reference.PackageId,
-                reference.Version,
-                ReadEffectiveCondition(root),
-                () => (reference.VersionStart, reference.VersionLength));
+                new PackageVersionCandidate(
+                    SdkName,
+                    reference.PackageId,
+                    reference.Version,
+                    ReadEffectiveCondition(root),
+                    () => (reference.VersionStart, reference.VersionLength)));
         }
 
         return sdkReferenceFound;
@@ -472,11 +481,12 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 manifest,
                 filePath,
                 PackageSourceKind.Project,
-                SdkName,
-                packageId,
-                version,
-                ReadEffectiveCondition(element),
-                () => GetVersionSpan(text, lineStartOffsets, versionSource));
+                new PackageVersionCandidate(
+                    SdkName,
+                    packageId,
+                    version,
+                    ReadEffectiveCondition(element),
+                    () => GetVersionSpan(text, lineStartOffsets, versionSource)));
         }
 
         return sdkReferenceFound;
@@ -486,26 +496,22 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         PackageManifest manifest,
         string filePath,
         PackageSourceKind sourceKind,
-        string elementName,
-        string packageId,
-        string version,
-        string? condition,
-        Func<(int Start, int Length)> getVersionSpan)
+        PackageVersionCandidate candidate)
     {
-        if (!IsSupportedVersion(version))
+        if (!IsSupportedVersion(candidate.Version))
         {
             var warning =
-                $"Skipping {elementName} '{packageId}' in '{filePath}' because version '{version}' is not supported.";
+                $"Skipping {candidate.ElementName} '{candidate.PackageId}' in '{filePath}' because version '{candidate.Version}' is not supported.";
             logger.Warning(WarningMessageTemplate, warning);
             manifest.AddWarning(warning);
             return false;
         }
 
-        var (versionStart, versionLength) = getVersionSpan();
+        var (versionStart, versionLength) = candidate.GetVersionSpan();
         if (versionStart < 0)
         {
             var warning =
-                $"Skipping {elementName} '{packageId}' in '{filePath}' because its version value could not be located.";
+                $"Skipping {candidate.ElementName} '{candidate.PackageId}' in '{filePath}' because its version value could not be located.";
             logger.Warning(WarningMessageTemplate, warning);
             manifest.AddWarning(warning);
             return false;
@@ -514,13 +520,13 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         manifest.Add(
             new PackageVersionEntry
             {
-                PackageId = packageId,
-                OriginalVersion = version,
-                Version = version,
+                PackageId = candidate.PackageId,
+                OriginalVersion = candidate.Version,
+                Version = candidate.Version,
                 FilePath = filePath,
                 SourceKind = sourceKind,
-                ElementName = elementName,
-                Condition = condition,
+                ElementName = candidate.ElementName,
+                Condition = candidate.Condition,
                 VersionStart = versionStart,
                 VersionLength = versionLength,
             });
