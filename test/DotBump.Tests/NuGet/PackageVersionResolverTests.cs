@@ -39,7 +39,7 @@ public class PackageVersionResolverTests
                 BumpType.Minor,
                 nugetConfig);
 
-            result["mytool"].Version.ShouldBe("1.0.0");
+            GetVersion(result, "mytool").Version.ShouldBe("1.0.0");
         }
 
         [Fact]
@@ -59,7 +59,7 @@ public class PackageVersionResolverTests
                 BumpType.Minor,
                 nugetConfig);
 
-            result["mytool"].Version.ShouldBe("1.0.0");
+            GetVersion(result, "mytool").Version.ShouldBe("1.0.0");
         }
 
         [Fact]
@@ -79,7 +79,7 @@ public class PackageVersionResolverTests
                 BumpType.Minor,
                 nugetConfig);
 
-            result["mytool"].Version.ShouldBe("1.1.0-preview.1");
+            GetVersion(result, "mytool").Version.ShouldBe("1.1.0-preview.1");
         }
 
         [Fact]
@@ -101,7 +101,7 @@ public class PackageVersionResolverTests
                 BumpType.Patch,
                 nugetConfig);
 
-            result["mytool"].Version.ShouldBe("1.0.1");
+            GetVersion(result, "mytool").Version.ShouldBe("1.0.1");
         }
 
         [Fact]
@@ -118,7 +118,7 @@ public class PackageVersionResolverTests
                 BumpType.Major,
                 nugetConfig);
 
-            result["mytool"].Version.ShouldBe("2.1.5");
+            GetVersion(result, "mytool").Version.ShouldBe("2.1.5");
         }
 
         [Fact]
@@ -135,7 +135,7 @@ public class PackageVersionResolverTests
                 BumpType.Major,
                 nugetConfig);
 
-            result["mytool"].Version.ShouldBe("1.9.2");
+            GetVersion(result, "mytool").Version.ShouldBe("1.9.2");
         }
 
         [Fact]
@@ -153,7 +153,7 @@ public class PackageVersionResolverTests
                 nugetConfig,
                 preRelease: true);
 
-            result["mytool"].Version.ShouldBe("2.1.0-preview.1");
+            GetVersion(result, "mytool").Version.ShouldBe("2.1.0-preview.1");
         }
 
         [Fact]
@@ -174,7 +174,7 @@ public class PackageVersionResolverTests
                 nugetConfig,
                 preRelease: true);
 
-            result["mytool"].Version.ShouldBe("2.0.0-preview.1");
+            GetVersion(result, "mytool").Version.ShouldBe("2.0.0-preview.1");
         }
 
         [Fact]
@@ -230,8 +230,53 @@ public class PackageVersionResolverTests
                 nugetConfig);
 
             result.ShouldSatisfyAllConditions(
-                () => result["package-a"].Version.ShouldBe("1.5.1"),
-                () => result["package-b"].Version.ShouldBe("1.5.1"));
+                () => GetVersion(result, "package-a").Version.ShouldBe("1.5.1"),
+                () => GetVersion(result, "package-b").Version.ShouldBe("1.5.1"));
+        }
+
+        [Fact]
+        public async Task With_Same_Id_And_Different_Current_Versions_Resolves_Each_Input()
+        {
+            var nugetConfig = CreateConfig(("stable-feed", "https://feeds.example.com/stable"));
+            var resolver = CreateResolver(new Dictionary<string, (string Url, string[] Versions)>
+            {
+                ["stable-feed"] = ("https://feeds.example.com/stable", ["10.0.14", "10.0.15", "11.0.0-rc.3", "11.0.0-rc.4"]),
+            });
+
+            var result = await resolver.ResolveAsync(
+                [
+                    new PackageToBump("mypackage", new SemanticVersion("10.0.14")),
+                    new PackageToBump("mypackage", new SemanticVersion("11.0.0-rc.3")),
+                ],
+                BumpType.Patch,
+                nugetConfig);
+
+            result.ShouldSatisfyAllConditions(
+                () => result.Count.ShouldBe(2),
+                () => GetVersion(result, "mypackage", "10.0.14").Version.ShouldBe("10.0.15"),
+                () => GetVersion(result, "mypackage", "11.0.0-rc.3").Version.ShouldBe("11.0.0-rc.4"));
+        }
+
+        [Fact]
+        public async Task With_Same_Id_Different_Casing_And_Same_Version_Returns_One_Result()
+        {
+            var nugetConfig = CreateConfig(("stable-feed", "https://feeds.example.com/stable"));
+            var resolver = CreateResolver(new Dictionary<string, (string Url, string[] Versions)>
+            {
+                ["stable-feed"] = ("https://feeds.example.com/stable", ["1.0.1"]),
+            });
+
+            var result = await resolver.ResolveAsync(
+                [
+                    new PackageToBump("MyPackage", new SemanticVersion("1.0.0")),
+                    new PackageToBump("mypackage", new SemanticVersion("1.0.0")),
+                ],
+                BumpType.Patch,
+                nugetConfig);
+
+            result.ShouldSatisfyAllConditions(
+                () => result.Count.ShouldBe(1),
+                () => GetVersion(result, "mypackage").Version.ShouldBe("1.0.1"));
         }
 
         [Fact]
@@ -265,6 +310,24 @@ public class PackageVersionResolverTests
 
             await Should.ThrowAsync<ArgumentNullException>(() => resolver.ResolveAsync(null!, BumpType.Minor, new NuGetConfig()));
         }
+    }
+
+    private static SemanticVersion GetVersion(
+        IReadOnlyDictionary<PackageToBump, SemanticVersion> result,
+        string packageId)
+    {
+        return result.Single(entry =>
+            string.Equals(entry.Key.PackageId, packageId, StringComparison.OrdinalIgnoreCase)).Value;
+    }
+
+    private static SemanticVersion GetVersion(
+        IReadOnlyDictionary<PackageToBump, SemanticVersion> result,
+        string packageId,
+        string currentVersion)
+    {
+        return result.Single(entry =>
+            string.Equals(entry.Key.PackageId, packageId, StringComparison.OrdinalIgnoreCase)
+            && entry.Key.CurrentVersion == new SemanticVersion(currentVersion)).Value;
     }
 
     private static NuGetConfig CreateConfig(params (string Key, string Url)[] sources)

@@ -42,21 +42,24 @@ internal class BumpPackagesHandler(
             return bumpReport;
         }
 
-        var referenceVersions = GetReferenceVersions(manifest, skipPackages);
-        var packagesToBump = referenceVersions
-            .Select(reference => new PackageToBump(reference.Key, reference.Value))
-            .ToList();
+        var variantsByPackage = GetPackagesToBump(manifest, skipPackages);
+        var packagesToBump = variantsByPackage.Keys.ToList();
 
         var bestVersions = await packageVersionResolver
             .ResolveAsync(packagesToBump, bumpType, nuGetConfiguration, preRelease)
             .ConfigureAwait(false);
 
-        foreach (var (packageId, newVersion) in bestVersions)
+        foreach (var (package, newVersion) in bestVersions)
         {
-            // Never downgrade: only apply a target higher than every current occurrence.
-            if (newVersion > referenceVersions[packageId])
+            // Never downgrade: only apply a target higher than every current occurrence in the variant.
+            if (newVersion <= package.CurrentVersion)
             {
-                manifest.SetVersion(packageId, newVersion.ToString());
+                continue;
+            }
+
+            foreach (var variant in variantsByPackage[package])
+            {
+                manifest.SetVersion(variant, newVersion.ToString());
             }
         }
 
@@ -75,50 +78,68 @@ internal class BumpPackagesHandler(
     }
 
     /// <summary>
-    /// Gets the distinct packages and the highest current version of each, which is used as the
-    /// reference version to resolve a newer version from. Packages that match a skip pattern and
-    /// packages without a valid semantic version are skipped.
+    /// Gets the package variants to resolve, keyed by package id and the highest current version in
+    /// the variant. Variants that match a skip pattern and variants without a valid semantic version
+    /// are skipped.
     /// </summary>
-    private Dictionary<string, SemanticVersion> GetReferenceVersions(
+    private Dictionary<PackageToBump, List<PackageVariant>> GetPackagesToBump(
         PackageManifest manifest,
         IReadOnlyCollection<string>? skipPackages)
     {
-        var referenceVersions = new Dictionary<string, SemanticVersion>();
+        var variantsByPackage = new Dictionary<PackageToBump, List<PackageVariant>>();
         var skipMatcher = NamePatternMatcher.Create(skipPackages);
+        var skippedPackageIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var packageId in manifest.GetPackageIds())
+        foreach (var variant in manifest.GetVariants())
         {
-            if (skipMatcher.TryMatch(packageId, out var matchedPattern))
+            if (skipMatcher.TryMatch(variant.PackageId, out var matchedPattern))
             {
-                var skipWarning =
-                    $"Skipping '{packageId}' because it matches --skip-package pattern '{matchedPattern}'.";
-                logger.Warning("{Warning}", skipWarning);
-                manifest.AddWarning(skipWarning);
+                if (skippedPackageIds.Add(variant.PackageId))
+                {
+                    var skipWarning =
+                        $"Skipping '{variant.PackageId}' because it matches --skip-package pattern '{matchedPattern}'.";
+                    logger.Warning("{Warning}", skipWarning);
+                    manifest.AddWarning(skipWarning);
+                }
+
                 continue;
             }
 
-            var occurrences = manifest.Packages
-                .Where(package => string.Equals(package.PackageId, packageId, StringComparison.OrdinalIgnoreCase))
+            var condition = variant.Condition == null ? string.Empty : $" under condition '{variant.Condition}'";
+            var unparseableVersions = variant.Occurrences
+                .Where(package => !package.SemanticVersion.IsValid)
+                .Select(package => $"'{package.Version}'")
                 .ToList();
 
-            var versions = occurrences
-                .Select(package => package.SemanticVersion)
-                .Where(version => version.IsValid)
-                .ToList();
-
-            if (versions.Count == 0)
+            var referenceVersion = variant.HighestCurrentVersion;
+            if (referenceVersion == null)
             {
-                var invalidVersions = string.Join(", ", occurrences.Select(package => $"'{package.Version}'"));
                 var warning =
-                    $"Skipping '{packageId}' because version(s) {invalidVersions} cannot be parsed as a semantic version.";
+                    $"Skipping '{variant.PackageId}'{condition} because version(s) {string.Join(", ", unparseableVersions)} cannot be parsed as a semantic version.";
                 logger.Warning("{Warning}", warning);
                 manifest.AddWarning(warning);
                 continue;
             }
 
-            referenceVersions[packageId] = versions.OrderByDescending(version => version).First();
+            if (unparseableVersions.Count > 0)
+            {
+                var warning =
+                    $"Package '{variant.PackageId}'{condition} contains unparseable version(s) {string.Join(", ", unparseableVersions)}; they will be overwritten if a bump is applied.";
+                logger.Warning("{Warning}", warning);
+                manifest.AddWarning(warning);
+            }
+
+            var packageToBump = new PackageToBump(variant.PackageId, referenceVersion);
+
+            if (!variantsByPackage.TryGetValue(packageToBump, out var variants))
+            {
+                variants = [];
+                variantsByPackage[packageToBump] = variants;
+            }
+
+            variants.Add(variant);
         }
 
-        return referenceVersions;
+        return variantsByPackage;
     }
 }

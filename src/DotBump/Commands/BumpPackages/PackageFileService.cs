@@ -23,6 +23,13 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
     private static readonly string[] s_packageElementNames =
         ["PackageReference", "PackageVersion", "GlobalPackageReference"];
 
+    private readonly record struct PackageVersionCandidate(
+        string ElementName,
+        string PackageId,
+        string Version,
+        string? Condition,
+        Func<(int Start, int Length)> GetSpan);
+
     public PackageManifest GetPackageManifest(
         string repositoryPath,
         IReadOnlyCollection<string>? excludedPaths = null)
@@ -129,6 +136,33 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         return element.Attributes()
             .FirstOrDefault(attribute => attribute.Name.LocalName.Equals(attributeName, StringComparison.Ordinal))
             ?.Value;
+    }
+
+    /// <summary>
+    /// Returns the effective condition for an element: its own <c>Condition</c> attribute combined
+    /// with the conditions of all enclosing elements, in root-to-element order. Conditions are not
+    /// evaluated; they are only used to distinguish independent occurrences of the same package.
+    /// </summary>
+    private static string? ReadEffectiveCondition(XElement element)
+    {
+        var conditions = new List<string>();
+
+        for (var current = element; current != null; current = current.Parent)
+        {
+            var condition = PackageVariant.NormalizeCondition(ReadAttribute(current, "Condition"));
+            if (condition != null)
+            {
+                conditions.Add(condition);
+            }
+        }
+
+        if (conditions.Count == 0)
+        {
+            return null;
+        }
+
+        conditions.Reverse();
+        return string.Join(" && ", conditions);
     }
 
     // The returned version is the XML-decoded value (XAttribute.Value / XElement.Value). The matching
@@ -329,10 +363,12 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                     manifest,
                     filePath,
                     sourceKind,
-                    elementName,
-                    packageId,
-                    version,
-                    () => GetVersionSpan(text, lineStartOffsets, versionSource)))
+                    new PackageVersionCandidate(
+                        elementName,
+                        packageId,
+                        version,
+                        ReadEffectiveCondition(element),
+                        () => GetVersionSpan(text, lineStartOffsets, versionSource))))
             {
                 packageFound = true;
             }
@@ -402,10 +438,12 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 manifest,
                 filePath,
                 PackageSourceKind.Project,
-                SdkName,
-                reference.PackageId,
-                reference.Version,
-                () => (reference.VersionStart, reference.VersionLength));
+                new PackageVersionCandidate(
+                    SdkName,
+                    reference.PackageId,
+                    reference.Version,
+                    ReadEffectiveCondition(root),
+                    () => (reference.VersionStart, reference.VersionLength)));
         }
 
         return sdkReferenceFound;
@@ -443,10 +481,12 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 manifest,
                 filePath,
                 PackageSourceKind.Project,
-                SdkName,
-                packageId,
-                version,
-                () => GetVersionSpan(text, lineStartOffsets, versionSource));
+                new PackageVersionCandidate(
+                    SdkName,
+                    packageId,
+                    version,
+                    ReadEffectiveCondition(element),
+                    () => GetVersionSpan(text, lineStartOffsets, versionSource)));
         }
 
         return sdkReferenceFound;
@@ -456,25 +496,22 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         PackageManifest manifest,
         string filePath,
         PackageSourceKind sourceKind,
-        string elementName,
-        string packageId,
-        string version,
-        Func<(int Start, int Length)> getVersionSpan)
+        PackageVersionCandidate candidate)
     {
-        if (!IsSupportedVersion(version))
+        if (!IsSupportedVersion(candidate.Version))
         {
             var warning =
-                $"Skipping {elementName} '{packageId}' in '{filePath}' because version '{version}' is not supported.";
+                $"Skipping {candidate.ElementName} '{candidate.PackageId}' in '{filePath}' because version '{candidate.Version}' is not supported.";
             logger.Warning(WarningMessageTemplate, warning);
             manifest.AddWarning(warning);
             return false;
         }
 
-        var (versionStart, versionLength) = getVersionSpan();
+        var (versionStart, versionLength) = candidate.GetSpan();
         if (versionStart < 0)
         {
             var warning =
-                $"Skipping {elementName} '{packageId}' in '{filePath}' because its version value could not be located.";
+                $"Skipping {candidate.ElementName} '{candidate.PackageId}' in '{filePath}' because its version value could not be located.";
             logger.Warning(WarningMessageTemplate, warning);
             manifest.AddWarning(warning);
             return false;
@@ -483,12 +520,13 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         manifest.Add(
             new PackageVersionEntry
             {
-                PackageId = packageId,
-                OriginalVersion = version,
-                Version = version,
+                PackageId = candidate.PackageId,
+                OriginalVersion = candidate.Version,
+                Version = candidate.Version,
                 FilePath = filePath,
                 SourceKind = sourceKind,
-                ElementName = elementName,
+                ElementName = candidate.ElementName,
+                Condition = candidate.Condition,
                 VersionStart = versionStart,
                 VersionLength = versionLength,
             });

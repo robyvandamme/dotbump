@@ -59,9 +59,9 @@ internal class BumpToolsHandler(
             .ResolveAsync(packagesToBump, bumpType, nuGetConfiguration, preRelease)
             .ConfigureAwait(false);
 
-        foreach (var (toolKey, newVersion) in bestVersions)
+        foreach (var (package, newVersion) in bestVersions)
         {
-            manifest.Tools[toolKey].Version = newVersion.ToString();
+            manifest.Tools[package.PackageId].Version = newVersion.ToString();
         }
 
         bumpReport.ReportChanges(manifest);

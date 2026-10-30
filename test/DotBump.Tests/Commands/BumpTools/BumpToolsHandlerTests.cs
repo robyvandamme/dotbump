@@ -31,7 +31,7 @@ public class BumpToolsHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(new Dictionary<string, SemanticVersion> { ["mytool"] = new("1.1.0") });
+                .ReturnsAsync(CreateResolved(("mytool", "1.0.0", "1.1.0")));
             var handler = CreateHandler(fileService, resolver);
 
             var report = await handler.HandleAsync(BumpType.Minor, "nuget.config", "dotnet-tools.json");
@@ -53,7 +53,7 @@ public class BumpToolsHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(new Dictionary<string, SemanticVersion> { ["mytool"] = new("2.0.0") });
+                .ReturnsAsync(CreateResolved(("mytool", "1.0.0", "2.0.0")));
             var handler = CreateHandler(fileService, resolver);
 
             var report = await handler.HandleAsync(BumpType.Major, "nuget.config", "dotnet-tools.json");
@@ -81,7 +81,7 @@ public class BumpToolsHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(new Dictionary<string, SemanticVersion>());
+                .ReturnsAsync(CreateResolved());
             var handler = CreateHandler(fileService, resolver);
 
             await handler.HandleAsync(BumpType.Major, "nuget.config", "dotnet-tools.json", preRelease: true);
@@ -107,7 +107,7 @@ public class BumpToolsHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(new Dictionary<string, SemanticVersion>());
+                .ReturnsAsync(CreateResolved());
             var handler = CreateHandler(fileService, resolver);
 
             var report = await handler.HandleAsync(BumpType.Minor, "nuget.config", "dotnet-tools.json");
@@ -149,7 +149,7 @@ public class BumpToolsHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(new Dictionary<string, SemanticVersion>());
+                .ReturnsAsync(CreateResolved());
             var handler = CreateHandler(fileService, resolver);
 
             await handler.HandleAsync(BumpType.Minor, "nuget.config", "dotnet-tools.json");
@@ -178,7 +178,7 @@ public class BumpToolsHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(new Dictionary<string, SemanticVersion> { ["othertool"] = new("1.1.0") });
+                .ReturnsAsync(CreateResolved(("othertool", "1.0.0", "1.1.0")));
             var handler = CreateHandler(fileService, resolver);
 
             var report = await handler.HandleAsync(
@@ -215,7 +215,7 @@ public class BumpToolsHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(new Dictionary<string, SemanticVersion> { ["Other.Tool"] = new("1.1.0") });
+                .ReturnsAsync(CreateResolved(("Other.Tool", "1.0.0", "1.1.0")));
             var handler = CreateHandler(fileService, resolver);
 
             var report = await handler.HandleAsync(
@@ -250,7 +250,7 @@ public class BumpToolsHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(new Dictionary<string, SemanticVersion>());
+                .ReturnsAsync(CreateResolved());
             var handler = CreateHandler(fileService, resolver);
 
             var report = await handler.HandleAsync(
@@ -265,6 +265,14 @@ public class BumpToolsHandlerTests
             fileService.Verify(
                 s => s.SaveToolsManifest(It.IsAny<ToolsManifest>(), It.IsAny<string>()),
                 Times.Never);
+        }
+
+        private static IReadOnlyDictionary<PackageToBump, SemanticVersion> CreateResolved(
+            params (string Id, string CurrentVersion, string ResolvedVersion)[] resolved)
+        {
+            return resolved.ToDictionary(
+                item => new PackageToBump(item.Id, new SemanticVersion(item.CurrentVersion)),
+                item => new SemanticVersion(item.ResolvedVersion));
         }
 
         private static ToolsManifest CreateManifest(params (string Key, string Version)[] tools)

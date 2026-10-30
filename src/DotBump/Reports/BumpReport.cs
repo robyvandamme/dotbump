@@ -97,10 +97,13 @@ internal class BumpReport
         CommandName = BumpCommandNames.Packages;
         BumpType = bumpType;
 
-        foreach (var packageId in packageManifest.GetPackageIds())
+        foreach (var variant in packageManifest.GetVariants())
         {
             _results.Add(
-                new BumpResult(packageId, GetReferenceVersion(packageManifest, packageId, useCurrentVersion: false)));
+                new BumpResult(variant.PackageId, GetReferenceVersion(variant, useCurrentVersion: false))
+                {
+                    Condition = variant.Condition,
+                });
         }
     }
 
@@ -152,14 +155,14 @@ internal class BumpReport
     {
         ArgumentNullException.ThrowIfNull(packageManifest);
 
-        foreach (var packageId in packageManifest.GetPackageIds())
+        foreach (var variant in packageManifest.GetVariants())
         {
-            var reportItem = _results.FirstOrDefault(o => o.Id.Equals(
-                packageId,
-                StringComparison.OrdinalIgnoreCase));
+            var reportItem = _results.FirstOrDefault(o =>
+                o.Id.Equals(variant.PackageId, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(o.Condition, variant.Condition, StringComparison.Ordinal));
             if (reportItem != null)
             {
-                reportItem.NewVersion = GetReferenceVersion(packageManifest, packageId, useCurrentVersion: true);
+                reportItem.NewVersion = GetReferenceVersion(variant, useCurrentVersion: true);
             }
         }
 
@@ -228,28 +231,22 @@ internal class BumpReport
     }
 
     /// <summary>
-    /// Gets the reference version for a package: the highest semantic version across all its
+    /// Gets the reference version for a package variant: the highest semantic version across its
     /// occurrences, falling back to the first occurrence when none is a valid semantic version.
     /// </summary>
-    private static string GetReferenceVersion(
-        PackageManifest packageManifest,
-        string packageId,
-        bool useCurrentVersion)
+    private static string GetReferenceVersion(PackageVariant variant, bool useCurrentVersion)
     {
-        var entries = packageManifest.Packages
-            .Where(package => string.Equals(package.PackageId, packageId, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        var highestVersion = useCurrentVersion
+            ? variant.HighestCurrentVersion
+            : variant.HighestOriginalVersion;
 
-        var versions = entries
-            .Select(entry => new SemanticVersion(useCurrentVersion ? entry.Version : entry.OriginalVersion))
-            .Where(version => version.IsValid)
-            .ToList();
-
-        if (versions.Count > 0)
+        if (highestVersion != null)
         {
-            return versions.OrderByDescending(version => version).First().Version;
+            return highestVersion.Version;
         }
 
-        return useCurrentVersion ? entries[0].Version : entries[0].OriginalVersion;
+        var firstOccurrence = variant.Occurrences[0];
+
+        return useCurrentVersion ? firstOccurrence.Version : firstOccurrence.OriginalVersion;
     }
 }

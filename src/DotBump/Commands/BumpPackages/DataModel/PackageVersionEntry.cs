@@ -42,6 +42,13 @@ internal sealed class PackageVersionEntry
     public required string ElementName { get; init; }
 
     /// <summary>
+    /// Gets the effective MSBuild condition that applies to this occurrence: the element's own
+    /// <c>Condition</c> combined with the conditions of its enclosing elements. <see langword="null"/>
+    /// when the occurrence is unconditional.
+    /// </summary>
+    public string? Condition { get; init; }
+
+    /// <summary>
     /// Gets the package version as a semantic version.
     /// </summary>
     public SemanticVersion SemanticVersion => new(Version);
