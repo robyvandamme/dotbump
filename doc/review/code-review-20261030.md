@@ -127,7 +127,7 @@ if (newVersion <= package.CurrentVersion)
 **Status: fixed.** The guard now uses the positive `<=` form. Existing no-downgrade coverage verifies the behavior is
 unchanged.
 
-### 4. Condition formatting string duplicated in three places *(Duplication · Low)*
+### 4. Condition formatting string duplicated in three places *(Duplication · Low)* — ✅ Fixed
 
 The `(when <condition>)` display convention is now hand-built in:
 
@@ -136,6 +136,10 @@ The `(when <condition>)` display convention is now hand-built in:
 - The invalid-version warning in `BumpPackagesHandler.GetPackagesToBump` uses a related ` under condition '...'` suffix (line 116)
 
 Each currently formats slightly differently (leading space inside the parentheses vs. outside). If the convention ever changes (e.g. quoting style, truncation of long conditions), three sites must move in lock-step. Consider one shared formatter (e.g. a static helper on `BumpResult` or `PackageVariant`) that both report formatters and the warning text call. Low priority, but cheap to do while the concept is fresh.
+
+**Status: fixed for the two report paths.** `BumpResult.DisplayId` now owns the `(when ...)` convention used by
+`ToString()` and markdown. The invalid-version warning intentionally keeps its different `under condition '...'`
+diagnostic wording. Covered by `BumpResultTests`.
 
 ### 5. Document the (deliberate) exact-string condition semantics *(Documentation · Low)*
 
@@ -196,10 +200,10 @@ This follows from `SemanticVersion`'s `CompareTo`-based record equality and `Ord
 | 1 | Medium | Quality | `GetVariants` default-tuple sentinel check; O(n²) grouping — use a composite-key dictionary | ✅ Fixed (`c50d747`) |
 | 2 | Medium-Low | Duplication | Highest-version selection logic duplicated between handler and report | ✅ Fixed |
 | 3 | Low | Readability | `!(a > b)` → `a <= b` | ✅ Fixed |
-| 4 | Low | Duplication | `(when ...)` formatting repeated in three places | Open |
+| 4 | Low | Duplication | `(when ...)` formatting repeated in three places | ✅ Fixed |
 | 5 | Low | Docs | Document exact-string condition grouping consequences | Open |
 | 6 | Low | Behavior | Mixed valid/invalid variant bumps invalid occurrences (matches old behavior; make it explicit + test) | Open |
 | 7 | Info | Robustness | Report matching depends on condition normalization consistency | Open |
 | 8 | Info | Docs | Document equality-based dedupe contract on `IPackageVersionResolver` | Open |
 
-No blocking issues. Findings 1–3 are fixed; the rest are optional polish.
+No blocking issues. Findings 1–4 are fixed; the rest are optional polish.

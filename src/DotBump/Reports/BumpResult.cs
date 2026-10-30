@@ -19,11 +19,16 @@ internal class BumpResult(string id, string oldVersion)
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Condition { get; init; }
 
+    /// <summary>
+    /// Gets the package identifier with its condition suffix for display in console and markdown
+    /// reports.
+    /// </summary>
+    [JsonIgnore]
+    public string DisplayId => Condition == null ? Id : $"{Id} (when {Condition})";
+
     public override string ToString()
     {
-        var condition = Condition == null ? string.Empty : $" (when {Condition})";
-
-        return Id + condition + ": " + OldVersion + " > " + NewVersion;
+        return DisplayId + ": " + OldVersion + " > " + NewVersion;
     }
 
     [JsonIgnore]

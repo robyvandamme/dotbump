@@ -77,11 +77,8 @@ internal static class MarkdownReportFormatter
             return $"{EscapeInline(result.OldVersion)} → {EscapeInline(result.NewVersion)}";
         }
 
-        var id = result.Condition == null
-            ? EscapeInline(result.Id)
-            : $"{EscapeInline(result.Id)} (when {EscapeInline(result.Condition)})";
-
-        return $"{id}: {EscapeInline(result.OldVersion)} → {EscapeInline(result.NewVersion)}";
+        return
+            $"{EscapeInline(result.DisplayId)}: {EscapeInline(result.OldVersion)} → {EscapeInline(result.NewVersion)}";
     }
 
     private static void AppendSection(StringBuilder builder, string heading, IReadOnlyCollection<string> lines)
