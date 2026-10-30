@@ -103,7 +103,7 @@ The handler then reads `variant.HighestVersion` and skips when null; the report 
 private selection method. The handler uses `HighestCurrentVersion`; the report uses the appropriate property and keeps
 its existing display fallback for invalid versions. Covered by `PackageVariantTests`.
 
-### 3. Negated version comparison is harder to read than the positive form *(Readability · Low)*
+### 3. Negated version comparison is harder to read than the positive form *(Readability · Low)* — ✅ Fixed
 
 `src/DotBump/Commands/BumpPackages/BumpPackagesHandler.cs:54-58`
 
@@ -123,6 +123,9 @@ if (newVersion <= package.CurrentVersion)
     continue;
 }
 ```
+
+**Status: fixed.** The guard now uses the positive `<=` form. Existing no-downgrade coverage verifies the behavior is
+unchanged.
 
 ### 4. Condition formatting string duplicated in three places *(Duplication · Low)*
 
@@ -192,12 +195,11 @@ This follows from `SemanticVersion`'s `CompareTo`-based record equality and `Ord
 |---|----------|------|---------|--------|
 | 1 | Medium | Quality | `GetVariants` default-tuple sentinel check; O(n²) grouping — use a composite-key dictionary | ✅ Fixed (`c50d747`) |
 | 2 | Medium-Low | Duplication | Highest-version selection logic duplicated between handler and report | ✅ Fixed |
-| 3 | Low | Readability | `!(a > b)` → `a <= b` | Open |
+| 3 | Low | Readability | `!(a > b)` → `a <= b` | ✅ Fixed |
 | 4 | Low | Duplication | `(when ...)` formatting repeated in three places | Open |
 | 5 | Low | Docs | Document exact-string condition grouping consequences | Open |
 | 6 | Low | Behavior | Mixed valid/invalid variant bumps invalid occurrences (matches old behavior; make it explicit + test) | Open |
 | 7 | Info | Robustness | Report matching depends on condition normalization consistency | Open |
 | 8 | Info | Docs | Document equality-based dedupe contract on `IPackageVersionResolver` | Open |
 
-No blocking issues. Findings 1 and 2 are fixed; finding 3 is a quick, worthwhile readability change that can land
-before or shortly after merge; the rest are optional polish.
+No blocking issues. Findings 1–3 are fixed; the rest are optional polish.

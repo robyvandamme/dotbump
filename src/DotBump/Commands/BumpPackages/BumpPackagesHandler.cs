@@ -52,7 +52,7 @@ internal class BumpPackagesHandler(
         foreach (var (package, newVersion) in bestVersions)
         {
             // Never downgrade: only apply a target higher than every current occurrence in the variant.
-            if (!(newVersion > package.CurrentVersion))
+            if (newVersion <= package.CurrentVersion)
             {
                 continue;
             }
