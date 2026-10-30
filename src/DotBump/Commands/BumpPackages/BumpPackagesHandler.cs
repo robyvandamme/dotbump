@@ -105,16 +105,28 @@ internal class BumpPackagesHandler(
                 continue;
             }
 
+            var condition = variant.Condition == null ? string.Empty : $" under condition '{variant.Condition}'";
+            var unparseableVersions = variant.Occurrences
+                .Where(package => !package.SemanticVersion.IsValid)
+                .Select(package => $"'{package.Version}'")
+                .ToList();
+
             var referenceVersion = variant.HighestCurrentVersion;
             if (referenceVersion == null)
             {
-                var invalidVersions = string.Join(", ", variant.Occurrences.Select(package => $"'{package.Version}'"));
-                var condition = variant.Condition == null ? string.Empty : $" under condition '{variant.Condition}'";
                 var warning =
-                    $"Skipping '{variant.PackageId}'{condition} because version(s) {invalidVersions} cannot be parsed as a semantic version.";
+                    $"Skipping '{variant.PackageId}'{condition} because version(s) {string.Join(", ", unparseableVersions)} cannot be parsed as a semantic version.";
                 logger.Warning("{Warning}", warning);
                 manifest.AddWarning(warning);
                 continue;
+            }
+
+            if (unparseableVersions.Count > 0)
+            {
+                var warning =
+                    $"Package '{variant.PackageId}'{condition} contains unparseable version(s) {string.Join(", ", unparseableVersions)}; they will be overwritten if a bump is applied.";
+                logger.Warning("{Warning}", warning);
+                manifest.AddWarning(warning);
             }
 
             var packageToBump = new PackageToBump(variant.PackageId, referenceVersion);

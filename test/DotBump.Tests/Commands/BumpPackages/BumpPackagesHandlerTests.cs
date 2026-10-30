@@ -274,6 +274,25 @@ public class BumpPackagesHandlerTests
         }
 
         [Fact]
+        public async Task With_Mixed_Valid_And_Unparseable_Versions_Warns_And_Updates_Both()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(
+                ("MyPackage", "1.0"),
+                ("MyPackage", "1.5.0"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(("MyPackage", "1.6.0"));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+
+            manifest.Packages.ShouldAllBe(package => package.Version == "1.6.0");
+            report.Warnings.ShouldContain(warning =>
+                warning.Contains("MyPackage", StringComparison.Ordinal)
+                && warning.Contains("'1.0'", StringComparison.Ordinal)
+                && warning.Contains("overwritten", StringComparison.Ordinal));
+        }
+
+        [Fact]
         public async Task With_Four_Part_Version_Resolves_And_Bumps()
         {
             var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.2.0.556"));

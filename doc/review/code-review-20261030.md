@@ -154,11 +154,15 @@ The doc comment on `ReadEffectiveCondition` already says "conditions are not eva
 **Status: fixed.** `README.md` now explains that condition matching is textual and that formatting, logical structure,
 `||`, and negation are not normalized. `PackageVariant.Condition` documents the same rule.
 
-### 6. Variant with mixed valid/invalid versions bumps its invalid occurrences too *(Behavioral observation · Low)*
+### 6. Variant with mixed valid/invalid versions bumps its invalid occurrences too *(Behavioral observation · Low)* — ✅ Fixed
 
 `BumpPackagesHandler.GetPackagesToBump` derives the reference version only from *valid* semantic versions in the variant (invalid ones are filtered out and, when all are invalid, the variant is skipped with a warning). However, `manifest.SetVersion(variant, ...)` then rewrites **every** occurrence in the variant — including occurrences whose original version could not be parsed. This matches the pre-existing per-package behavior (not a regression), but now that variants make partial-validity visible, it may merit a warning such as "N occurrence(s) had unparseable versions and were overwritten". Worth a conscious decision rather than leaving it implicit; a test asserting the current behavior would lock in whichever choice is made.
 
 *(Tests currently cover the all-invalid case and the all-valid case; the mixed case is untested.)*
+
+**Status: fixed.** The handler now emits a warning when a variant contains valid and unparseable versions, stating that
+those occurrences will be overwritten when a bump is applied. The existing overwrite behavior is preserved and covered
+by `With_Mixed_Valid_And_Unparseable_Versions_Warns_And_Updates_Both`.
 
 ### 7. `_results` first-match matching depends on conditions surviving the round-trip unchanged *(Robustness · Info)*
 
@@ -205,8 +209,8 @@ This follows from `SemanticVersion`'s `CompareTo`-based record equality and `Ord
 | 3 | Low | Readability | `!(a > b)` → `a <= b` | ✅ Fixed |
 | 4 | Low | Duplication | `(when ...)` formatting repeated in three places | ✅ Fixed |
 | 5 | Low | Docs | Document exact-string condition grouping consequences | ✅ Fixed |
-| 6 | Low | Behavior | Mixed valid/invalid variant bumps invalid occurrences (matches old behavior; make it explicit + test) | Open |
+| 6 | Low | Behavior | Mixed valid/invalid variant bumps invalid occurrences (matches old behavior; make it explicit + test) | ✅ Fixed |
 | 7 | Info | Robustness | Report matching depends on condition normalization consistency | Open |
 | 8 | Info | Docs | Document equality-based dedupe contract on `IPackageVersionResolver` | Open |
 
-No blocking issues. Findings 1–5 are fixed; the rest are optional polish.
+No blocking issues. Findings 1–6 are fixed; the rest are optional polish.
