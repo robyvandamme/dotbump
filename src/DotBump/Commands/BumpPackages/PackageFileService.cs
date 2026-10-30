@@ -142,10 +142,10 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
         for (var current = element; current != null; current = current.Parent)
         {
-            var condition = ReadAttribute(current, "Condition");
-            if (!string.IsNullOrWhiteSpace(condition))
+            var condition = PackageVariant.NormalizeCondition(ReadAttribute(current, "Condition"));
+            if (condition != null)
             {
-                conditions.Add(condition.Trim());
+                conditions.Add(condition);
             }
         }
 

@@ -23,7 +23,7 @@ internal sealed class PackageVariant(
     /// the variant is unconditional. Conditions are compared as exact strings after trimming and
     /// joining enclosing conditions; they are not evaluated or simplified.
     /// </summary>
-    public string? Condition { get; } = condition;
+    public string? Condition { get; } = NormalizeCondition(condition);
 
     /// <summary>
     /// Gets the occurrences that make up this variant.
@@ -42,6 +42,11 @@ internal sealed class PackageVariant(
     /// none of the current versions is a valid semantic version.
     /// </summary>
     public SemanticVersion? HighestCurrentVersion => GetHighestVersion(entry => entry.SemanticVersion);
+
+    internal static string? NormalizeCondition(string? condition)
+    {
+        return string.IsNullOrWhiteSpace(condition) ? null : condition.Trim();
+    }
 
     private SemanticVersion? GetHighestVersion(Func<PackageVersionEntry, SemanticVersion> selector)
     {

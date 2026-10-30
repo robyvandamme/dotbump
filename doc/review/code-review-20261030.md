@@ -164,7 +164,7 @@ The doc comment on `ReadEffectiveCondition` already says "conditions are not eva
 those occurrences will be overwritten when a bump is applied. The existing overwrite behavior is preserved and covered
 by `With_Mixed_Valid_And_Unparseable_Versions_Warns_And_Updates_Both`.
 
-### 7. `_results` first-match matching depends on conditions surviving the round-trip unchanged *(Robustness · Info)*
+### 7. `_results` first-match matching depends on conditions surviving the round-trip unchanged *(Robustness · Info)* — ✅ Fixed
 
 `BumpReport.ReportChanges(PackageManifest)` matches report items by `(Id ordinal-ignore-case, Condition ordinal)`. Both `GetVariants()` calls (constructor and `ReportChanges`) derive from the same manifest instance in the current call flow, so matching is reliable. But the matching is only as stable as condition normalization:
 
@@ -172,6 +172,9 @@ by `With_Mixed_Valid_And_Unparseable_Versions_Warns_And_Updates_Both`.
 - `ReadEffectiveCondition` does `Trim()` each part and joins with `" && "`.
 
 Those are consistent today because the production read path is the only source of conditions. If a future source (e.g. a loader for persisted manifests) adds untrimmed conditions, `ReportChanges` would silently fail to match and report entries would show no change. If a dictionary keyed by `(Id, Condition)` is adopted per finding 1, consider a single normalization function (`Trim`, whitespace→null) applied in exactly one place and reused everywhere.
+
+**Status: fixed.** `PackageVariant.NormalizeCondition` is now the single normalization point (`Trim`, whitespace→null), used by
+both `ReadEffectiveCondition` and `GetVariants`. Covered by `With_Untrimmed_Conditions_Groups_By_Trimmed_Value`.
 
 ### 8. Interface contract: equality is now load-bearing for `IPackageVersionResolver` *(Documentation · Info)*
 
@@ -210,7 +213,7 @@ This follows from `SemanticVersion`'s `CompareTo`-based record equality and `Ord
 | 4 | Low | Duplication | `(when ...)` formatting repeated in three places | ✅ Fixed |
 | 5 | Low | Docs | Document exact-string condition grouping consequences | ✅ Fixed |
 | 6 | Low | Behavior | Mixed valid/invalid variant bumps invalid occurrences (matches old behavior; make it explicit + test) | ✅ Fixed |
-| 7 | Info | Robustness | Report matching depends on condition normalization consistency | Open |
+| 7 | Info | Robustness | Report matching depends on condition normalization consistency | ✅ Fixed |
 | 8 | Info | Docs | Document equality-based dedupe contract on `IPackageVersionResolver` | Open |
 
-No blocking issues. Findings 1–6 are fixed; the rest are optional polish.
+No blocking issues. Findings 1–7 are fixed; the remaining finding is optional documentation polish.

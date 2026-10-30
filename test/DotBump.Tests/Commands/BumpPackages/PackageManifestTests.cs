@@ -70,6 +70,20 @@ public class PackageManifestTests
         }
 
         [Fact]
+        public void With_Untrimmed_Conditions_Groups_By_Trimmed_Value()
+        {
+            var manifest = new PackageManifest();
+            manifest.Add(CreateEntry("/repo/A.csproj", "MyPackage", "1.0.0", " net10.0 "));
+            manifest.Add(CreateEntry("/repo/B.csproj", "MyPackage", "1.2.0", "net10.0"));
+
+            var variant = manifest.GetVariants().ShouldHaveSingleItem();
+
+            variant.ShouldSatisfyAllConditions(
+                () => variant.Condition.ShouldBe("net10.0"),
+                () => variant.Occurrences.Count.ShouldBe(2));
+        }
+
+        [Fact]
         public void With_Multiple_Variants_Returns_First_Seen_Order()
         {
             var manifest = new PackageManifest();

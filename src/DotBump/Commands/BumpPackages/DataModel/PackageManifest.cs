@@ -56,7 +56,7 @@ internal sealed class PackageManifest
 
         foreach (var package in _packages)
         {
-            var condition = string.IsNullOrWhiteSpace(package.Condition) ? null : package.Condition;
+            var condition = PackageVariant.NormalizeCondition(package.Condition);
             var key = (package.PackageId, condition);
 
             if (!indexes.TryGetValue(key, out var index))
