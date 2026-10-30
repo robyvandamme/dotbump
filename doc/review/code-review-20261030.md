@@ -21,7 +21,7 @@ Findings below are mostly quality/clarity suggestions; no blocking correctness i
 
 ## Findings
 
-### 1. `PackageManifest.GetVariants()` — fragile "not found" idiom and O(n²) grouping *(Quality · Medium)*
+### 1. `PackageManifest.GetVariants()` — fragile "not found" idiom and O(n²) grouping *(Quality · Medium)* — ✅ Fixed
 
 `src/DotBump/Commands/BumpPackages/DataModel/PackageManifest.cs:50-73`
 
@@ -72,6 +72,11 @@ public IReadOnlyList<PackageVariant> GetVariants()
 ```
 
 Note this changes id matching from `OrdinalIgnoreCase` to the default ordinal tuple comparison; if case-insensitive id grouping must be preserved, key on `package.PackageId` normalized (e.g. `ToUpperInvariant`) or keep an explicit comparer.
+
+**Status: fixed in `c50d747`.** `GetVariants()` now keeps the ordered variant list and uses a
+`Dictionary<(string PackageId, string? Condition), int>` index with an explicit comparer that preserves
+`OrdinalIgnoreCase` package-id matching and `Ordinal` condition matching. This removes the default-tuple sentinel and
+makes grouping linear. Verified by `With_Multiple_Variants_Returns_First_Seen_Order`.
 
 ### 2. Duplicated "highest valid semantic version" logic *(Duplication · Medium-Low)*
 
@@ -179,15 +184,16 @@ This follows from `SemanticVersion`'s `CompareTo`-based record equality and `Ord
 
 ## Summary
 
-| # | Severity | Area | Finding |
-|---|----------|------|---------|
-| 1 | Medium | Quality | `GetVariants` default-tuple sentinel check; O(n²) grouping — use a composite-key dictionary |
-| 2 | Medium-Low | Duplication | Highest-version selection logic duplicated between handler and report |
-| 3 | Low | Readability | `!(a > b)` → `a <= b` |
-| 4 | Low | Duplication | `(when ...)` formatting repeated in three places |
-| 5 | Low | Docs | Document exact-string condition grouping consequences |
-| 6 | Low | Behavior | Mixed valid/invalid variant bumps invalid occurrences (matches old behavior; make it explicit + test) |
-| 7 | Info | Robustness | Report matching depends on condition normalization consistency |
-| 8 | Info | Docs | Document equality-based dedupe contract on `IPackageVersionResolver` |
+| # | Severity | Area | Finding | Status |
+|---|----------|------|---------|--------|
+| 1 | Medium | Quality | `GetVariants` default-tuple sentinel check; O(n²) grouping — use a composite-key dictionary | ✅ Fixed (`c50d747`) |
+| 2 | Medium-Low | Duplication | Highest-version selection logic duplicated between handler and report | Open |
+| 3 | Low | Readability | `!(a > b)` → `a <= b` | Open |
+| 4 | Low | Duplication | `(when ...)` formatting repeated in three places | Open |
+| 5 | Low | Docs | Document exact-string condition grouping consequences | Open |
+| 6 | Low | Behavior | Mixed valid/invalid variant bumps invalid occurrences (matches old behavior; make it explicit + test) | Open |
+| 7 | Info | Robustness | Report matching depends on condition normalization consistency | Open |
+| 8 | Info | Docs | Document equality-based dedupe contract on `IPackageVersionResolver` | Open |
 
-No blocking issues. Findings 1–3 are quick, worthwhile refactors that can land before or shortly after merge; the rest are optional polish.
+No blocking issues. Finding 1 is fixed; findings 2–3 are quick, worthwhile refactors that can land before or shortly
+after merge; the rest are optional polish.
