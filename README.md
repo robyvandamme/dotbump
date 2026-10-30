@@ -26,7 +26,7 @@ USAGE:
 COMMANDS:
     sdk         Bump the global.json SDK version
     tools       Bump the local .NET tools versions
-    packages    Bump the NuGet package versions
+    packages    Bump the NuGet package and project SDK versions
     frameworks  Bump the target framework versions
     language    Bump the C# language version
 
@@ -134,12 +134,13 @@ OPTIONS:
 
 ```text
 DESCRIPTION:
-Bump the NuGet package versions. Use the 'minor' type option to bump the
-packages to the latest minor or patch versions for the current major version.
-Use the 'patch' type option to bump the packages to the latest patch version for
-the current minor version. Use the 'major' type option to bump the packages to
-the latest version, including versions with a higher major version. Use
-'--prerelease' with the 'major' type to include pre-release versions.
+Bump the NuGet package versions and versioned MSBuild project SDK references.
+Use the 'minor' type option to bump the packages to the latest minor or patch
+versions for the current major version. Use the 'patch' type option to bump the
+packages to the latest patch version for the current minor version. Use the
+'major' type option to bump the packages to the latest version, including
+versions with a higher major version. Use '--prerelease' with the 'major' type
+to include pre-release versions.
 
 USAGE:
     dotnet dotbump packages [OPTIONS]
@@ -184,12 +185,29 @@ following files into account:
 
 | File | Contents |
 | ---- | -------- |
-| `*.csproj`, `*.fsproj`, `*.vbproj` | `<PackageReference>` entries, where the version can be a `Version` attribute, a `<Version>` child element or a `VersionOverride` attribute. |
+| `*.csproj`, `*.fsproj`, `*.vbproj` | `<PackageReference>` entries, where the version can be a `Version` attribute, a `<Version>` child element or a `VersionOverride` attribute. Versioned project SDK references in the root `Sdk` attribute and in `<Sdk>` elements. |
 | `Directory.Packages.props` | Central Package Management `<PackageVersion>` and `<GlobalPackageReference>` entries. |
 | `Directory.Build.props`, `Directory.Build.targets` | Shared `<PackageReference>`, `<PackageVersion>` and `<GlobalPackageReference>` entries. |
 
 The package id is read from the `Include` attribute, or, for override entries, the `Update` attribute. The version is
 read from a `Version` attribute, a `<Version>` child element or a `VersionOverride` attribute.
+
+Project SDK references are supported in both forms:
+
+```xml
+<Project Sdk="Aspire.AppHost.Sdk/13.0.1">
+```
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk;Aspire.AppHost.Sdk/13.0.1">
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.0.1" />
+</Project>
+```
+
+The SDK id is resolved as a NuGet package, so `--skip-package` applies to SDK references too. Only SDK references with
+an explicit version are bumped; unversioned SDKs such as `Microsoft.NET.Sdk` are ignored. The version is the only part
+of the SDK reference that is rewritten. SDK references declared on `<Import ... />` elements are not detected yet; use
+the `Sdk` attribute or an `<Sdk>` element.
 
 #### Version resolution
 
@@ -216,7 +234,9 @@ Other current limitations:
 
 * MSBuild `Condition` attributes are ignored, so conditionally referenced packages are treated as active.
 * Explicit `<Import ... />` elements are not followed; only the conventional `Directory.Build.props`,
-  `Directory.Build.targets`, `Directory.Packages.props` and project files are scanned.
+  `Directory.Build.targets`, `Directory.Packages.props` and project files are scanned. Versioned SDK references
+  declared on `<Import ... />` elements (for example
+  `<Import Project="Sdk.props" Sdk="My.Custom.Sdk" Version="1.2.3" />`) are not bumped yet either.
 * `packages.lock.json` files are not updated.
 * A `<PackageReference>` without a version (the usual Central Package Management setup) is ignored, because its
   version is defined by the corresponding `<PackageVersion>` in `Directory.Packages.props`, which is scanned instead.

@@ -1,5 +1,6 @@
 // Copyright © Roby Van Damme.
 
+using System.Net;
 using System.Xml;
 using System.Xml.Linq;
 using DotBump.Commands.BumpPackages.DataModel;
@@ -14,6 +15,8 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
     private const string DirectoryPackagesPropsFileName = "Directory.Packages.props";
     private const string DirectoryBuildPropsFileName = "Directory.Build.props";
     private const string DirectoryBuildTargetsFileName = "Directory.Build.targets";
+    private const string WarningMessageTemplate = "{Warning}";
+    private const string SdkName = "Sdk";
 
     private static readonly string[] s_projectExtensions = [".csproj", ".fsproj", ".vbproj"];
 
@@ -171,6 +174,105 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         return version.IndexOfAny(['[', ']', '(', ')', ',']) < 0;
     }
 
+    /// <summary>
+    /// Splits a raw Sdk attribute value on semicolons and returns each versioned SDK reference with
+    /// the span of its version, so only the version part is rewritten.
+    /// </summary>
+    private static IEnumerable<(string PackageId, string Version, int VersionStart, int VersionLength)>
+        ParseSdkAttributeReferences(string text, int valueStart, int valueLength)
+    {
+        var valueEnd = valueStart + valueLength;
+        var referenceStart = valueStart;
+
+        while (referenceStart < valueEnd)
+        {
+            var separatorIndex = FindReferenceSeparator(text, referenceStart, valueEnd);
+            var referenceEnd = separatorIndex < 0 ? valueEnd : separatorIndex;
+
+            var reference = TryParseSdkReference(text, referenceStart, referenceEnd);
+            if (reference != null)
+            {
+                yield return reference.Value;
+            }
+
+            if (separatorIndex < 0)
+            {
+                yield break;
+            }
+
+            referenceStart = separatorIndex + 1;
+        }
+    }
+
+    /// <summary>
+    /// Finds the next SDK reference separator (a semicolon) that is not part of an XML entity
+    /// reference. Numeric entities such as <c>&amp;#46;</c> contain a semicolon of their own, so a
+    /// plain semicolon search would split the attribute in the middle of a version.
+    /// </summary>
+    private static int FindReferenceSeparator(string text, int start, int end)
+    {
+        var index = start;
+        while (index < end)
+        {
+            if (text[index] == '&')
+            {
+                var entityEnd = text.IndexOf(';', index + 1, end - index - 1);
+                if (entityEnd < 0)
+                {
+                    return -1;
+                }
+
+                index = entityEnd + 1;
+                continue;
+            }
+
+            if (text[index] == ';')
+            {
+                return index;
+            }
+
+            index++;
+        }
+
+        return -1;
+    }
+
+    private static (string PackageId, string Version, int VersionStart, int VersionLength)?
+        TryParseSdkReference(string text, int referenceStart, int referenceEnd)
+    {
+        // MSBuild SDK references are written as <id>/<version>. The id itself never contains a slash.
+        // This parses the raw attribute text, so the '/' separator must be literal and a ';' only
+        // separates references outside an XML entity. An encoded slash (for example &#47;) hides the
+        // reference, which is then skipped like an unversioned SDK; an encoded semicolon is treated
+        // as part of the value. Only the id and version are decoded.
+        var slashIndex = referenceEnd > referenceStart
+            ? text.LastIndexOf('/', referenceEnd - 1, referenceEnd - referenceStart)
+            : -1;
+
+        if (slashIndex < referenceStart)
+        {
+            return null;
+        }
+
+        var packageId = WebUtility.HtmlDecode(text[referenceStart..slashIndex].Trim()).Trim();
+        if (packageId.Length == 0)
+        {
+            return null;
+        }
+
+        var (versionStart, versionLength) = XmlFileText.TrimSpan(text, slashIndex + 1, referenceEnd);
+        if (versionLength <= 0)
+        {
+            return null;
+        }
+
+        return (
+            packageId,
+            WebUtility.HtmlDecode(text.Substring(versionStart, versionLength)),
+            versionStart,
+            versionLength);
+    }
+
     private void ReadPackageVersions(string filePath, PackageManifest manifest)
     {
         var text = XmlFileText.ReadText(filePath);
@@ -223,38 +325,22 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
                 continue;
             }
 
-            if (!IsSupportedVersion(version))
+            if (TryAddVersion(
+                    manifest,
+                    filePath,
+                    sourceKind,
+                    elementName,
+                    packageId,
+                    version,
+                    () => GetVersionSpan(text, lineStartOffsets, versionSource)))
             {
-                var warning =
-                    $"Skipping {elementName} '{packageId}' in '{filePath}' because version '{version}' is not supported.";
-                logger.Warning("{Warning}", warning);
-                manifest.AddWarning(warning);
-                continue;
+                packageFound = true;
             }
+        }
 
-            var (versionStart, versionLength) = GetVersionSpan(text, lineStartOffsets, versionSource);
-            if (versionStart < 0)
-            {
-                var warning =
-                    $"Skipping {elementName} '{packageId}' in '{filePath}' because its version value could not be located.";
-                logger.Warning("{Warning}", warning);
-                manifest.AddWarning(warning);
-                continue;
-            }
-
-            manifest.Add(
-                new PackageVersionEntry
-                {
-                    PackageId = packageId,
-                    OriginalVersion = version,
-                    Version = version,
-                    FilePath = filePath,
-                    SourceKind = sourceKind,
-                    ElementName = elementName,
-                    VersionStart = versionStart,
-                    VersionLength = versionLength,
-                });
-
+        if (sourceKind == PackageSourceKind.Project
+            && ReadSdkReferences(root, text, lineStartOffsets, manifest, filePath))
+        {
             packageFound = true;
         }
 
@@ -262,6 +348,152 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         {
             manifest.RegisterFileText(filePath, text);
         }
+    }
+
+    /// <summary>
+    /// Reads versioned MSBuild project SDK references from the root Sdk attribute and Sdk elements,
+    /// for example <c>Sdk="Aspire.AppHost.Sdk/13.0.1"</c>.
+    /// Versioned SDK references declared on <c>&lt;Import /&gt;</c> elements are not recognized yet
+    /// (see the README limitations).
+    /// </summary>
+    private bool ReadSdkReferences(
+        XElement root,
+        string text,
+        int[] lineStartOffsets,
+        PackageManifest manifest,
+        string filePath)
+    {
+        var attributeReferenceFound =
+            ReadSdkAttributeReferences(root, text, lineStartOffsets, manifest, filePath);
+        var elementReferenceFound =
+            ReadSdkElementReferences(root, text, lineStartOffsets, manifest, filePath);
+
+        return attributeReferenceFound || elementReferenceFound;
+    }
+
+    private bool ReadSdkAttributeReferences(
+        XElement root,
+        string text,
+        int[] lineStartOffsets,
+        PackageManifest manifest,
+        string filePath)
+    {
+        var sdkAttribute = root.Attributes()
+            .FirstOrDefault(attribute => attribute.Name.LocalName.Equals(SdkName, StringComparison.Ordinal));
+        if (sdkAttribute == null)
+        {
+            return false;
+        }
+
+        var (valueStart, valueLength) = XmlFileText.GetAttributeValueSpan(text, lineStartOffsets, sdkAttribute);
+        if (valueStart < 0)
+        {
+            var warning =
+                $"Skipping SDK references in '{filePath}' because the Sdk attribute value could not be located.";
+            logger.Warning(WarningMessageTemplate, warning);
+            manifest.AddWarning(warning);
+            return false;
+        }
+
+        var sdkReferenceFound = false;
+        foreach (var reference in ParseSdkAttributeReferences(text, valueStart, valueLength))
+        {
+            sdkReferenceFound |= TryAddVersion(
+                manifest,
+                filePath,
+                PackageSourceKind.Project,
+                SdkName,
+                reference.PackageId,
+                reference.Version,
+                () => (reference.VersionStart, reference.VersionLength));
+        }
+
+        return sdkReferenceFound;
+    }
+
+    private bool ReadSdkElementReferences(
+        XElement root,
+        string text,
+        int[] lineStartOffsets,
+        PackageManifest manifest,
+        string filePath)
+    {
+        var sdkReferenceFound = false;
+
+        foreach (var element in root.Descendants().Where(element =>
+                     element.Name.LocalName.Equals(SdkName, StringComparison.Ordinal)))
+        {
+            var packageId = ReadAttribute(element, "Name");
+            if (string.IsNullOrWhiteSpace(packageId))
+            {
+                continue;
+            }
+
+            var (version, versionSource) = ReadVersion(element);
+            if (version == null || versionSource == null)
+            {
+                logger.Debug(
+                    "Skipping Sdk {PackageId} in {File} because it has no version",
+                    packageId,
+                    filePath);
+                continue;
+            }
+
+            sdkReferenceFound |= TryAddVersion(
+                manifest,
+                filePath,
+                PackageSourceKind.Project,
+                SdkName,
+                packageId,
+                version,
+                () => GetVersionSpan(text, lineStartOffsets, versionSource));
+        }
+
+        return sdkReferenceFound;
+    }
+
+    private bool TryAddVersion(
+        PackageManifest manifest,
+        string filePath,
+        PackageSourceKind sourceKind,
+        string elementName,
+        string packageId,
+        string version,
+        Func<(int Start, int Length)> getVersionSpan)
+    {
+        if (!IsSupportedVersion(version))
+        {
+            var warning =
+                $"Skipping {elementName} '{packageId}' in '{filePath}' because version '{version}' is not supported.";
+            logger.Warning(WarningMessageTemplate, warning);
+            manifest.AddWarning(warning);
+            return false;
+        }
+
+        var (versionStart, versionLength) = getVersionSpan();
+        if (versionStart < 0)
+        {
+            var warning =
+                $"Skipping {elementName} '{packageId}' in '{filePath}' because its version value could not be located.";
+            logger.Warning(WarningMessageTemplate, warning);
+            manifest.AddWarning(warning);
+            return false;
+        }
+
+        manifest.Add(
+            new PackageVersionEntry
+            {
+                PackageId = packageId,
+                OriginalVersion = version,
+                Version = version,
+                FilePath = filePath,
+                SourceKind = sourceKind,
+                ElementName = elementName,
+                VersionStart = versionStart,
+                VersionLength = versionLength,
+            });
+
+        return true;
     }
 
     private string ApplyChanges(PackageManifest manifest, string filePath, string text)
@@ -287,7 +519,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             {
                 var warning =
                     $"Skipping version '{package.OriginalVersion}' for '{package.PackageId}' in '{filePath}' because its recorded span is invalid.";
-                logger.Warning("{Warning}", warning);
+                logger.Warning(WarningMessageTemplate, warning);
                 manifest.AddWarning(warning);
                 continue;
             }

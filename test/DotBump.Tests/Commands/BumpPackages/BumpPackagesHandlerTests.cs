@@ -36,6 +36,26 @@ public class BumpPackagesHandlerTests
         }
 
         [Fact]
+        public async Task With_Sdk_Reference_Resolves_And_Bumps()
+        {
+            var manifest = TestPackageManifestFactory.CreateManifest(("Aspire.AppHost.Sdk", "13.0.1"));
+            var fileService = CreateFileService(manifest);
+            var resolver = CreateResolver(("Aspire.AppHost.Sdk", "13.6.4"));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+
+            report.ShouldSatisfyAllConditions(
+                () => report.HasChanges.ShouldBeTrue(),
+                () => report.Results.ShouldContain(result =>
+                    result.Id == "Aspire.AppHost.Sdk"
+                    && result.OldVersion == "13.0.1"
+                    && result.NewVersion == "13.6.4"));
+            manifest.Packages.Single().Version.ShouldBe("13.6.4");
+            fileService.Verify(s => s.SavePackageManifest(manifest), Times.Once);
+        }
+
+        [Fact]
         public async Task With_Major_Bump_Type_Forwards_Type_And_Applies_Version()
         {
             var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"));

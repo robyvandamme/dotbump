@@ -109,7 +109,7 @@ internal static class CommandConfiguration
 
             config.AddCommand<BumpPackagesCommand>(name: BumpCommandNames.Packages)
                 .WithDescription(
-                    "Bump the NuGet package versions. " +
+                    "Bump the NuGet package versions and versioned MSBuild project SDK references. " +
                     "Use the 'minor' type option to bump the packages to the latest minor or patch versions for the current major version. " +
                     "Use the 'patch' type option to bump the packages to the latest patch version for the current minor version. " +
                     "Use the 'major' type option to bump the packages to the latest version, including versions with a higher major version. " +
