@@ -28,7 +28,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         string PackageId,
         string Version,
         string? Condition,
-        Func<(int Start, int Length)> GetVersionSpan);
+        Func<(int Start, int Length)> GetSpan);
 
     public PackageManifest GetPackageManifest(
         string repositoryPath,
@@ -507,7 +507,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             return false;
         }
 
-        var (versionStart, versionLength) = candidate.GetVersionSpan();
+        var (versionStart, versionLength) = candidate.GetSpan();
         if (versionStart < 0)
         {
             var warning =
