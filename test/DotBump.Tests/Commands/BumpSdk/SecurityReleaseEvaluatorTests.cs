@@ -6,6 +6,8 @@ using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Common;
 using Moq;
 using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 using Shouldly;
 
 namespace DotBump.Tests.Commands.BumpSdk;
@@ -110,6 +112,44 @@ public class SecurityReleaseEvaluatorTests
         }
 
         [Fact]
+        public void With_Unparseable_Security_Sdk_Version_Is_Ignored_And_Logged()
+        {
+            var channelReleases = CreateChannelReleases(
+                CreateRelease(security: true, "not-a-version"));
+            var sink = new CapturingSink();
+            using var logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Sink(sink)
+                .CreateLogger();
+            var evaluator = new SecurityReleaseEvaluator(logger);
+
+            var result = evaluator.IncludesNewerSecurityRelease(
+                new SemanticVersion("10.0.402"),
+                new SemanticVersion("10.0.404"),
+                channelReleases);
+
+            result.ShouldBeFalse();
+            sink.Events.ShouldContain(logEvent =>
+                logEvent.Level == LogEventLevel.Warning
+                && logEvent.RenderMessage().Contains("not-a-version", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void With_Unparseable_And_Valid_Security_Sdk_Versions_Returns_True()
+        {
+            var channelReleases = CreateChannelReleases(
+                CreateRelease(security: true, "not-a-version", "10.0.403"));
+            var evaluator = new SecurityReleaseEvaluator(new Mock<ILogger>().Object);
+
+            var result = evaluator.IncludesNewerSecurityRelease(
+                new SemanticVersion("10.0.402"),
+                new SemanticVersion("10.0.404"),
+                channelReleases);
+
+            result.ShouldBeTrue();
+        }
+
+        [Fact]
         public void With_Empty_Releases_Returns_False()
         {
             var evaluator = new SecurityReleaseEvaluator(new Mock<ILogger>().Object);
@@ -145,5 +185,15 @@ public class SecurityReleaseEvaluatorTests
         return new ChannelRelease(
             security,
             new Collection<ChannelSdk>(sdks.Select(sdk => new ChannelSdk(sdk)).ToList()));
+    }
+
+    private sealed class CapturingSink : ILogEventSink
+    {
+        public List<LogEvent> Events { get; } = [];
+
+        public void Emit(LogEvent logEvent)
+        {
+            Events.Add(logEvent);
+        }
     }
 }

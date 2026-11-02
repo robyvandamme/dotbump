@@ -37,7 +37,28 @@ internal class ReleaseWebService(ILogger logger, HttpClient httpClient) : IRelea
 
         var json = await GetJsonAsync(channelReleasesUri).ConfigureAwait(false);
 
-        var channelReleases = JsonSerializer.Deserialize<ChannelReleases>(json);
+        ChannelReleases? channelReleases;
+        try
+        {
+            channelReleases = JsonSerializer.Deserialize<ChannelReleases>(json);
+        }
+        catch (JsonException exception)
+        {
+            logger.Error(exception, "Invalid channel releases payload from {Uri}", channelReleasesUri.ToString());
+            throw new DotBumpException(
+                $"Invalid release history payload from {channelReleasesUri}.",
+                exception);
+        }
+        catch (ArgumentException exception)
+        {
+            // A missing or empty "version" element reaches the ChannelSdk constructor as null and
+            // surfaces as an ArgumentException rather than a JsonException.
+            logger.Error(exception, "Invalid channel releases payload from {Uri}", channelReleasesUri.ToString());
+            throw new DotBumpException(
+                $"Invalid release history payload from {channelReleasesUri}.",
+                exception);
+        }
+
         if (channelReleases?.Releases != null)
         {
             logger.MethodReturn(nameof(ReleaseWebService), nameof(GetChannelReleasesAsync), "channel releases");
@@ -65,7 +86,7 @@ internal class ReleaseWebService(ILogger logger, HttpClient httpClient) : IRelea
 
         if (string.IsNullOrWhiteSpace(json))
         {
-            throw new DotBumpException("No json release data returned from URL");
+            throw new DotBumpException($"No release data returned from {uri}.");
         }
 
         return json;

@@ -68,12 +68,14 @@ public class ReleaseWebServiceTests
         }
 
         [Fact]
-        public async Task With_Empty_Response_Throws_DotBumpException()
+        public async Task With_Empty_Response_Throws_DotBumpException_With_Source_Uri()
         {
             var service = CreateService(string.Empty);
 
-            await Should.ThrowAsync<DotBumpException>(
+            var exception = await Should.ThrowAsync<DotBumpException>(
                 () => service.GetChannelReleasesAsync(new Uri(ChannelReleasesUrl)));
+
+            exception.Message.ShouldContain(ChannelReleasesUrl);
         }
 
         [Fact]
@@ -83,6 +85,29 @@ public class ReleaseWebServiceTests
 
             await Should.ThrowAsync<DotBumpException>(
                 () => service.GetChannelReleasesAsync(new Uri(ChannelReleasesUrl)));
+        }
+
+        [Fact]
+        public async Task With_Malformed_Json_Throws_DotBumpException_With_Source_Uri()
+        {
+            var service = CreateService("{ \"releases\": [ ");
+
+            var exception = await Should.ThrowAsync<DotBumpException>(
+                () => service.GetChannelReleasesAsync(new Uri(ChannelReleasesUrl)));
+
+            exception.Message.ShouldContain(ChannelReleasesUrl);
+        }
+
+        [Fact]
+        public async Task With_Sdk_Without_Version_Throws_DotBumpException_With_Source_Uri()
+        {
+            var service = CreateService(
+                "{ \"releases\": [ { \"security\": true, \"sdks\": [ {} ] } ] }");
+
+            var exception = await Should.ThrowAsync<DotBumpException>(
+                () => service.GetChannelReleasesAsync(new Uri(ChannelReleasesUrl)));
+
+            exception.Message.ShouldContain(ChannelReleasesUrl);
         }
 
         [Fact]
