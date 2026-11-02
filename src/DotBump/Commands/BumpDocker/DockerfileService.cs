@@ -124,6 +124,52 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
         return tokens;
     }
 
+    private static (string Line, int Start) GetLine(string text, int[] lineStartOffsets, int lineIndex)
+    {
+        var start = lineStartOffsets[lineIndex];
+        var end = lineIndex + 1 < lineStartOffsets.Length ? lineStartOffsets[lineIndex + 1] : text.Length;
+
+        return (text[start..end].TrimEnd('\r', '\n'), start);
+    }
+
+    private static bool IsSkippable(string line)
+    {
+        var trimmedStart = line.TrimStart();
+
+        return trimmedStart.Length == 0 || trimmedStart[0] == '#';
+    }
+
+    private static bool EndsWithContinuation(string line)
+    {
+        return line.TrimEnd().EndsWith('\\');
+    }
+
+    private static bool StartsContinuation(string line)
+    {
+        return !IsSkippable(line) && EndsWithContinuation(line);
+    }
+
+    /// <summary>
+    /// Updates the continuation state for the current line and returns whether the line belongs to a
+    /// continued instruction and must be skipped.
+    /// </summary>
+    private static bool IsInsideContinuation(string line, ref bool isContinuation)
+    {
+        if (!isContinuation)
+        {
+            return false;
+        }
+
+        // Docker removes comment and empty lines inside a continued instruction before processing
+        // the continuation, so they must not change the continuation state here.
+        if (!IsSkippable(line))
+        {
+            isContinuation = EndsWithContinuation(line);
+        }
+
+        return true;
+    }
+
     private void ReadFromInstructions(string rootPath, string filePath, DockerfileManifest manifest)
     {
         var text = FileText.ReadText(filePath);
@@ -134,38 +180,18 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
 
         for (var lineIndex = 0; lineIndex < lineStartOffsets.Length; lineIndex++)
         {
-            var lineStart = lineStartOffsets[lineIndex];
-            var lineEnd = lineIndex + 1 < lineStartOffsets.Length ? lineStartOffsets[lineIndex + 1] : text.Length;
-            var line = text[lineStart..lineEnd].TrimEnd('\r', '\n');
+            var (line, lineStart) = GetLine(text, lineStartOffsets, lineIndex);
 
-            var match = s_fromPattern.Match(line);
-            var trimmedStart = line.TrimStart();
-            var isSkippable = trimmedStart.Length == 0 || trimmedStart[0] == '#';
-            var continuesOnNextLine = !isSkippable && line.TrimEnd().EndsWith('\\');
-
-            if (isContinuation)
+            if (IsInsideContinuation(line, ref isContinuation))
             {
-                // Docker removes comment and empty lines inside a continued instruction before
-                // processing the continuation, so they must not change the continuation state here.
-                if (!isSkippable)
-                {
-                    isContinuation = continuesOnNextLine;
-                }
-
                 continue;
             }
 
-            if (continuesOnNextLine)
-            {
-                // The instruction spans multiple physical lines; joining it correctly would require
-                // tracking logical line spans, so it is skipped rather than risking a partial rewrite.
-                if (match.Success)
-                {
-                    AddWarning(
-                        manifest,
-                        $"Skipping multi-line FROM instruction in '{relativePath}' (line {lineIndex + 1}) because multi-line FROM instructions are not supported yet.");
-                }
+            var match = s_fromPattern.Match(line);
 
+            if (StartsContinuation(line))
+            {
+                WarnIfMultiLineFrom(match, manifest, relativePath, lineIndex + 1);
                 isContinuation = true;
                 continue;
             }
@@ -189,6 +215,20 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
         {
             manifest.RegisterFileText(filePath, text);
         }
+    }
+
+    private void WarnIfMultiLineFrom(Match match, DockerfileManifest manifest, string relativePath, int lineNumber)
+    {
+        if (!match.Success)
+        {
+            return;
+        }
+
+        // The instruction spans multiple physical lines; joining it correctly would require tracking
+        // logical line spans, so it is skipped rather than risking a partial rewrite.
+        AddWarning(
+            manifest,
+            $"Skipping multi-line FROM instruction in '{relativePath}' (line {lineNumber}) because multi-line FROM instructions are not supported yet.");
     }
 
     private void ReadFromInstruction(
