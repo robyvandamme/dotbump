@@ -118,6 +118,18 @@ public class ReleaseWebServiceTests
             await Should.ThrowAsync<ArgumentNullException>(
                 () => service.GetChannelReleasesAsync(null!));
         }
+
+        [Theory]
+        [InlineData("http://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json")]
+        [InlineData("https://example.com/dotnet/release-metadata/10.0/releases.json")]
+        [InlineData("https://user:secret@builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json")]
+        public async Task With_Untrusted_Url_Throws_DotBumpException(string url)
+        {
+            var service = CreateService("{}");
+
+            await Should.ThrowAsync<DotBumpException>(
+                () => service.GetChannelReleasesAsync(new Uri(url)));
+        }
     }
 
     private static ReleaseWebService CreateService(string responseJson)

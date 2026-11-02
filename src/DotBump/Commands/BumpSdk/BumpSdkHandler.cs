@@ -30,7 +30,7 @@ internal class BumpSdkHandler(
 
         if (newRelease != null && securityOnly)
         {
-            newRelease = await TryKeepSecurityReleaseAsync(currentSdk, newRelease).ConfigureAwait(false);
+            newRelease = await ResolveSecurityReleaseAsync(currentSdk, newRelease).ConfigureAwait(false);
         }
 
         if (newRelease != null)
@@ -51,42 +51,56 @@ internal class BumpSdkHandler(
     }
 
     /// <summary>
-    /// Keeps the candidate release only when the channel's release history contains a security
-    /// release newer than the pinned SDK. The channel-level security flag only describes the newest
-    /// release, so it cannot tell whether an earlier security release was missed.
+    /// Resolves the candidate release to keep for a security-only bump, or <see langword="null"/> when
+    /// the channel's release history does not contain a security release newer than the pinned SDK.
+    /// The channel-level security flag only describes the newest release, so it cannot tell whether an
+    /// earlier security release was missed.
     /// </summary>
-    private async Task<Release?> TryKeepSecurityReleaseAsync(Sdk currentSdk, Release newRelease)
+    private async Task<Release?> ResolveSecurityReleaseAsync(Sdk currentSdk, Release newRelease)
     {
+        logger.MethodStart(nameof(BumpSdkHandler), nameof(ResolveSecurityReleaseAsync));
+
+        Release? resolved;
+
         if (newRelease.Security)
         {
-            return newRelease;
+            resolved = newRelease;
         }
-
-        if (!Uri.TryCreate(newRelease.ReleasesJson, UriKind.Absolute, out var channelReleasesUri))
+        else if (!Uri.TryCreate(newRelease.ReleasesJson, UriKind.Absolute, out var channelReleasesUri))
         {
             throw new DotBumpException(
                 $"Release metadata for .NET {newRelease.ChannelVersion} does not link a release history URL.");
         }
-
-        var channelReleases =
-            await releaseService.GetChannelReleasesAsync(channelReleasesUri).ConfigureAwait(false);
-
-        if (securityReleaseEvaluator.IncludesNewerSecurityRelease(
-                currentSdk.SemanticVersion,
-                newRelease.LatestSdkVersion,
-                channelReleases))
+        else
         {
-            logger.Debug(
-                "Bumping to {TargetVersion} includes a security release newer than {CurrentVersion}",
-                newRelease.LatestSdk,
-                currentSdk.Version);
-            return newRelease;
+            var channelReleases =
+                await releaseService.GetChannelReleasesAsync(channelReleasesUri).ConfigureAwait(false);
+
+            if (securityReleaseEvaluator.IncludesNewerSecurityRelease(
+                    currentSdk.SemanticVersion,
+                    newRelease.LatestSdkVersion,
+                    channelReleases))
+            {
+                logger.Debug(
+                    "Bumping to {TargetVersion} includes a security release newer than {CurrentVersion}",
+                    newRelease.LatestSdk,
+                    currentSdk.Version);
+                resolved = newRelease;
+            }
+            else
+            {
+                logger.Debug(
+                    "No security release newer than {CurrentVersion} was published for .NET {ChannelVersion}; not bumping",
+                    currentSdk.Version,
+                    newRelease.ChannelVersion);
+                resolved = null;
+            }
         }
 
-        logger.Debug(
-            "No security release newer than {CurrentVersion} was published for .NET {ChannelVersion}; not bumping",
-            currentSdk.Version,
-            newRelease.ChannelVersion);
-        return null;
+        logger.MethodReturn(
+            nameof(BumpSdkHandler),
+            nameof(ResolveSecurityReleaseAsync),
+            resolved == null ? "dropped" : "kept");
+        return resolved;
     }
 }

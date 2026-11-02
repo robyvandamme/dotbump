@@ -34,6 +34,7 @@ internal class ReleaseWebService(ILogger logger, HttpClient httpClient) : IRelea
         logger.MethodStart(nameof(ReleaseWebService), nameof(GetChannelReleasesAsync));
 
         ArgumentNullException.ThrowIfNull(channelReleasesUri);
+        EnsureTrustedReleaseUri(channelReleasesUri);
 
         var json = await GetJsonAsync(channelReleasesUri).ConfigureAwait(false);
 
@@ -67,6 +68,21 @@ internal class ReleaseWebService(ILogger logger, HttpClient httpClient) : IRelea
 
         throw new DotBumpException(
             $"No release history returned from {channelReleasesUri}. Please check the source URL.");
+    }
+
+    /// <summary>
+    /// The release index is trusted, but the history URL is still followed over the network. Keep the
+    /// request on the same https origin as the index instead of pinning a host that may change.
+    /// </summary>
+    private void EnsureTrustedReleaseUri(Uri uri)
+    {
+        if (uri.Scheme != Uri.UriSchemeHttps
+            || uri.UserInfo.Length > 0
+            || !string.Equals(uri.Host, _releaseUri.Host, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new DotBumpException(
+                $"Refusing to fetch release history from {uri}; expected an https URL on {_releaseUri.Host}.");
+        }
     }
 
     private async Task<string> GetJsonAsync(Uri uri)
