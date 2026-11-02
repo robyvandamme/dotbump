@@ -27,7 +27,7 @@ Findings below are ranked. All actionable findings have been resolved; Finding 8
 | 5. Continuation state and comments | **Fixed** in `a48ec19` — comments and blank lines no longer end a continuation. |
 | 6. `XmlFileText` naming | **Fixed** in `1e1f0e4` — generic helpers moved to `FileText`. |
 | 7. Brittle split assertion | **Fixed** in `eb025dc` — exact content comparison. |
-| 8. Design observations | Informational |
+| 8. Design observations | Informational — `Sdk` call-site comment added in `ac5ab28`. |
 
 ---
 
@@ -272,16 +272,17 @@ so both occurrences and their surrounding text are covered in a single readable 
 
 ### 8. INFO — Design observations (no change requested)
 
-* **Reuse of `ReleaseFinder` via `new Sdk(currentEntry.OriginalTag, string.Empty)`:** acceptable
+* **Reuse of `ReleaseFinder` via `new Sdk(referenceEntry.OriginalTag, string.Empty)`:** acceptable
 given the stated goal of identical version selection; the fake `Sdk` with an empty `rollForward` is a
 bit of a smelly contract since `TryFindNewRelease` ignores it, but introducing a
-`SemanticVersion`-based overload is not worth the churn now. A comment on the call site explaining
-"Sdk here is only used for its parsed version" would help future readers.
+`SemanticVersion`-based overload is not worth the churn now. **Addressed in `ac5ab28`:** the call site
+now explains that only the parsed version is used.
 * **Release-index → tag mapping assumption:** `SdkImageTag.TryMapFromSdkVersion` assumes every
 release-index version has a published `mcr.microsoft.com/dotnet/sdk:<version>` tag. Historically a
 brand-new release can exist in the index before the Docker tag is published. The command will then
 edit the Dockerfile to a tag that may not exist yet. Worth a note in the README/limitations, not a
-code change.
+code change. **Already covered:** the docker limitations in the README state that the resolved tag
+is not validated against MCR and would only surface when the image is pulled.
 * **`DockerfileManifest` visibility mix:** public `HasChanges`/`Entries` alongside internal
 `ChangedFiles`/`Add` works, but `Add` being the mutation point while `TrackFileText` is internal-only
 reads slightly inconsistently — matching the surrounding manifest classes' style is fine as-is.
