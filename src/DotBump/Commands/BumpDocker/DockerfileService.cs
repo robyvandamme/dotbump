@@ -66,7 +66,7 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
             }
 
             var updatedText = ApplyChanges(manifest, filePath, text);
-            XmlFileText.WriteText(filePath, updatedText);
+            FileText.WriteText(filePath, updatedText);
             logger.Debug("Updated SDK image tags in {File}", filePath);
         }
 
@@ -126,9 +126,9 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
 
     private void ReadFromInstructions(string rootPath, string filePath, DockerfileManifest manifest)
     {
-        var text = XmlFileText.ReadText(filePath);
+        var text = FileText.ReadText(filePath);
         var relativePath = GetRelativePath(rootPath, filePath);
-        var lineStartOffsets = XmlFileText.GetLineStartOffsets(text);
+        var lineStartOffsets = FileText.GetLineStartOffsets(text);
         var entriesBefore = manifest.Entries.Count;
         var isContinuation = false;
 

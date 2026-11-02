@@ -66,7 +66,7 @@ internal sealed class FrameworkFileService(ILogger logger) : IFrameworkFileServi
             }
 
             var updatedText = ApplyChanges(manifest, filePath, text);
-            XmlFileText.WriteText(filePath, updatedText);
+            FileText.WriteText(filePath, updatedText);
             logger.Debug("Updated target frameworks in {File}", filePath);
         }
 
@@ -93,7 +93,7 @@ internal sealed class FrameworkFileService(ILogger logger) : IFrameworkFileServi
 
     private void ReadTargetFrameworks(string rootPath, string filePath, FrameworkManifest manifest)
     {
-        var text = XmlFileText.ReadText(filePath);
+        var text = FileText.ReadText(filePath);
 
         XDocument document;
         try
@@ -123,7 +123,7 @@ internal sealed class FrameworkFileService(ILogger logger) : IFrameworkFileServi
             return;
         }
 
-        var lineStartOffsets = XmlFileText.GetLineStartOffsets(text);
+        var lineStartOffsets = FileText.GetLineStartOffsets(text);
         var targetFrameworkFound = false;
 
         foreach (var element in root.Descendants()

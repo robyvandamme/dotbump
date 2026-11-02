@@ -59,7 +59,7 @@ internal sealed class LanguageFileService(ILogger logger) : ILanguageFileService
             }
 
             var updatedText = ApplyChanges(manifest, filePath, text);
-            XmlFileText.WriteText(filePath, updatedText);
+            FileText.WriteText(filePath, updatedText);
             logger.Debug("Updated language versions in {File}", filePath);
         }
 
@@ -86,7 +86,7 @@ internal sealed class LanguageFileService(ILogger logger) : ILanguageFileService
 
     private void ReadLanguageVersions(string rootPath, string filePath, LanguageManifest manifest)
     {
-        var text = XmlFileText.ReadText(filePath);
+        var text = FileText.ReadText(filePath);
 
         XDocument document;
         try
@@ -107,7 +107,7 @@ internal sealed class LanguageFileService(ILogger logger) : ILanguageFileService
         }
 
         var relativePath = GetRelativePath(rootPath, filePath);
-        var lineStartOffsets = XmlFileText.GetLineStartOffsets(text);
+        var lineStartOffsets = FileText.GetLineStartOffsets(text);
         var languageVersionFound = false;
 
         foreach (var element in root.Descendants()

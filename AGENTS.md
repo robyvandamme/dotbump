@@ -56,7 +56,7 @@ Key capabilities include:
     - `NuGet/`: Reusable NuGet client services, configuration file services (`nuget.config`), validators, release
       finder, and data models.
     - `Common/`: Shared utilities (`SemanticVersion`, `VersionInfo`, `DotBumpException`, `LoggerExtensions`,
-      `XmlFileText`, `RepositoryFileScanner`).
+      `FileText`, `XmlFileText`, `RepositoryFileScanner`).
     - `Reports/`: Reporting models (`BumpReport`, `BumpResult`).
 - `test/DotBump.Tests/`: Unit and integration test suite.
     - `Commands/`: Tests for SDK, frameworks, tools and packages commands, handlers, and services.
