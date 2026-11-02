@@ -6,7 +6,6 @@ using DotBump.Commands.BumpDocker.DataModel;
 using DotBump.Commands.BumpFrameworks.DataModel;
 using DotBump.Commands.BumpLanguage.DataModel;
 using DotBump.Commands.BumpPackages.DataModel;
-using DotBump.Common;
 using DotBump.Reports;
 using DotBump.Tests.TestHelpers;
 using Shouldly;
@@ -97,7 +96,6 @@ public class BumpReportTests
                 "/repo/Dockerfile",
                 1,
                 "10.0.100",
-                new SemanticVersion("10.0.100"),
                 0,
                 8);
             manifest.Add(entry);

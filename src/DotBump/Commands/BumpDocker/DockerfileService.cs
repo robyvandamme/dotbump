@@ -295,7 +295,7 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
             return;
         }
 
-        if (!SdkImageTag.TryParse(tag, out var version))
+        if (!SdkImageTag.TryParse(tag, out _))
         {
             AddWarning(
                 manifest,
@@ -310,7 +310,6 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
                 filePath,
                 lineNumber,
                 tag,
-                version,
                 imageToken.Start + tagSeparator + 1,
                 tag.Length));
     }

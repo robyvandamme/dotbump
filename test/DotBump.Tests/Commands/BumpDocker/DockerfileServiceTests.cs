@@ -3,7 +3,6 @@
 using System.Text;
 using DotBump.Commands.BumpDocker;
 using DotBump.Commands.BumpDocker.DataModel;
-using DotBump.Common;
 using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
@@ -312,7 +311,6 @@ public class DockerfileServiceTests
                 "/repo/Dockerfile",
                 1,
                 "10.0.100",
-                new SemanticVersion("10.0.100"),
                 0,
                 8);
             manifest.Add(entry);

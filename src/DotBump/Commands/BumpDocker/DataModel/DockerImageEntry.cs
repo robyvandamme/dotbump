@@ -15,7 +15,6 @@ internal sealed class DockerImageEntry
         string filePath,
         int lineNumber,
         string originalTag,
-        SemanticVersion parsedVersion,
         int tagStart,
         int tagLength)
     {
@@ -24,7 +23,7 @@ internal sealed class DockerImageEntry
         FilePath = filePath;
         LineNumber = lineNumber;
         OriginalTag = originalTag;
-        ParsedVersion = parsedVersion;
+        ParsedVersion = new SemanticVersion(originalTag);
         Tag = originalTag;
         TagStart = tagStart;
         TagLength = tagLength;

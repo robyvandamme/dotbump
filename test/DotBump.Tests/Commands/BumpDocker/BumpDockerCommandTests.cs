@@ -164,7 +164,6 @@ public class BumpDockerCommandTests
                 "/repo/Dockerfile",
                 1,
                 "10.0.100",
-                new SemanticVersion("10.0.100"),
                 0,
                 8);
             manifest.Add(entry);
