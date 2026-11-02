@@ -14,7 +14,7 @@ Overall this is a well-structured, idiomatic addition that follows the establish
 ships with a solid, isolated test suite. The span-based rewriting of Dockerfiles (recorded offsets,
 backwards application, BOM/line-ending preservation) is careful and well covered by tests.
 
-Findings below are ranked. Findings 1–6 have been resolved; the remaining item is test-only.
+Findings below are ranked. All actionable findings have been resolved; Finding 8 is informational.
 
 ## Status
 
@@ -26,7 +26,7 @@ Findings below are ranked. Findings 1–6 have been resolved; the remaining item
 | 4. Trailing `@` digest edge case | **Fixed** in `bd7ce92` — any `@` is treated as a digest. |
 | 5. Continuation state and comments | **Fixed** in `a48ec19` — comments and blank lines no longer end a continuation. |
 | 6. `XmlFileText` naming | **Fixed** in `1e1f0e4` — generic helpers moved to `FileText`. |
-| 7. Brittle split assertion | Open |
+| 7. Brittle split assertion | **Fixed** in `eb025dc` — exact content comparison. |
 | 8. Design observations | Informational |
 
 ---
@@ -245,6 +245,9 @@ span locators and delegates offset math to `FileText`. `AGENTS.md` lists both ty
 
 ### 7. LOW (tests) — Brittle assertion in `With_Multiple_Occurrences_Updates_All_Of_Them`
 
+> **Status: fixed in `eb025dc`.** The test now reads the file once and asserts the exact updated
+> content, matching the handler test style. No counting or split-length arithmetic remains.
+
 ```csharp
 File.ReadAllText(filePath).ShouldNotContain("10.0.100");
 File.ReadAllText(filePath).Split("10.0.101").Length.ShouldBe(3);
@@ -263,6 +266,9 @@ updated.Split("10.0.101").Length.ShouldBe(3) // with a comment: 2 occurrences �
 `updated.CountOccurences("10.0.101")`-style helper or `Regex.Count(updated, "10.0.101")`, or simply
 assert on the two full lines as the handler test `With_Multiple_Occurrences_Does_Not_Downgrade`
 already does (which reads better).
+
+**Resolution applied in `eb025dc`:** the test now reads the file once and compares the exact content,
+so both occurrences and their surrounding text are covered in a single readable assertion.
 
 ### 8. INFO — Design observations (no change requested)
 
