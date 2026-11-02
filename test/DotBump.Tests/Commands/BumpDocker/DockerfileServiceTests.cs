@@ -147,7 +147,7 @@ public class DockerfileServiceTests
 
             manifest.ShouldSatisfyAllConditions(
                 () => manifest.Entries.ShouldBeEmpty(),
-                () => manifest.Warnings.ShouldBeEmpty());
+                () => manifest.Warnings.ShouldHaveSingleItem().ShouldContain("multi-line FROM"));
         }
 
         [Fact]

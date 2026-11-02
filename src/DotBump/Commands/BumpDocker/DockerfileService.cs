@@ -147,7 +147,9 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
                 // tracking logical line spans, so it is skipped rather than risking a partial rewrite.
                 if (match.Success)
                 {
-                    logger.Debug("Skipping multi-line FROM instruction in {File}", relativePath);
+                    AddWarning(
+                        manifest,
+                        $"Skipping multi-line FROM instruction in '{relativePath}' (line {lineIndex + 1}) because multi-line FROM instructions are not supported yet.");
                 }
 
                 isContinuation = true;

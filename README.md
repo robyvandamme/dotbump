@@ -405,7 +405,9 @@ in the output report:
 * `latest`, floating tags such as `11.0`, and variant tags such as `10.0.101-noble` or `10.0.101-alpine3.24`.
 * Digest-pinned images (`...@sha256:...`).
 * Tags that use build arguments (`${SDK_VERSION}`).
-* Multi-line `FROM` instructions.
+
+Multi-line `FROM` instructions are also skipped and reported as warnings, because the instruction cannot be rewritten
+reliably without joining physical lines.
 
 #### Limitations
 
