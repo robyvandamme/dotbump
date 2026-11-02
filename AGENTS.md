@@ -19,6 +19,9 @@ Key capabilities include:
 - `dotnet dotbump language`: Bumps numeric `<LangVersion>` values in C# projects and shared MSBuild files to the SDK
   major plus four (for example .NET 10 to C# 14.0). Values are only bumped upward; F# and Visual Basic projects are
   ignored.
+- `dotnet dotbump docker`: Bumps the `mcr.microsoft.com/dotnet/sdk` base image tag in Dockerfiles and Containerfiles
+  using the .NET release index. Only fully versioned SDK tags are supported; other images, variant tags and digest
+  pins are left untouched.
 - `dotnet dotbump tools`: Bumps local .NET tools declared in `.config/dotnet-tools.json` using NuGet feeds (supporting
   pre-releases, unlisted package detection, and authenticated private feeds via environment variables). Supports
   `minor`, `patch` and `major` bump types.
@@ -45,6 +48,8 @@ Key capabilities include:
     - `Commands/BumpSdk/`: SDK bump command, handler, services, and models (`global.json`, release index).
     - `Commands/BumpFrameworks/`: Target framework bump command, handler, file service, and manifest models.
     - `Commands/BumpLanguage/`: C# language version bump command, handler, file service, and manifest models.
+    - `Commands/BumpDocker/`: .NET SDK base image bump command, handler, Dockerfile service, SDK image tag mapping, and
+      manifest models.
     - `Commands/BumpTools/`: Tools bump command, handler, and local tool manifest file services (`dotnet-tools.json`).
     - `Commands/BumpPackages/`: NuGet package bump command, handler, file service, and manifest models.
     - `NuGet/`: Reusable NuGet client services, configuration file services (`nuget.config`), validators, release

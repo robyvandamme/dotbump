@@ -6,6 +6,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotBump.Commands;
+using DotBump.Commands.BumpDocker.DataModel;
 using DotBump.Commands.BumpFrameworks.DataModel;
 using DotBump.Commands.BumpLanguage.DataModel;
 using DotBump.Commands.BumpPackages.DataModel;
@@ -107,6 +108,27 @@ internal class BumpReport
         }
     }
 
+    public BumpReport(DockerfileManifest dockerfileManifest, BumpType bumpType)
+    {
+        ArgumentNullException.ThrowIfNull(dockerfileManifest);
+
+        CommandName = BumpCommandNames.Docker;
+        BumpType = bumpType;
+
+        // Group duplicate occurrences of the same image and tag so multi-stage Dockerfiles produce a single
+        // report entry per starting tag.
+        foreach (var group in dockerfileManifest.Entries.GroupBy(entry => (entry.Image, entry.OriginalTag)))
+        {
+            _results.Add(
+                new BumpResult(group.Key.Image, group.Key.OriginalTag)
+                {
+                    NewVersion = group.First().Tag,
+                });
+        }
+
+        TimeStamp = DateTime.UtcNow;
+    }
+
     public string CommandName { get; init; }
 
     public BumpType BumpType { get; init; }
@@ -163,6 +185,23 @@ internal class BumpReport
             if (reportItem != null)
             {
                 reportItem.NewVersion = GetReferenceVersion(variant, useCurrentVersion: true);
+            }
+        }
+
+        TimeStamp = DateTime.UtcNow;
+    }
+
+    public void ReportChanges(DockerfileManifest dockerfileManifest)
+    {
+        ArgumentNullException.ThrowIfNull(dockerfileManifest);
+
+        foreach (var entry in dockerfileManifest.Entries)
+        {
+            foreach (var reportItem in _results.Where(o =>
+                         o.Id.Equals(entry.Image, StringComparison.OrdinalIgnoreCase)
+                         && string.Equals(o.OldVersion, entry.OriginalTag, StringComparison.Ordinal)))
+            {
+                reportItem.NewVersion = entry.Tag;
             }
         }
 

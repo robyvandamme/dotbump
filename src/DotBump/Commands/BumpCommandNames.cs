@@ -16,4 +16,6 @@ internal static class BumpCommandNames
     public const string Frameworks = "frameworks";
 
     public const string Language = "language";
+
+    public const string Docker = "docker";
 }

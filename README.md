@@ -29,6 +29,7 @@ COMMANDS:
     packages    Bump the NuGet package and project SDK versions
     frameworks  Bump the target framework versions
     language    Bump the C# language version
+    docker      Bump the .NET SDK base image tag in Dockerfiles
 
 OPTIONS:
     -h, --help       Prints help information
@@ -343,11 +344,77 @@ Only existing numeric `<LangVersion>` values are considered, and they are bumped
   `$(LangVersion)` and missing values are left unchanged.
 * SDK versions below .NET 5 are rejected because the SDK major cannot be mapped reliably to a C# version.
 
+### docker
+
+```text
+DESCRIPTION:
+Bump the .NET SDK base image tag in Dockerfiles. Only the
+`mcr.microsoft.com/dotnet/sdk` image is supported. Uses the same version
+selection as the `sdk` command. Use the 'minor' type option to bump the image
+to the latest minor or patch version for the current major version. Use the
+'patch' type option to bump the image to the latest patch version for the
+current minor version. Use the 'major' type option to bump the image to the
+latest version, including versions with a higher major version. Use
+'--prerelease' with the 'major' type to include pre-release versions.
+
+USAGE:
+    dotnet dotbump docker [OPTIONS]
+
+EXAMPLES:
+    dotnet dotbump docker
+    dotnet dotbump docker --type patch
+    dotnet dotbump docker --type major
+    dotnet dotbump docker --type major --prerelease
+    dotnet dotbump docker --path ./src --output bump-docker-report.md
+    dotnet dotbump docker --debug --logfile bump-docker-log.txt
+
+OPTIONS:
+    -h, --help       Prints help information
+    -t, --type       The bump type. Defaults to `minor`. Available options are
+                     `minor`, `patch` and `major`
+    -p, --path       The root directory to scan. Defaults to the current
+                     directory
+    -e, --exclude    A directory to exclude from the scan. Can be specified
+                     multiple times. Relative paths are resolved against the
+                     current directory, not the scan root given by --path
+    -o, --output     Output file name. The name of the file to write the result
+                     to. The output format is inferred from the file extension:
+                     `.json` or `.md`
+        --prerelease Include pre-release SDK versions when bumping. Only applies
+                     to `major` bumps. Defaults to false
+        --debug      Enable debug logging for troubleshooting. Includes response
+                     data
+        --logfile    The file to send the log output to
+```
+
+The command scans `Dockerfile`, `Dockerfile.*`, `*.dockerfile` (including `*.Dockerfile`) and `Containerfile`, and
+updates the tag of every `FROM mcr.microsoft.com/dotnet/sdk:<tag>` instruction. The target version is resolved from the
+same .NET release index as the `sdk` command, and the image tag is the SDK version without build metadata:
+`11.0.100-rc.3.26522.148` becomes `11.0.100-rc.3`.
+
+Only fully versioned tags are supported: `major.minor.patch` with an optional `alpha`, `beta`, `rc` or `preview`
+suffix. All other images are ignored. For the SDK image, the following are left unchanged and listed under `warnings`
+in the output report:
+
+* `latest`, floating tags such as `11.0`, and variant tags such as `10.0.101-noble` or `10.0.101-alpine3.24`.
+* Digest-pinned images (`...@sha256:...`).
+* Tags that use build arguments (`${SDK_VERSION}`).
+* Multi-line `FROM` instructions.
+
+#### Limitations
+
+* Only the `mcr.microsoft.com/dotnet/sdk` image is supported. Other .NET images, other registries,
+  `docker-compose.yml` and `.devcontainer` files are left untouched.
+* The resolved image tag is not validated against the Microsoft Container Registry, because the version comes from the
+  .NET release index. The index and the published images are released together, but an unavailable image tag would only
+  surface when the image is pulled.
+* Variant and OS suffixes (for example `-noble`, `-alpine3.24`) are not supported yet and are reported as warnings.
+
 ## Common behaviour
 
 ### Version selection and pre-releases
 
-The `sdk`, `tools` and `packages` commands share the same version selection rules.
+The `sdk`, `tools`, `packages` and `docker` commands share the same version selection rules.
 
 * `minor` and `patch` stay within the current major or minor version.
 * `major` removes the major-version cap, consistent with how `minor` includes patch releases. It therefore also selects

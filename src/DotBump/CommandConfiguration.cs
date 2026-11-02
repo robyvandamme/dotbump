@@ -1,6 +1,8 @@
 // Copyright © Roby Van Damme.
 
 using DotBump.Commands;
+using DotBump.Commands.BumpDocker;
+using DotBump.Commands.BumpDocker.Interfaces;
 using DotBump.Commands.BumpFrameworks;
 using DotBump.Commands.BumpFrameworks.Interfaces;
 using DotBump.Commands.BumpLanguage;
@@ -177,6 +179,29 @@ internal static class CommandConfiguration
                     DebugOptionName,
                     LogFileOptionName,
                     "bump-language-log.txt");
+
+            config.Settings.Registrar.Register<IDockerfileService, DockerfileService>();
+            config.Settings.Registrar.Register<IBumpDockerHandler, BumpDockerHandler>();
+
+            config.AddCommand<BumpDockerCommand>(name: BumpCommandNames.Docker)
+                .WithDescription(
+                    "Bump the .NET SDK base image tag in Dockerfiles. " +
+                    "Only the `mcr.microsoft.com/dotnet/sdk` image is supported. " +
+                    "Uses the same version selection as the `sdk` command. " +
+                    "Use the 'minor' type option to bump the image to the latest minor or patch version for the current major version. " +
+                    "Use the 'patch' type option to bump the image to the latest patch version for the current minor version. " +
+                    "Use the 'major' type option to bump the image to the latest version, including versions with a higher major version. " +
+                    "Use '--prerelease' with the 'major' type to include pre-release versions. ")
+                .WithExample(BumpCommandNames.Docker)
+                .WithExample(BumpCommandNames.Docker, TypeOptionName, PatchBumpType)
+                .WithExample(BumpCommandNames.Docker, TypeOptionName, MajorBumpType)
+                .WithExample(BumpCommandNames.Docker, TypeOptionName, MajorBumpType, PreReleaseOptionName)
+                .WithExample(BumpCommandNames.Docker, "--path", "./src", OutputOptionName, "bump-docker-report.md")
+                .WithExample(
+                    BumpCommandNames.Docker,
+                    DebugOptionName,
+                    LogFileOptionName,
+                    "bump-docker-log.txt");
         });
     }
 }
