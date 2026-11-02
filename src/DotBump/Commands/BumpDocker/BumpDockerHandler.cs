@@ -31,11 +31,7 @@ internal class BumpDockerHandler(
 
         try
         {
-            var currentEntry = manifest.Entries
-                .OrderByDescending(entry => entry.ParsedVersion)
-                .FirstOrDefault();
-
-            if (currentEntry == null)
+            if (manifest.Entries.Count == 0)
             {
                 logger.Debug(
                     "No supported .NET SDK image found in {RepositoryPath}",
@@ -43,36 +39,11 @@ internal class BumpDockerHandler(
                 return bumpReport;
             }
 
-            var currentSdk = new Sdk(currentEntry.OriginalTag, string.Empty);
-            var releases = await releaseService.GetReleasesAsync().ConfigureAwait(false);
+            var releases = (await releaseService.GetReleasesAsync().ConfigureAwait(false)).ToList();
 
-            var newRelease = releaseFinder.TryFindNewRelease(
-                currentSdk,
-                releases.ToList(),
-                bumpType,
-                securityOnly: false,
-                preRelease);
-
-            if (newRelease == null)
+            foreach (var group in GroupEntries(manifest, bumpType))
             {
-                logger.Debug(
-                    "No new SDK release found for image tag {Tag}",
-                    currentEntry.OriginalTag);
-                return bumpReport;
-            }
-
-            var newTag = SdkImageTag.TryMapFromSdkVersion(newRelease.LatestSdk);
-            if (newTag == null || !SdkImageTag.TryParse(newTag, out var newVersion))
-            {
-                var warning = $"Skipping SDK image bump because SDK version '{newRelease.LatestSdk}' cannot be mapped to a supported Docker image tag.";
-                AddWarning(manifest, warning);
-                return bumpReport;
-            }
-
-            // Never downgrade: only update occurrences below the resolved target version.
-            foreach (var entry in manifest.Entries.Where(entry => newVersion > entry.ParsedVersion))
-            {
-                manifest.SetTag(entry, newTag);
+                ApplyBump(group, bumpType, releases, preRelease, manifest);
             }
 
             bumpReport.ReportChanges(manifest);
@@ -88,6 +59,64 @@ internal class BumpDockerHandler(
         {
             bumpReport.ReportWarnings(manifest.Warnings);
             logger.MethodReturn(nameof(BumpDockerHandler), nameof(HandleAsync), bumpReport);
+        }
+    }
+
+    /// <summary>
+    /// Groups the image occurrences by the SDK channel they belong to. A patch bump stays within the
+    /// current major.minor, while minor and major bumps start from each current major and let
+    /// <see cref="IReleaseFinder"/> apply the major-version cap.
+    /// </summary>
+    private static IEnumerable<IGrouping<(int Major, int Minor), DockerImageEntry>> GroupEntries(
+        DockerfileManifest manifest,
+        BumpType bumpType)
+    {
+        IEnumerable<IGrouping<(int Major, int Minor), DockerImageEntry>> groups = bumpType == BumpType.Patch
+            ? manifest.Entries.GroupBy(entry => (Major: entry.ParsedVersion.Major, Minor: entry.ParsedVersion.Minor))
+            : manifest.Entries.GroupBy(entry => (Major: entry.ParsedVersion.Major, Minor: 0));
+
+        return groups;
+    }
+
+    private void ApplyBump(
+        IGrouping<(int Major, int Minor), DockerImageEntry> group,
+        BumpType bumpType,
+        IReadOnlyList<Release> releases,
+        bool preRelease,
+        DockerfileManifest manifest)
+    {
+        var referenceEntry = group.OrderByDescending(entry => entry.ParsedVersion).First();
+        var referenceSdk = new Sdk(referenceEntry.OriginalTag, string.Empty);
+
+        var newRelease = releaseFinder.TryFindNewRelease(
+            referenceSdk,
+            releases,
+            bumpType,
+            securityOnly: false,
+            preRelease);
+
+        if (newRelease == null)
+        {
+            logger.Debug(
+                "No new SDK release found for .NET {Major}.{Minor} images (current tag {Tag})",
+                group.Key.Major,
+                group.Key.Minor,
+                referenceEntry.OriginalTag);
+            return;
+        }
+
+        var newTag = SdkImageTag.TryMapFromSdkVersion(newRelease.LatestSdk);
+        if (newTag == null || !SdkImageTag.TryParse(newTag, out var newVersion))
+        {
+            var warning = $"Skipping .NET {group.Key.Major}.{group.Key.Minor} images because SDK version '{newRelease.LatestSdk}' cannot be mapped to a supported Docker image tag.";
+            AddWarning(manifest, warning);
+            return;
+        }
+
+        // Never downgrade: only update occurrences below the resolved target version.
+        foreach (var entry in group.Where(entry => newVersion > entry.ParsedVersion))
+        {
+            manifest.SetTag(entry, newTag);
         }
     }
 

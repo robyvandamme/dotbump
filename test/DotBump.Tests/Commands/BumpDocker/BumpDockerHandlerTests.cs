@@ -95,6 +95,138 @@ public class BumpDockerHandlerTests
         }
 
         [Fact]
+        public async Task With_Mixed_Majors_And_Patch_Bump_Bumps_Each_Major_To_Its_Latest()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/sdk:8.0.404 AS legacy\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build\n");
+            var handler = CreateHandler(
+                new Release("8.0", "8.0.427", "maintenance", true),
+                new Release("10.0", "10.0.406", "lts", false));
+
+            var report = await handler.HandleAsync(BumpType.Patch, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldSatisfyAllConditions(
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "8.0.404" && result.NewVersion == "8.0.427"),
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "10.0.403" && result.NewVersion == "10.0.406"));
+
+            ReadDockerfile().ShouldBe(
+                "FROM mcr.microsoft.com/dotnet/sdk:8.0.427 AS legacy\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.406 AS build\n");
+        }
+
+        [Fact]
+        public async Task With_Mixed_Majors_And_Minor_Bump_Bumps_Each_Major_Independently()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.1 AS publish\n");
+            var handler = CreateHandler(
+                new Release("10.0", "10.0.406", "lts", false),
+                new Release("11.0", "11.0.100-rc.3.26522.148", "go-live", false));
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldSatisfyAllConditions(
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "10.0.403" && result.NewVersion == "10.0.406"),
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "11.0.100-rc.1" && result.NewVersion == "11.0.100-rc.3"));
+
+            ReadDockerfile().ShouldBe(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.406 AS build\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.3 AS publish\n");
+        }
+
+        [Fact]
+        public async Task With_Mixed_Majors_And_Major_Bump_Moves_All_To_Latest()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/sdk:8.0.404 AS legacy\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build\n");
+            var handler = CreateHandler(
+                new Release("8.0", "8.0.427", "maintenance", true),
+                new Release("10.0", "10.0.406", "lts", false),
+                new Release("11.0", "11.0.100", "sts", false));
+
+            var report = await handler.HandleAsync(BumpType.Major, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldAllBe(result => result.NewVersion == "11.0.100");
+            ReadDockerfile().ShouldBe(
+                "FROM mcr.microsoft.com/dotnet/sdk:11.0.100 AS legacy\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:11.0.100 AS build\n");
+        }
+
+        [Fact]
+        public async Task With_Mixed_Majors_And_Major_Bump_With_PreRelease_Moves_All_To_Highest()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.1 AS publish\n");
+            var handler = CreateHandler(
+                new Release("10.0", "10.0.406", "lts", false),
+                new Release("11.0", "11.0.100", "sts", false),
+                new Release("12.0", "12.0.100-preview.1.26522.200", "go-live", false));
+
+            var report = await handler.HandleAsync(
+                BumpType.Major,
+                TempDirectory.AbsolutePath,
+                preRelease: true);
+
+            report.Results.ShouldAllBe(result => result.NewVersion == "12.0.100-preview.1");
+            ReadDockerfile().ShouldBe(
+                "FROM mcr.microsoft.com/dotnet/sdk:12.0.100-preview.1 AS build\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:12.0.100-preview.1 AS publish\n");
+        }
+
+        [Fact]
+        public async Task With_Mixed_Minors_And_Patch_Bump_Keeps_Each_Minor()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.1.100 AS publish\n");
+            var handler = CreateHandler(
+                new Release("10.0", "10.0.406", "lts", false),
+                new Release("10.1", "10.1.103", "lts", false));
+
+            var report = await handler.HandleAsync(BumpType.Patch, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldSatisfyAllConditions(
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "10.0.100" && result.NewVersion == "10.0.406"),
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "10.1.100" && result.NewVersion == "10.1.103"));
+
+            ReadDockerfile().ShouldBe(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.406 AS build\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.1.103 AS publish\n");
+        }
+
+        [Fact]
+        public async Task With_Mixed_Patches_In_One_Major_Converges_To_The_Latest_Patch()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.404 AS publish\n");
+            var handler = CreateHandler(new Release("10.0", "10.0.406", "lts", false));
+
+            var report = await handler.HandleAsync(BumpType.Patch, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldAllBe(result => result.NewVersion == "10.0.406");
+            ReadDockerfile().ShouldBe(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.406 AS build\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.406 AS publish\n");
+        }
+
+        [Fact]
         public async Task With_PreRelease_Current_And_Major_Bump_Prefers_Stable_Release()
         {
             ResetTempDirectory();

@@ -392,6 +392,12 @@ updates the tag of every `FROM mcr.microsoft.com/dotnet/sdk:<tag>` instruction. 
 same .NET release index as the `sdk` command, and the image tag is the SDK version without build metadata:
 `11.0.100-rc.3.26522.148` becomes `11.0.100-rc.3`.
 
+Images are bumped per SDK channel rather than all to a single version. With `minor` and `patch`, each Dockerfile stays
+on its current SDK major (and, for `patch`, its current minor) and is updated to the latest release in that channel. A
+repository with images on .NET 8 and .NET 10 therefore keeps both majors and moves each to its own latest version.
+`major` removes the cap and moves every image to the latest release. Pre-release versions follow the shared version
+selection rules.
+
 Only fully versioned tags are supported: `major.minor.patch` with an optional `alpha`, `beta`, `rc` or `preview`
 suffix. All other images are ignored. For the SDK image, the following are left unchanged and listed under `warnings`
 in the output report:
@@ -414,7 +420,8 @@ in the output report:
 
 ### Version selection and pre-releases
 
-The `sdk`, `tools`, `packages` and `docker` commands share the same version selection rules.
+The `sdk`, `tools`, `packages` and `docker` commands share the same version selection rules. For `docker`, the rules
+are applied per SDK major, and per major.minor for `patch` bumps.
 
 * `minor` and `patch` stay within the current major or minor version.
 * `major` removes the major-version cap, consistent with how `minor` includes patch releases. It therefore also selects

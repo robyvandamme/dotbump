@@ -20,8 +20,9 @@ Key capabilities include:
   major plus four (for example .NET 10 to C# 14.0). Values are only bumped upward; F# and Visual Basic projects are
   ignored.
 - `dotnet dotbump docker`: Bumps the `mcr.microsoft.com/dotnet/sdk` base image tag in Dockerfiles and Containerfiles
-  using the .NET release index. Only fully versioned SDK tags are supported; other images, variant tags and digest
-  pins are left untouched.
+  using the .NET release index. Each image stays on its current SDK major for `minor`/`patch` bumps, while `major`
+  moves all images to the latest release. Only fully versioned SDK tags are supported; other images, variant tags and
+  digest pins are left untouched.
 - `dotnet dotbump tools`: Bumps local .NET tools declared in `.config/dotnet-tools.json` using NuGet feeds (supporting
   pre-releases, unlisted package detection, and authenticated private feeds via environment variables). Supports
   `minor`, `patch` and `major` bump types.
