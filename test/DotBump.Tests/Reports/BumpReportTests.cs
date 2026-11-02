@@ -2,6 +2,7 @@
 
 using System.Text.Json;
 using DotBump.Commands;
+using DotBump.Commands.BumpDocker.DataModel;
 using DotBump.Commands.BumpFrameworks.DataModel;
 using DotBump.Commands.BumpLanguage.DataModel;
 using DotBump.Commands.BumpPackages.DataModel;
@@ -83,6 +84,34 @@ public class BumpReportTests
                 () => result.Id.ShouldBe("App.csproj"),
                 () => result.OldVersion.ShouldBe("12.0"),
                 () => result.NewVersion.ShouldBe("14.0"));
+        }
+
+        [Fact]
+        public void With_Dockerfile_Manifest_Reports_Docker_Command_And_Results()
+        {
+            var manifest = new DockerfileManifest();
+            var entry = new DockerImageEntry(
+                "mcr.microsoft.com/dotnet/sdk",
+                "Dockerfile",
+                "/repo/Dockerfile",
+                1,
+                "10.0.100",
+                0,
+                8);
+            manifest.Add(entry);
+            manifest.SetTag(entry, "10.0.101");
+
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+            var result = report.Results.ShouldHaveSingleItem();
+
+            report.ShouldSatisfyAllConditions(
+                () => report.CommandName.ShouldBe("docker"),
+                () => report.BumpType.ShouldBe(BumpType.Minor),
+                () => report.HasChanges.ShouldBeTrue(),
+                () => result.Id.ShouldBe("mcr.microsoft.com/dotnet/sdk"),
+                () => result.OldVersion.ShouldBe("10.0.100"),
+                () => result.NewVersion.ShouldBe("10.0.101"));
         }
     }
 

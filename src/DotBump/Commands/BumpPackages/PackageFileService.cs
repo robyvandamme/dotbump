@@ -72,7 +72,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             }
 
             var updatedText = ApplyChanges(manifest, filePath, text);
-            XmlFileText.WriteText(filePath, updatedText);
+            FileText.WriteText(filePath, updatedText);
             logger.Debug("Updated package versions in {File}", filePath);
         }
 
@@ -81,7 +81,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
     internal static int GetOffset(int[] lineStartOffsets, int lineNumber, int linePosition)
     {
-        return XmlFileText.GetOffset(lineStartOffsets, lineNumber, linePosition);
+        return FileText.GetOffset(lineStartOffsets, lineNumber, linePosition);
     }
 
     internal static (int Start, int Length) GetVersionSpan(string text, int[] lineStartOffsets, XObject source)
@@ -294,7 +294,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
             return null;
         }
 
-        var (versionStart, versionLength) = XmlFileText.TrimSpan(text, slashIndex + 1, referenceEnd);
+        var (versionStart, versionLength) = FileText.TrimSpan(text, slashIndex + 1, referenceEnd);
         if (versionLength <= 0)
         {
             return null;
@@ -309,7 +309,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
 
     private void ReadPackageVersions(string filePath, PackageManifest manifest)
     {
-        var text = XmlFileText.ReadText(filePath);
+        var text = FileText.ReadText(filePath);
 
         XDocument document;
         try
@@ -330,7 +330,7 @@ internal sealed class PackageFileService(ILogger logger) : IPackageFileService
         }
 
         var sourceKind = GetSourceKind(filePath);
-        var lineStartOffsets = XmlFileText.GetLineStartOffsets(text);
+        var lineStartOffsets = FileText.GetLineStartOffsets(text);
         var packageFound = false;
 
         foreach (var element in root.Descendants())

@@ -1238,7 +1238,7 @@ public class PackageFileServiceTests
             const string text = "<Project>\n  <Version>13<!-- keep -->.0.1</Version>\n</Project>\n";
             var versionElement = XDocument.Parse(text, LoadOptions.SetLineInfo)
                 .Descendants("Version").Single();
-            var lineStartOffsets = XmlFileText.GetLineStartOffsets(text);
+            var lineStartOffsets = FileText.GetLineStartOffsets(text);
 
             var (start, length) = PackageFileService.GetVersionSpan(text, lineStartOffsets, versionElement);
 
