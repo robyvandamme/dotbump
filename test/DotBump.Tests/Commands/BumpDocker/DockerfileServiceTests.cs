@@ -2,6 +2,8 @@
 
 using System.Text;
 using DotBump.Commands.BumpDocker;
+using DotBump.Commands.BumpDocker.DataModel;
+using DotBump.Common;
 using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
@@ -210,6 +212,30 @@ public class DockerfileServiceTests
 
     public class SaveDockerfileManifest
     {
+        [Fact]
+        public void With_Changed_File_Without_Captured_Text_Adds_Warning()
+        {
+            var manifest = new DockerfileManifest();
+            var entry = new DockerImageEntry(
+                "mcr.microsoft.com/dotnet/sdk",
+                "Dockerfile",
+                "/repo/Dockerfile",
+                1,
+                "10.0.100",
+                new SemanticVersion("10.0.100"),
+                0,
+                8);
+            manifest.Add(entry);
+            manifest.SetTag(entry, "10.0.101");
+            var service = CreateService();
+
+            service.SaveDockerfileManifest(manifest);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Warnings.ShouldHaveSingleItem().ShouldContain("file content was not available"),
+                () => manifest.Entries.ShouldHaveSingleItem().Tag.ShouldBe("10.0.101"));
+        }
+
         [Fact]
         public void With_Changed_Tag_Updates_Only_The_Tag()
         {

@@ -55,6 +55,13 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
             var text = manifest.GetFileText(filePath);
             if (text == null)
             {
+                var relativePath = manifest.Entries
+                    .FirstOrDefault(entry => string.Equals(entry.FilePath, filePath, StringComparison.Ordinal))
+                    ?.RelativePath ?? filePath;
+
+                AddWarning(
+                    manifest,
+                    $"Could not update SDK image tags in '{relativePath}' because the file content was not available.");
                 continue;
             }
 
