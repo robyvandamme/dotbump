@@ -224,11 +224,11 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
             return;
         }
 
-        if (digestIndex >= 0 && digestIndex < imageToken.Value.Length - 1)
+        if (digestIndex >= 0)
         {
             AddWarning(
                 manifest,
-                $"Skipping digest-pinned image '{image}' in '{relativePath}' (line {lineNumber}) because digests are not supported yet.");
+                $"Skipping image '{image}' in '{relativePath}' (line {lineNumber}) because image digests are not supported yet.");
             return;
         }
 

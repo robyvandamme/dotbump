@@ -137,6 +137,22 @@ public class DockerfileServiceTests
         }
 
         [Fact]
+        public void With_Trailing_At_Sign_Adds_Digest_Warning()
+        {
+            ResetTempDirectory();
+            File.WriteAllText(
+                TempPath("Dockerfile"),
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.101@ AS build\n");
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Entries.ShouldBeEmpty(),
+                () => manifest.Warnings.ShouldHaveSingleItem().ShouldContain("digests are not supported"));
+        }
+
+        [Fact]
         public void With_Multi_Line_From_Instruction_Skips_It()
         {
             ResetTempDirectory();
