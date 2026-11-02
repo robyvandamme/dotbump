@@ -14,7 +14,7 @@ Overall this is a well-structured, idiomatic addition that follows the establish
 ships with a solid, isolated test suite. The span-based rewriting of Dockerfiles (recorded offsets,
 backwards application, BOM/line-ending preservation) is careful and well covered by tests.
 
-Findings below are ranked. Findings 1–5 have been resolved; the rest are minor.
+Findings below are ranked. Findings 1–6 have been resolved; the remaining item is test-only.
 
 ## Status
 
@@ -25,7 +25,7 @@ Findings below are ranked. Findings 1–5 have been resolved; the rest are minor
 | 3. Silent skip on missing file text | **Fixed** in `29d2568` — a manifest warning is added. |
 | 4. Trailing `@` digest edge case | **Fixed** in `bd7ce92` — any `@` is treated as a digest. |
 | 5. Continuation state and comments | **Fixed** in `a48ec19` — comments and blank lines no longer end a continuation. |
-| 6. `XmlFileText` naming | Open |
+| 6. `XmlFileText` naming | **Fixed** in `1e1f0e4` — generic helpers moved to `FileText`. |
 | 7. Brittle split assertion | Open |
 | 8. Design observations | Informational |
 
@@ -223,6 +223,11 @@ parser changed.
 
 ### 6. LOW — Reusing `XmlFileText` for plain-text Dockerfiles is misleading
 
+> **Status: fixed in `1e1f0e4`.** The generic helpers (`ReadText`, `WriteText`, `DetectEncoding`,
+> `GetLineStartOffsets`, `GetOffset`, `TrimSpan`) moved to `FileText`. `XmlFileText` now only contains
+> `GetAttributeValueSpan` and `GetElementTextSpan`. Docker, frameworks, language and packages were
+> updated to call the appropriate type; no behaviour changed.
+
 `DockerfileService` reads/writes Dockerfiles via `XmlFileText.ReadText`, `XmlFileText.WriteText` and
 `XmlFileText.GetLineStartOffsets`. Those APIs happen to be generic (byte-based encoding detection,
 offset math), but the type name promises XML and only the XML-specific members
@@ -233,6 +238,10 @@ code has to check `XmlFileText` before trusting it with a non-XML file.
 encoding/offset helpers into a small `FileText` static class and keep `XmlFileText` for the XML span
 helpers). This shows up again in the log line `"Updated SDK image tags in {File}"` calling
 `XmlFileText.WriteText` — correct at runtime, confusing on screen.
+
+**Resolution applied in `1e1f0e4`:** the extraction option was chosen over a blanket rename.
+`Common/FileText.cs` now holds the generic helpers, and `Common/XmlFileText.cs` keeps only the XML
+span locators and delegates offset math to `FileText`. `AGENTS.md` lists both types.
 
 ### 7. LOW (tests) — Brittle assertion in `With_Multiple_Occurrences_Updates_All_Of_Them`
 
