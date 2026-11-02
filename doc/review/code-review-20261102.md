@@ -14,7 +14,7 @@ Overall this is a well-structured, idiomatic addition that follows the establish
 ships with a solid, isolated test suite. The span-based rewriting of Dockerfiles (recorded offsets,
 backwards application, BOM/line-ending preservation) is careful and well covered by tests.
 
-Findings below are ranked. Findings 1 and 2 have been resolved; the rest are minor.
+Findings below are ranked. Findings 1–3 have been resolved; the rest are minor.
 
 ## Status
 
@@ -22,7 +22,7 @@ Findings below are ranked. Findings 1 and 2 have been resolved; the rest are min
 | --- | --- |
 | 1. Cross-major image rewrite | **Fixed** in `49ac565` — targets are now resolved per SDK channel. |
 | 2. Silent multi-line `FROM` skip | **Fixed** in `6edbe99` — the skip is now a manifest warning. |
-| 3. Silent skip on missing file text | Open |
+| 3. Silent skip on missing file text | **Fixed** in `29d2568` — a manifest warning is added. |
 | 4. Trailing `@` digest edge case | Open |
 | 5. Continuation state and comments | Open |
 | 6. `XmlFileText` naming | Open |
@@ -125,6 +125,11 @@ because the warning applies to any image, not only the SDK image.
 
 ### 3. LOW — `SaveDockerfileManifest` can silently skip a changed file while the report claims a bump
 
+> **Status: fixed in `29d2568`.** The missing-text branch now adds a manifest warning with the file's
+> relative path. Per-file write failures remain fail-fast: an I/O exception propagates to the command,
+> which exits `1` before writing a report, so no success report is produced. This matches the other
+> file services and was left unchanged.
+
 ```csharp
 foreach (var filePath in manifest.ChangedFiles)
 {
@@ -144,6 +149,12 @@ entries), but as a defensive branch it should be a warning (`AddWarning`) rather
 with only a missing log — right now the skip would be completely invisible. Also consider re-reporting
 errors per-file so a filesystem failure during one write does not leave the user with a partially
 bumped repo and a report claiming success.
+
+**Resolution applied in `29d2568`:** the branch now calls `AddWarning` with the affected file's
+relative path. A test covers a manifest with a changed entry but no captured file text. Per-file write
+failures were deliberately left fail-fast: an I/O exception propagates to the command, which exits `1`
+without writing a report. Collecting those failures would still leave a partially bumped repository
+and a report that claims success for files that were never written.
 
 ### 4. LOW — Digest edge case: `sdk:10.0.101@` passes the digest guard
 
