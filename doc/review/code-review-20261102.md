@@ -14,7 +14,7 @@ Overall this is a well-structured, idiomatic addition that follows the establish
 ships with a solid, isolated test suite. The span-based rewriting of Dockerfiles (recorded offsets,
 backwards application, BOM/line-ending preservation) is careful and well covered by tests.
 
-Findings below are ranked. Findings 1–4 have been resolved; the rest are minor.
+Findings below are ranked. Findings 1–5 have been resolved; the rest are minor.
 
 ## Status
 
@@ -24,7 +24,7 @@ Findings below are ranked. Findings 1–4 have been resolved; the rest are minor
 | 2. Silent multi-line `FROM` skip | **Fixed** in `6edbe99` — the skip is now a manifest warning. |
 | 3. Silent skip on missing file text | **Fixed** in `29d2568` — a manifest warning is added. |
 | 4. Trailing `@` digest edge case | **Fixed** in `bd7ce92` — any `@` is treated as a digest. |
-| 5. Continuation state and comments | Open |
+| 5. Continuation state and comments | **Fixed** in `a48ec19` — comments and blank lines no longer end a continuation. |
 | 6. `XmlFileText` naming | Open |
 | 7. Brittle split assertion | Open |
 | 8. Design observations | Informational |
@@ -184,6 +184,11 @@ reference. No other invalid Dockerfile syntax is validated or repaired.
 
 ### 5. LOW — Continuation state is reset by a comment line inside a multi-line instruction
 
+> **Status: fixed in `a48ec19`.** Comment-only and empty lines no longer change the continuation
+> state, matching BuildKit's parser (`isComment` and `isEmptyContinuationLine` are skipped inside the
+> continuation loop). Tests cover a comment and a blank line inside a continued `RUN`, a comment
+> inside a multi-line `FROM`, and a real `FROM` after a completed continuation.
+
 ```csharp
 var continuesOnNextLine = !isComment && line.TrimEnd().EndsWith('\\');
 if (isContinuation)
@@ -210,6 +215,11 @@ parser is knowingly different from Docker's here. If you extend the continuation
 treat comment-only lines inside a continuation as consumed continuation content (internal to the
 skip logic), not as terminators. At minimum, add a comment in `ReadFromInstructions` documenting
 this accepted divergence so a future maintainer does not "fix" it blindly.
+
+**Resolution applied in `a48ec19`:** the continuation branch now ignores comment-only and empty
+lines without changing `isContinuation`, and the code carries a comment explaining the Docker
+behaviour. Blank lines were included because BuildKit treats them the same way. No other part of the
+parser changed.
 
 ### 6. LOW — Reusing `XmlFileText` for plain-text Dockerfiles is misleading
 
