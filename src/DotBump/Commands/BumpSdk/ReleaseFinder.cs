@@ -13,7 +13,6 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         Sdk currentSdk,
         IReadOnlyList<Release> releases,
         BumpType bumpType,
-        bool securityOnly,
         bool preRelease)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindNewRelease));
@@ -26,13 +25,13 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         switch (bumpType)
         {
             case BumpType.Minor:
-                newRelease = TryFindMinorOrPatch(currentSdk, releases, securityOnly);
+                newRelease = TryFindMinorOrPatch(currentSdk, releases);
                 break;
             case BumpType.Patch:
-                newRelease = TryFindPatch(currentSdk, releases, securityOnly);
+                newRelease = TryFindPatch(currentSdk, releases);
                 break;
             case BumpType.Major:
-                newRelease = TryFindMajor(currentSdk, releases, securityOnly, preRelease);
+                newRelease = TryFindMajor(currentSdk, releases, preRelease);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(bumpType), bumpType, null);
@@ -65,7 +64,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
             : null;
     }
 
-    private Release? TryFindMinorOrPatch(Sdk currentSdk, IReadOnlyList<Release> releases, bool securityOnly)
+    private Release? TryFindMinorOrPatch(Sdk currentSdk, IReadOnlyList<Release> releases)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch));
 
@@ -74,8 +73,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
                 o.LatestSdkVersion.Major == currentSdk.SemanticVersion.Major);
 
         if (relevantRelease != null &&
-            relevantRelease.LatestSdkVersion > currentSdk.SemanticVersion &&
-            (!securityOnly || relevantRelease.Security))
+            relevantRelease.LatestSdkVersion > currentSdk.SemanticVersion)
         {
             logger.Debug("Found new release {Release}", relevantRelease.LatestSdkVersion.ToString());
             logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindMinorOrPatch), relevantRelease);
@@ -86,7 +84,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         return null;
     }
 
-    private Release? TryFindPatch(Sdk currentSdk, IReadOnlyList<Release> releases, bool securityOnly)
+    private Release? TryFindPatch(Sdk currentSdk, IReadOnlyList<Release> releases)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindPatch));
 
@@ -97,8 +95,7 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
                 o.LatestSdkVersion.Patch >= currentSdk.SemanticVersion.Patch); // in the case of preview releases the patch version might be equal
 
         if (relevantRelease != null &&
-            relevantRelease.LatestSdkVersion > currentSdk.SemanticVersion &&
-            (!securityOnly || relevantRelease.Security))
+            relevantRelease.LatestSdkVersion > currentSdk.SemanticVersion)
         {
             logger.Debug("Found new release {Release}", relevantRelease.LatestSdkVersion.ToString());
             logger.MethodReturn(nameof(ReleaseFinder), nameof(TryFindPatch), relevantRelease);
@@ -109,14 +106,12 @@ internal class ReleaseFinder(ILogger logger) : IReleaseFinder
         return null;
     }
 
-    private Release? TryFindMajor(Sdk currentSdk, IReadOnlyList<Release> releases, bool securityOnly, bool preRelease)
+    private Release? TryFindMajor(Sdk currentSdk, IReadOnlyList<Release> releases, bool preRelease)
     {
         logger.MethodStart(nameof(ReleaseFinder), nameof(TryFindMajor));
 
         // A major bump removes the major-version cap, so newer minor and patch versions are also valid targets.
-        var candidates = releases.Where(o =>
-            o.LatestSdkVersion > currentSdk.SemanticVersion
-            && (!securityOnly || o.Security));
+        var candidates = releases.Where(o => o.LatestSdkVersion > currentSdk.SemanticVersion);
 
         var newRelease = preRelease
             ? candidates.OrderByDescending(o => o.LatestSdkVersion).FirstOrDefault()

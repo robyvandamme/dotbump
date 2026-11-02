@@ -11,6 +11,7 @@ namespace DotBump.Tests.Commands.BumpSdk.Fakes;
 internal class ReleaseFileService : IReleaseService
 {
     private readonly string _filePath = Directory.GetCurrentDirectory() + "/Data/releases-index.json";
+    private readonly string _channelReleasesPath = Directory.GetCurrentDirectory() + "/Data/releases-8.0.json";
 
     public async Task<IEnumerable<Release>> GetReleasesAsync()
     {
@@ -22,5 +23,19 @@ internal class ReleaseFileService : IReleaseService
         }
 
         throw new DotBumpException("ReleaseIndex is empty. Please check the source URL.");
+    }
+
+    public async Task<ChannelReleases> GetChannelReleasesAsync(Uri channelReleasesUri)
+    {
+        ArgumentNullException.ThrowIfNull(channelReleasesUri);
+
+        var json = await File.ReadAllTextAsync(_channelReleasesPath).ConfigureAwait(false);
+        var channelReleases = JsonSerializer.Deserialize<ChannelReleases>(json);
+        if (channelReleases?.Releases != null)
+        {
+            return channelReleases;
+        }
+
+        throw new DotBumpException("Channel releases are empty. Please check the source URL.");
     }
 }

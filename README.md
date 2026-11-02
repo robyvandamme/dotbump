@@ -77,8 +77,9 @@ OPTIONS:
     -o, --output           Output file name. The name of the file to write the
                            result to. The output format is inferred from the
                            file extension: `.json` or `.md`
-    -s, --security-only    Only bump the version if the new release is a
-                           security release. Defaults to false
+    -s, --security-only    Only bump the version if a security release newer
+                           than the current SDK version exists. Defaults to
+                           false
         --prerelease       Include pre-release SDK versions when bumping. Only
                            applies to `major` bumps. Defaults to false
         --debug            Enable debug logging for troubleshooting. Includes

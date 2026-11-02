@@ -20,4 +20,11 @@ internal record Release(string ChannelVersion, string LatestSdk, string SupportP
 
     [JsonPropertyName("security")]
     public bool Security { get; set; } = Security;
+
+    /// <summary>
+    /// Gets the URL of the channel's release history, which lists the security state of every
+    /// individual release in the channel.
+    /// </summary>
+    [JsonPropertyName("releases.json")]
+    public string? ReleasesJson { get; init; }
 }

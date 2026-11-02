@@ -11,4 +11,9 @@ internal sealed class FakeReleaseService(params Release[] releases) : IReleaseSe
     {
         return Task.FromResult<IEnumerable<Release>>(releases);
     }
+
+    public Task<ChannelReleases> GetChannelReleasesAsync(Uri channelReleasesUri)
+    {
+        throw new NotSupportedException("The docker command does not use the channel release history.");
+    }
 }

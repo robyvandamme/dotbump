@@ -22,7 +22,8 @@ internal class BumpSdkSettings : BumpSettings
     [CommandOption("-o|--output")]
     public string? Output { get; init; }
 
-    [Description("Only bump the version if the new release is a security release. Defaults to false.")]
+    [Description(
+        "Only bump the version if a security release newer than the current SDK version exists. Defaults to false.")]
     [CommandOption("-s|--security-only")]
     [DefaultValue(false)]
     public bool SecurityOnly { get; init; }

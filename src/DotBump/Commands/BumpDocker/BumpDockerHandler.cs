@@ -94,7 +94,6 @@ internal class BumpDockerHandler(
             referenceSdk,
             releases,
             bumpType,
-            securityOnly: false,
             preRelease);
 
         if (newRelease == null)
