@@ -86,6 +86,8 @@ internal class BumpDockerHandler(
         DockerfileManifest manifest)
     {
         var referenceEntry = group.OrderByDescending(entry => entry.ParsedVersion).First();
+
+        // ReleaseFinder only needs the parsed SDK version; the roll-forward setting is not used here.
         var referenceSdk = new Sdk(referenceEntry.OriginalTag, string.Empty);
 
         var newRelease = releaseFinder.TryFindNewRelease(
