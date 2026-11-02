@@ -169,6 +169,80 @@ public class DockerfileServiceTests
         }
 
         [Fact]
+        public void With_Comment_Inside_Continuation_Does_Not_Parse_Following_From()
+        {
+            ResetTempDirectory();
+            const string content =
+                "RUN apt-get update \\\n" +
+                "# note about the install\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:8.0.404\n";
+            File.WriteAllText(TempPath("Dockerfile"), content);
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Entries.ShouldBeEmpty(),
+                () => manifest.Warnings.ShouldBeEmpty());
+        }
+
+        [Fact]
+        public void With_Blank_Line_Inside_Continuation_Does_Not_Parse_Following_From()
+        {
+            ResetTempDirectory();
+            const string content =
+                "RUN apt-get update \\\n" +
+                "\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:8.0.404\n";
+            File.WriteAllText(TempPath("Dockerfile"), content);
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Entries.ShouldBeEmpty(),
+                () => manifest.Warnings.ShouldBeEmpty());
+        }
+
+        [Fact]
+        public void With_Comment_Inside_Multi_Line_From_Adds_Warning()
+        {
+            ResetTempDirectory();
+            const string content =
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.101 \\\n" +
+                "# note about the stage\n" +
+                "AS build\n";
+            File.WriteAllText(TempPath("Dockerfile"), content);
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Entries.ShouldBeEmpty(),
+                () => manifest.Warnings.ShouldHaveSingleItem().ShouldContain("multi-line FROM"));
+        }
+
+        [Fact]
+        public void With_Completed_Continuation_Parses_Following_From()
+        {
+            ResetTempDirectory();
+            const string content =
+                "RUN echo \\\n" +
+                "    hello\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.101 AS build\n";
+            File.WriteAllText(TempPath("Dockerfile"), content);
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            var entry = manifest.Entries.ShouldHaveSingleItem();
+            manifest.Warnings.ShouldBeEmpty();
+            entry.ShouldSatisfyAllConditions(
+                () => entry.LineNumber.ShouldBe(3),
+                () => entry.OriginalTag.ShouldBe("10.0.101"));
+        }
+
+        [Fact]
         public void With_Supported_File_Names_Returns_All_Entries()
         {
             ResetTempDirectory();

@@ -139,12 +139,19 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
             var line = text[lineStart..lineEnd].TrimEnd('\r', '\n');
 
             var match = s_fromPattern.Match(line);
-            var isComment = line.TrimStart().StartsWith('#');
-            var continuesOnNextLine = !isComment && line.TrimEnd().EndsWith('\\');
+            var trimmedStart = line.TrimStart();
+            var isSkippable = trimmedStart.Length == 0 || trimmedStart[0] == '#';
+            var continuesOnNextLine = !isSkippable && line.TrimEnd().EndsWith('\\');
 
             if (isContinuation)
             {
-                isContinuation = continuesOnNextLine;
+                // Docker removes comment and empty lines inside a continued instruction before
+                // processing the continuation, so they must not change the continuation state here.
+                if (!isSkippable)
+                {
+                    isContinuation = continuesOnNextLine;
+                }
+
                 continue;
             }
 
