@@ -14,7 +14,7 @@ Overall this is a well-structured, idiomatic addition that follows the establish
 ships with a solid, isolated test suite. The span-based rewriting of Dockerfiles (recorded offsets,
 backwards application, BOM/line-ending preservation) is careful and well covered by tests.
 
-Findings below are ranked. Findings 1–3 have been resolved; the rest are minor.
+Findings below are ranked. Findings 1–4 have been resolved; the rest are minor.
 
 ## Status
 
@@ -23,7 +23,7 @@ Findings below are ranked. Findings 1–3 have been resolved; the rest are minor
 | 1. Cross-major image rewrite | **Fixed** in `49ac565` — targets are now resolved per SDK channel. |
 | 2. Silent multi-line `FROM` skip | **Fixed** in `6edbe99` — the skip is now a manifest warning. |
 | 3. Silent skip on missing file text | **Fixed** in `29d2568` — a manifest warning is added. |
-| 4. Trailing `@` digest edge case | Open |
+| 4. Trailing `@` digest edge case | **Fixed** in `bd7ce92` — any `@` is treated as a digest. |
 | 5. Continuation state and comments | Open |
 | 6. `XmlFileText` naming | Open |
 | 7. Brittle split assertion | Open |
@@ -158,6 +158,10 @@ and a report that claims success for files that were never written.
 
 ### 4. LOW — Digest edge case: `sdk:10.0.101@` passes the digest guard
 
+> **Status: fixed in `bd7ce92`.** Any `@` in the image token is now treated as an unsupported digest,
+> including an empty digest at the end of the token. The reference is skipped with a warning, and a
+> test covers the trailing-`@` case.
+
 ```csharp
 var digestIndex = imageToken.Value.IndexOf('@', StringComparison.Ordinal);
 ...
@@ -173,6 +177,10 @@ Dockerfile syntax), `digestIndex == Value.Length - 1` sidesteps the guard, the t
 input file is broken in either case, but a silent half-fix is worse than a clear warning. Treat any
 presence of `@` as digest-pinned (`digestIndex >= 0`) so all such cases are skipped with the same
 diagnostic.
+
+**Resolution applied in `bd7ce92`:** the guard is now `digestIndex >= 0` and the warning reads
+"image digests are not supported yet". `With_Trailing_At_Sign_Adds_Digest_Warning` covers the invalid
+reference. No other invalid Dockerfile syntax is validated or repaired.
 
 ### 5. LOW — Continuation state is reset by a comment line inside a multi-line instruction
 
