@@ -349,6 +349,27 @@ public class DockerfileServiceTests
         }
 
         [Fact]
+        public void With_Containerfile_Updates_The_Tag()
+        {
+            ResetTempDirectory();
+            const string content =
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build\n" +
+                "RUN dotnet build -c Release\n";
+            var filePath = TempPath("Containerfile");
+            File.WriteAllText(filePath, content);
+            var service = CreateService();
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+            manifest.SetTag(manifest.Entries.ShouldHaveSingleItem(), "10.0.101");
+
+            service.SaveDockerfileManifest(manifest);
+
+            File.ReadAllText(filePath).ShouldBe(content.Replace(
+                "sdk:10.0.100",
+                "sdk:10.0.101",
+                StringComparison.Ordinal));
+        }
+
+        [Fact]
         public void With_Multiple_Occurrences_Updates_All_Of_Them()
         {
             ResetTempDirectory();
