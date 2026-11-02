@@ -349,11 +349,12 @@ Only existing numeric `<LangVersion>` values are considered, and they are bumped
 ```text
 DESCRIPTION:
 Bump the .NET SDK base image tag in Dockerfiles. Only the
-`mcr.microsoft.com/dotnet/sdk` image is supported. Uses the same version
-selection as the `sdk` command. Use the 'minor' type option to bump the image
-to the latest minor or patch version for the current major version. Use the
-'patch' type option to bump the image to the latest patch version for the
-current minor version. Use the 'major' type option to bump the image to the
+`mcr.microsoft.com/dotnet/sdk` image is supported. Each Dockerfile is bumped
+within its own current SDK major (and minor for 'patch'); the 'major' type moves
+every Dockerfile to the latest release. Use the 'minor' type option to bump each
+image to the latest minor or patch version for its current major version. Use
+the 'patch' type option to bump each image to the latest patch version for its
+current minor version. Use the 'major' type option to bump every image to the
 latest version, including versions with a higher major version. Use
 '--prerelease' with the 'major' type to include pre-release versions.
 
