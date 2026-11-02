@@ -14,15 +14,14 @@ Overall this is a well-structured, idiomatic addition that follows the establish
 ships with a solid, isolated test suite. The span-based rewriting of Dockerfiles (recorded offsets,
 backwards application, BOM/line-ending preservation) is careful and well covered by tests.
 
-Findings below are ranked. Finding 1 has been resolved; Finding 2 still deserves attention before merge, and the
-rest are minor.
+Findings below are ranked. Findings 1 and 2 have been resolved; the rest are minor.
 
 ## Status
 
 | Finding | Status |
 | --- | --- |
 | 1. Cross-major image rewrite | **Fixed** in `49ac565` — targets are now resolved per SDK channel. |
-| 2. Silent multi-line `FROM` skip | Open |
+| 2. Silent multi-line `FROM` skip | **Fixed** in `6edbe99` — the skip is now a manifest warning. |
 | 3. Silent skip on missing file text | Open |
 | 4. Trailing `@` digest edge case | Open |
 | 5. Continuation state and comments | Open |
@@ -93,6 +92,10 @@ Tests added in `BumpDockerHandlerTests`:
 
 ### 2. MEDIUM — Multi-line `FROM` skip is silent, contradicting the documented behaviour
 
+> **Status: fixed in `6edbe99`.** The skip now calls `AddWarning`, so it is logged and included in the
+> report's `warnings` array. The README wording was updated to describe multi-line `FROM` skips
+> independently of the SDK-image-specific list, and the test asserts the warning.
+
 In `DockerfileService.ReadFromInstructions`, multi-line `FROM` instructions are skipped with only a
 Debug log:
 
@@ -115,16 +118,10 @@ instructions". The test `With_Multi_Line_From_Instruction_Skips_It` even asserts
 means the Dockerfile quietly keeps an outdated SDK image, a manifest warning (visible in the report)
 is the better behaviour:
 
-```csharp
-if (match.Success)
-{
-    AddWarning(
-        manifest,
-        $"Skipping multi-line FROM instruction in '{relativePath}' (line {lineIndex + 1}) because multi-line instructions are not supported yet.");
-}
-```
-
-…and update the test to assert the warning. Please also reconcile the README wording with the code.
+**Resolution applied in `6edbe99`:** the branch now calls `AddWarning` with the file and line number,
+so the skip is logged and included in the report. The `With_Multi_Line_From_Instruction_Skips_It`
+test now asserts the warning, and the README describes multi-line `FROM` skips as a separate item
+because the warning applies to any image, not only the SDK image.
 
 ### 3. LOW — `SaveDockerfileManifest` can silently skip a changed file while the report claims a bump
 
@@ -257,7 +254,8 @@ Missing coverage to add:
 
 * ~~Mixed-major Dockerfiles (Finding 1).~~ Covered by the per-channel `patch`/`minor`/`major` tests added in
   `49ac565`.
-* Warning-on-skip for multi-line `FROM` if Finding 2 is accepted.
+* ~~Warning-on-skip for multi-line `FROM` (Finding 2).~~ Covered by the updated
+  `With_Multi_Line_From_Instruction_Skips_It` test in `6edbe99`.
 * One `Containerfile`/`Dockerfile.dev` save-path test (the save tests only exercise `Dockerfile`,
 and the discovery test asserts entry counting, not writing).
 
