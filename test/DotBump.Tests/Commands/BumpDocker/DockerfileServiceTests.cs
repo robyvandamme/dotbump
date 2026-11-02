@@ -367,8 +367,10 @@ public class DockerfileServiceTests
 
             service.SaveDockerfileManifest(manifest);
 
-            File.ReadAllText(filePath).ShouldNotContain("10.0.100");
-            File.ReadAllText(filePath).Split("10.0.101").Length.ShouldBe(3);
+            var updated = File.ReadAllText(filePath);
+            updated.ShouldBe(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.101 AS build\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.101 AS publish\n");
         }
 
         [Fact]
