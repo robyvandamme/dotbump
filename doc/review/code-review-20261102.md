@@ -14,13 +14,33 @@ Overall this is a well-structured, idiomatic addition that follows the establish
 ships with a solid, isolated test suite. The span-based rewriting of Dockerfiles (recorded offsets,
 backwards application, BOM/line-ending preservation) is careful and well covered by tests.
 
-Findings below are ranked. Two items deserve attention before merge; the rest are minor.
+Findings below are ranked. Finding 1 has been resolved; Finding 2 still deserves attention before merge, and the
+rest are minor.
+
+## Status
+
+| Finding | Status |
+| --- | --- |
+| 1. Cross-major image rewrite | **Fixed** in `49ac565` — targets are now resolved per SDK channel. |
+| 2. Silent multi-line `FROM` skip | Open |
+| 3. Silent skip on missing file text | Open |
+| 4. Trailing `@` digest edge case | Open |
+| 5. Continuation state and comments | Open |
+| 6. `XmlFileText` naming | Open |
+| 7. Brittle split assertion | Open |
+| 8. Design observations | Informational |
 
 ---
 
 ## Findings
 
 ### 1. HIGH — Cross-major image rewrite under `minor`/`patch` bump types
+
+> **Status: fixed in `49ac565`.** The handler no longer resolves a single repository-wide target. It groups
+> occurrences by SDK channel (`major.minor` for `patch`, `major` for `minor` and `major`), resolves each group from
+> its highest current tag, and applies the result only inside that group. `minor`/`patch` therefore never cross a
+> major, and `major` still moves every image to the latest release. The original recommendation was superseded; see
+> the resolution below.
 
 `BumpDockerHandler.HandleAsync` picks the *highest* `ParsedVersion` across **all** entries in the
 repository as the "current" SDK, resolves a target release for it, and then updates **every** entry
@@ -49,29 +69,27 @@ Note that `ReleaseFinder.TryFindPatch`/`TryFindMinorOrPatch` behave correctly *g
 `currentSdk` they are handed — the issue is which `currentSdk` the handler feeds in and which
 entries it lets the target leak onto.
 
-**Recommendation:** filter the entries that are eligible for the bump based on the resolved target,
-for example:
+**Original recommendation (superseded):** filter the eligible entries by major and warn about entries
+left on another major. That would have prevented the destructive rewrite, but it would still leave
+lower-major images unbumped and would not enforce the minor cap for `patch`.
 
-```csharp
-// Never downgrade; and never jump majors on a minor/patch bump.
-var eligible = bumpType == BumpType.Major
-    ? manifest.Entries.Where(entry => newVersion > entry.ParsedVersion)
-    : manifest.Entries.Where(entry =>
-        newVersion > entry.ParsedVersion
-        && entry.ParsedVersion.Major == newVersion.Major);
+**Resolution applied in `49ac565`:** resolve per SDK channel instead of per repository. The handler
+groups occurrences by `major.minor` for `patch` and by `major` for `minor`/`major`, takes the highest
+tag in each group as the reference, resolves that group with `ReleaseFinder`, and applies the target
+only to entries inside the group. Behaviour:
 
-foreach (var entry in eligible)
-{
-    manifest.SetTag(entry, newTag);
-}
-```
+* `patch` keeps every image on its current `major.minor`.
+* `minor` keeps every image on its current major.
+* `major` removes the cap, so every group converges on the latest release (stable by default, highest
+  available with `--prerelease`).
 
-…and emit a warning for entries below the target that live on another major so the user knows they
-were left on (or, if you prefer the "align everything" behaviour, make it explicit and documented,
-e.g. only as a deliberate consequence of `--type major`).
+Tests added in `BumpDockerHandlerTests`:
 
->Add a test for mixed-pinned Dockerfiles once the behaviour is settled — there is currently no test
->covering this scenario.
+* mixed-major `patch` and `minor` — each major is bumped to its own latest;
+* mixed-major `major` — every image converges on the latest release;
+* mixed-major `major --prerelease` — every image converges on the highest pre-release;
+* mixed patches within one major — all converge on the latest patch;
+* mixed minors with `patch` — each minor stays within itself.
 
 ### 2. MEDIUM — Multi-line `FROM` skip is silent, contradicting the documented behaviour
 
@@ -237,7 +255,8 @@ tag-mapping theory tests. Conventions (nested classes per method, AAA, `ShouldSa
 
 Missing coverage to add:
 
-* Mixed-major Dockerfiles (Finding 1).
+* ~~Mixed-major Dockerfiles (Finding 1).~~ Covered by the per-channel `patch`/`minor`/`major` tests added in
+  `49ac565`.
 * Warning-on-skip for multi-line `FROM` if Finding 2 is accepted.
 * One `Containerfile`/`Dockerfile.dev` save-path test (the save tests only exercise `Dockerfile`,
 and the discovery test asserts entry counting, not writing).
