@@ -170,7 +170,7 @@ public class PackageSourceMappingResolverTests
         }
 
         [Fact]
-        public void With_Unknown_Source_Key_Returns_Warning()
+        public void With_Unknown_Source_Key_Returns_Unknown_Source_Warning()
         {
             // Arrange
             var nugetConfig = CreateConfig(
@@ -180,13 +180,33 @@ public class PackageSourceMappingResolverTests
             var resolver = new PackageSourceMappingResolver();
 
             // Act
-            var result = resolver.Resolve(["ghost.package", "Newtonsoft.Json"], nugetConfig);
+            var result = resolver.Resolve(["Newtonsoft.Json"], nugetConfig);
 
             // Assert
-            result.Matches["ghost.package"].Sources.ShouldBeEmpty();
+            GetSourceKeys(result, "Newtonsoft.Json").ShouldBe(["nuget.org"]);
             result.Warnings.ShouldContain(warning => warning.Contains(
                 "package source 'ghost' does not match any package source",
                 StringComparison.Ordinal));
+            result.Warnings.ShouldNotContain(warning => warning.Contains(
+                "only mapped to undefined package source",
+                StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void With_Package_Mapped_Only_To_Unknown_Source_Returns_Undefined_Source_Warning()
+        {
+            // Arrange
+            var nugetConfig = CreateConfig(
+                [("nuget.org", "https://api.nuget.org/v3/index.json")],
+                ("ghost", ["ghost.package"]),
+                ("nuget.org", ["*"]));
+            var resolver = new PackageSourceMappingResolver();
+
+            // Act
+            var result = resolver.Resolve(["ghost.package"], nugetConfig);
+
+            // Assert
+            result.Matches["ghost.package"].Sources.ShouldBeEmpty();
             result.Warnings.ShouldContain(warning => warning.Contains(
                 "only mapped to undefined package source",
                 StringComparison.Ordinal));
