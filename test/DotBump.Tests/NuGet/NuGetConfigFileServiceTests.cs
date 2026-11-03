@@ -180,7 +180,7 @@ public class NuGetConfigFileServiceTests
         }
 
         [Fact]
-        public void With_Invalid_Xml_Content_Throws_XmlException()
+        public void With_Invalid_Xml_Content_Throws_DotBumpException()
         {
             // Arrange
             var xmlContent = "Just some text";
@@ -191,7 +191,13 @@ public class NuGetConfigFileServiceTests
             try
             {
                 // Act
-                Should.Throw<XmlException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
+                var exception = Should.Throw<DotBumpException>(
+                    () => service.GetNuGetConfiguration(s_defaultNugetConfig));
+
+                // Assert
+                exception.ShouldSatisfyAllConditions(
+                    () => exception.Message.ShouldContain(s_defaultNugetConfig),
+                    () => exception.InnerException.ShouldBeOfType<XmlException>());
             }
             finally
             {

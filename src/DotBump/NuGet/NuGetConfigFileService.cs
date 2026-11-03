@@ -155,8 +155,7 @@ internal class NuGetConfigFileService(ILogger logger) : INuGetConfigFileService
         }
         catch (XmlException exception)
         {
-            logger.Error(exception, "An error occurred trying to load the NuGet config file {FilePath}", filePath);
-            throw;
+            throw new DotBumpException($"Failed to read the NuGet config file at '{filePath}'.", exception);
         }
 
         if (doc.Root == null)
