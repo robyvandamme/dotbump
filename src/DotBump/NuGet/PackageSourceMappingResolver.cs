@@ -42,20 +42,20 @@ internal sealed class PackageSourceMappingResolver : IPackageSourceMappingResolv
             StringComparer.OrdinalIgnoreCase);
 
         var reportedUnknownSourceKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var mapping in nuGetConfiguration.PackageSourceMappings)
+        foreach (var sourceKey in nuGetConfiguration.PackageSourceMappings.Select(mapping => mapping.SourceKey))
         {
-            if (knownSourceKeys.Contains(mapping.SourceKey))
+            if (knownSourceKeys.Contains(sourceKey))
             {
                 continue;
             }
 
-            if (!reportedUnknownSourceKeys.Add(mapping.SourceKey))
+            if (!reportedUnknownSourceKeys.Add(sourceKey))
             {
                 continue;
             }
 
             warnings.Add(
-                $"The packageSourceMapping entry for package source '{mapping.SourceKey}' does not match " +
+                $"The packageSourceMapping entry for package source '{sourceKey}' does not match " +
                 "any package source in packageSources; it is ignored.");
         }
 
