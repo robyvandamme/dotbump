@@ -2,6 +2,7 @@
 
 using DotBump.Commands.BumpSdk;
 using DotBump.Common;
+using DotBump.Tests.TestHelpers;
 using Moq;
 using Serilog;
 using Serilog.Events;
@@ -60,12 +61,13 @@ public class LoggingInterceptorTests
         [Fact]
         public void With_LogFile_Writes_Startup_Diagnostics_To_File()
         {
-            var directory = Path.Combine(Path.GetTempPath(), $"dotbump-logging-{Guid.NewGuid():N}");
-            var logFile = Path.Combine(directory, "app.log");
+            var directory = new LocalDirectory("./temp");
+            var logFile = Path.Combine(directory.AbsolutePath, "app.log");
             var versionInfo = CreateVersionInfo();
             var originalLogger = Log.Logger;
 
-            Directory.CreateDirectory(directory);
+            directory.EnsureDirectoryDeleted();
+            directory.EnsureDirectoryCreated();
 
             try
             {
@@ -77,7 +79,7 @@ public class LoggingInterceptorTests
 
                 Log.CloseAndFlush();
 
-                var writtenFile = Directory.GetFiles(directory, "app*.log").ShouldHaveSingleItem();
+                var writtenFile = Directory.GetFiles(directory.AbsolutePath, "app*.log").ShouldHaveSingleItem();
                 var content = File.ReadAllText(writtenFile);
                 versionInfo.Version.ShouldNotBeNull();
                 content.ShouldContain(versionInfo.Version);
@@ -86,7 +88,7 @@ public class LoggingInterceptorTests
             finally
             {
                 ResetLogger(originalLogger);
-                Directory.Delete(directory, true);
+                directory.EnsureDirectoryDeleted();
             }
         }
 
