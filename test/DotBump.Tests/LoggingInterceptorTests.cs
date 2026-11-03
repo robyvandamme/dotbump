@@ -10,6 +10,10 @@ using Spectre.Console.Cli;
 
 namespace DotBump.Tests;
 
+/// <summary>
+/// Tests for the logging interceptor. These mutate the static <see cref="Log.Logger"/>, which is only safe because
+/// <c>xunit.runner.json</c> disables parallel test collections.
+/// </summary>
 public class LoggingInterceptorTests
 {
     public class Intercept
@@ -21,7 +25,7 @@ public class LoggingInterceptorTests
 
             try
             {
-                var interceptor = CreateInterceptor();
+                var interceptor = CreateInterceptor(CreateVersionInfo());
 
                 interceptor.Intercept(CreateContext("sdk"), new BumpSdkSettings { Debug = true });
 
@@ -40,7 +44,7 @@ public class LoggingInterceptorTests
 
             try
             {
-                var interceptor = CreateInterceptor();
+                var interceptor = CreateInterceptor(CreateVersionInfo());
 
                 interceptor.Intercept(CreateContext("sdk"), new BumpSdkSettings { Debug = false });
 
@@ -58,14 +62,14 @@ public class LoggingInterceptorTests
         {
             var directory = Path.Combine(Path.GetTempPath(), $"dotbump-logging-{Guid.NewGuid():N}");
             var logFile = Path.Combine(directory, "app.log");
-            var versionInfo = new VersionInfo(typeof(LoggingInterceptor).Assembly);
+            var versionInfo = CreateVersionInfo();
             var originalLogger = Log.Logger;
 
             Directory.CreateDirectory(directory);
 
             try
             {
-                var interceptor = new LoggingInterceptor(versionInfo);
+                var interceptor = CreateInterceptor(versionInfo);
 
                 interceptor.Intercept(
                     CreateContext("sdk"),
@@ -86,9 +90,14 @@ public class LoggingInterceptorTests
             }
         }
 
-        private static LoggingInterceptor CreateInterceptor()
+        private static VersionInfo CreateVersionInfo()
         {
-            return new LoggingInterceptor(new VersionInfo(typeof(LoggingInterceptor).Assembly));
+            return new VersionInfo(typeof(LoggingInterceptor).Assembly);
+        }
+
+        private static LoggingInterceptor CreateInterceptor(VersionInfo versionInfo)
+        {
+            return new LoggingInterceptor(versionInfo);
         }
 
         private static CommandContext CreateContext(string commandName)
