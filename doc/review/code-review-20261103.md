@@ -171,6 +171,26 @@ splitting it, or renaming to reflect that both warnings are exercised.
 `With_Unknown_Source_Key_Returns_Unknown_Source_Warning` and
 `With_Package_Mapped_Only_To_Unknown_Source_Returns_Undefined_Source_Warning`.
 
+### 8. [Minor] Missing XML docs on `IPackageSourceMappingResolver` — ✅ Fixed
+`src/DotBump/NuGet/Interfaces/IPackageSourceMappingResolver.cs`
+
+`IPackageSourceMappingResolver` and its `Resolve` method had no summary comments, while the sibling
+`IPackageVersionResolver` is fully documented. The type is internal, so this does not fail the Release build, but it is
+inconsistent with the codebase style.
+
+**Status: fixed in `762d277`.** The interface method now has summary, parameter and return documentation, and the
+implementation inherits it with `<inheritdoc />`.
+
+### 9. [Nit] Long single-line constructor calls in command tests — ✅ Fixed
+`test/DotBump.Tests/Commands/BumpTools/BumpToolsCommandTests.cs:53,81,112,148,205`
+`test/DotBump.Tests/Commands/BumpPackages/BumpPackagesCommandTests.cs:266,305`
+
+Adding the mapping-resolver constructor parameter pushed these calls past 200 characters in some cases. No analyzer
+rule enforces line length, but the formatting was inconsistent with the surrounding code.
+
+**Status: fixed in `081d783`.** The handler and resolver construction calls are split across lines with indentation
+matching the surrounding scope.
+
 ## Verified Non-Issues (checked, no action needed)
 
 - **Early-return ordering** (`mappingResult` computed before the `packageList.Count == 0` check in
@@ -191,5 +211,6 @@ splitting it, or renaming to reflect that both warnings are exercised.
 
 Small, cohesive feature with strong test coverage and careful attention to NuGet-compatible edge semantics. All
 findings are now addressed or explicitly accepted: finding 1 via dependency injection (`f74a948`), the pattern
-reporting and logging nits (`2ffd573`, `24c66b8`), the coverage gaps (`c41874f`), and the test cleanups (`3b9dc74`,
-`c72cb1e`). Finding 3 is accepted as intentional behaviour. The branch is ready to merge.
+reporting and logging nits (`2ffd573`, `24c66b8`), the coverage gaps (`c41874f`), the test cleanups (`3b9dc74`,
+`c72cb1e`), the interface documentation (`762d277`), and the constructor formatting (`081d783`). Finding 3 is accepted
+as intentional behaviour. The branch is ready to merge.
