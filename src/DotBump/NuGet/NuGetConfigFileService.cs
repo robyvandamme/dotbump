@@ -68,7 +68,7 @@ internal class NuGetConfigFileService(ILogger logger) : INuGetConfigFileService
     {
         return sourceElement
             .Elements("package")
-            .Select(element => element.Attribute("pattern")?.Value?.Trim())
+            .Select(element => element.Attribute("pattern")?.Value.Trim())
             .Where(pattern => !string.IsNullOrWhiteSpace(pattern))
             .Select(pattern => pattern!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
