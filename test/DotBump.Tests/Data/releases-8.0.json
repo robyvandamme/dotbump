@@ -1,0 +1,48 @@
+{
+  "channel-version": "8.0",
+  "latest-release": "8.0.30",
+  "latest-release-date": "2026-10-25",
+  "latest-release-security": false,
+  "latest-runtime": "8.0.30",
+  "latest-sdk": "8.0.406",
+  "support-phase": "maintenance",
+  "release-type": "lts",
+  "releases": [
+    {
+      "release-date": "2026-10-25",
+      "release-version": "8.0.30",
+      "security": false,
+      "sdks": [
+        {
+          "version": "8.0.406",
+          "runtime-version": "8.0.30"
+        },
+        {
+          "version": "8.0.125",
+          "runtime-version": "8.0.30"
+        }
+      ]
+    },
+    {
+      "release-date": "2026-10-13",
+      "release-version": "8.0.29",
+      "security": true,
+      "cve-list": [
+        {
+          "cve-id": "CVE-2026-00000",
+          "cve-url": "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-00000"
+        }
+      ],
+      "sdks": [
+        {
+          "version": "8.0.405",
+          "runtime-version": "8.0.29"
+        },
+        {
+          "version": "8.0.124",
+          "runtime-version": "8.0.29"
+        }
+      ]
+    }
+  ]
+}

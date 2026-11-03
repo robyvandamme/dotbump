@@ -51,10 +51,12 @@ internal static class CommandConfiguration
             config.SetApplicationName("dotbump");
             config.SetApplicationVersion(versionInfo.Version ?? "not available");
             config.Settings.Registrar.RegisterInstance(logger);
+            config.Settings.Registrar.RegisterInstance(new HttpClient());
 
             config.Settings.Registrar.Register<ISdkFileService, SdkFileService>();
             config.Settings.Registrar.Register<IReleaseService, ReleaseWebService>();
             config.Settings.Registrar.Register<IReleaseFinder, ReleaseFinder>();
+            config.Settings.Registrar.Register<ISecurityReleaseEvaluator, SecurityReleaseEvaluator>();
             config.Settings.Registrar.Register<IBumpSdkHandler, BumpSdkHandler>();
 
             config.AddCommand<BumpSdkCommand>(name: BumpCommandNames.Sdk)

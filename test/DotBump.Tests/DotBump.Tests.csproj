@@ -68,6 +68,14 @@
     <Content Include="Data\releases-index.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Remove="Data\releases-8.0.json" />
+    <Content Include="Data\releases-8.0.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="Data\releases-10.0.json" />
+    <Content Include="Data\releases-10.0.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Remove="Data\NuGet\DotMarkdown\package-registration.json" />
     <Content Include="Data\NuGet\DotMarkdown\package-registration.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

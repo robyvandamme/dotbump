@@ -34,7 +34,12 @@ public class BumpSdkCommandTests
             var sdkFileService = new SdkFileService(loggerMock);
             var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
             var releaseFinder = new ReleaseFinder(loggerMock);
-            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+            var handler = new BumpSdkHandler(
+                sdkFileService,
+                releaseService,
+                releaseFinder,
+                new SecurityReleaseEvaluator(loggerMock),
+                loggerMock);
 
             var command = new BumpSdkCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "sdk" };
@@ -65,7 +70,12 @@ public class BumpSdkCommandTests
             var sdkFileService = new SdkFileService(loggerMock);
             var releaseService = new ReleaseFileService();
             var releaseFinder = new ReleaseFinder(loggerMock);
-            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+            var handler = new BumpSdkHandler(
+                sdkFileService,
+                releaseService,
+                releaseFinder,
+                new SecurityReleaseEvaluator(loggerMock),
+                loggerMock);
 
             var command = new BumpSdkCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "sdk" };
@@ -96,7 +106,12 @@ public class BumpSdkCommandTests
             var sdkFileService = new SdkFileService(loggerMock);
             var releaseService = new ReleaseFileService();
             var releaseFinder = new ReleaseFinder(loggerMock);
-            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+            var handler = new BumpSdkHandler(
+                sdkFileService,
+                releaseService,
+                releaseFinder,
+                new SecurityReleaseEvaluator(loggerMock),
+                loggerMock);
 
             var command = new BumpSdkCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "sdk" };
@@ -132,7 +147,12 @@ public class BumpSdkCommandTests
             var sdkFileService = new SdkFileService(loggerMock);
             var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
             var releaseFinder = new ReleaseFinder(loggerMock);
-            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+            var handler = new BumpSdkHandler(
+                sdkFileService,
+                releaseService,
+                releaseFinder,
+                new SecurityReleaseEvaluator(loggerMock),
+                loggerMock);
 
             var command = new BumpSdkCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "sdk" };
@@ -161,7 +181,12 @@ public class BumpSdkCommandTests
             var sdkFileService = new SdkFileService(loggerMock);
             var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
             var releaseFinder = new ReleaseFinder(loggerMock);
-            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+            var handler = new BumpSdkHandler(
+                sdkFileService,
+                releaseService,
+                releaseFinder,
+                new SecurityReleaseEvaluator(loggerMock),
+                loggerMock);
 
             var command = new BumpSdkCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "sdk" };
@@ -195,7 +220,12 @@ public class BumpSdkCommandTests
                 var sdkFileService = new SdkFileService(loggerMock);
                 var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
                 var releaseFinder = new ReleaseFinder(loggerMock);
-                var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+                var handler = new BumpSdkHandler(
+                    sdkFileService,
+                    releaseService,
+                    releaseFinder,
+                    new SecurityReleaseEvaluator(loggerMock),
+                    loggerMock);
 
                 var command = new BumpSdkCommand(testConsole, loggerMock, handler);
                 var arguments = new[] { "bump", "sdk" };
@@ -242,7 +272,12 @@ public class BumpSdkCommandTests
                 var sdkFileService = new SdkFileService(loggerMock);
                 var releaseService = new ReleaseFileService(); // has an sdk version 8.0.406
                 var releaseFinder = new ReleaseFinder(loggerMock);
-                var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+                var handler = new BumpSdkHandler(
+                    sdkFileService,
+                    releaseService,
+                    releaseFinder,
+                    new SecurityReleaseEvaluator(loggerMock),
+                    loggerMock);
 
                 var command = new BumpSdkCommand(testConsole, loggerMock, handler);
                 var arguments = new[] { "bump", "sdk" };
@@ -292,7 +327,12 @@ public class BumpSdkCommandTests
             var sdkFileService = new SdkFileService(loggerMock);
             var releaseService = new ReleaseFileService();
             var releaseFinder = new ReleaseFinder(loggerMock);
-            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+            var handler = new BumpSdkHandler(
+                sdkFileService,
+                releaseService,
+                releaseFinder,
+                new SecurityReleaseEvaluator(loggerMock),
+                loggerMock);
 
             var command = new BumpSdkCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "sdk" };
@@ -311,6 +351,44 @@ public class BumpSdkCommandTests
         }
 
         [Fact]
+        public async Task With_SecurityOnly_True_And_Missed_Security_Release_Bumps_To_Latest()
+        {
+            // The current SDK (8.0.400) predates a security release (8.0.405), while the newest
+            // release in the index (8.0.406) is not itself a security release.
+            var json = new GlobalJson(new Sdk("8.0.400", "disable"));
+            var directory = new LocalDirectory("./temp");
+            directory.EnsureFileDeleted("global.json");
+            directory.EnsureFileCreated("global.json", JsonSerializer.Serialize(json));
+
+            var loggerMock = new Mock<ILogger>().Object;
+            using var testConsole = new TestConsole();
+            var sdkFileService = new SdkFileService(loggerMock);
+            var releaseService = new ReleaseFileService();
+            var releaseFinder = new ReleaseFinder(loggerMock);
+            var handler = new BumpSdkHandler(
+                sdkFileService,
+                releaseService,
+                releaseFinder,
+                new SecurityReleaseEvaluator(loggerMock),
+                loggerMock);
+
+            var command = new BumpSdkCommand(testConsole, loggerMock, handler);
+            var arguments = new[] { "bump", "sdk" };
+            var remainingArguments = new Mock<IRemainingArguments>();
+            var context = new CommandContext(arguments, remainingArguments.Object, "sdk", null);
+            var result = await command.ExecuteAsync(
+                context,
+                new BumpSdkSettings { GlobalJsonPath = "./temp/global.json", SecurityOnly = true },
+                CancellationToken.None);
+
+            var globalJson = sdkFileService.GetCurrentSdkVersionFromFile("./temp/global.json");
+            result.ShouldSatisfyAllConditions(
+                () => result.ShouldBe(0),
+                () => globalJson.Version.ShouldBe("8.0.406"),
+                () => testConsole.Output.ShouldContain("sdk: 8.0.400 > 8.0.406"));
+        }
+
+        [Fact]
         public async Task With_SecurityOnly_False_And_Non_Security_Releases_Returns_0()
         {
             // The SDK version in the release index (8.0.406) is not a security update.
@@ -324,7 +402,12 @@ public class BumpSdkCommandTests
             var sdkFileService = new SdkFileService(loggerMock);
             var releaseService = new ReleaseFileService();
             var releaseFinder = new ReleaseFinder(loggerMock);
-            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+            var handler = new BumpSdkHandler(
+                sdkFileService,
+                releaseService,
+                releaseFinder,
+                new SecurityReleaseEvaluator(loggerMock),
+                loggerMock);
 
             var command = new BumpSdkCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "sdk" };
@@ -357,7 +440,12 @@ public class BumpSdkCommandTests
             var sdkFileService = new SdkFileService(loggerMock);
             var releaseService = new ReleaseFileService();
             var releaseFinder = new ReleaseFinder(loggerMock);
-            var handler = new BumpSdkHandler(sdkFileService, releaseService, releaseFinder, loggerMock);
+            var handler = new BumpSdkHandler(
+                sdkFileService,
+                releaseService,
+                releaseFinder,
+                new SecurityReleaseEvaluator(loggerMock),
+                loggerMock);
 
             var command = new BumpSdkCommand(testConsole, loggerMock, handler);
             var arguments = new[] { "bump", "sdk" };

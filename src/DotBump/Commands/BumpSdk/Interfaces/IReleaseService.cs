@@ -7,4 +7,6 @@ namespace DotBump.Commands.BumpSdk.Interfaces;
 internal interface IReleaseService
 {
     Task<IEnumerable<Release>> GetReleasesAsync();
+
+    Task<ChannelReleases> GetChannelReleasesAsync(Uri channelReleasesUri);
 }

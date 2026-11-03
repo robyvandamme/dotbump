@@ -10,6 +10,5 @@ internal interface IReleaseFinder
         Sdk currentSdk,
         IReadOnlyList<Release> releases,
         BumpType bumpType,
-        bool securityOnly,
         bool preRelease);
 }
