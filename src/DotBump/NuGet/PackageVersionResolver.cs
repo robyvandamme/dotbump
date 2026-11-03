@@ -60,7 +60,7 @@ internal class PackageVersionResolver(
                 logger.Debug(
                     "Package {PackageId} is mapped to package source(s) {PackageSources} by pattern {Pattern}",
                     package.PackageId,
-                    match.Sources.Select(o => o.Key),
+                    match.Sources.Select(o => o.Key).ToArray(),
                     match.MatchedPattern);
             }
 
