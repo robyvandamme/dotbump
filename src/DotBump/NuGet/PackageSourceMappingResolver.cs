@@ -2,6 +2,7 @@
 
 using DotBump.NuGet.DataModel.NuGetConfiguration;
 using DotBump.NuGet.DataModel.PackageResolution;
+using DotBump.NuGet.Interfaces;
 
 namespace DotBump.NuGet;
 
@@ -11,7 +12,7 @@ namespace DotBump.NuGet;
 /// by the longest matching prefix pattern, with <c>*</c> having the lowest precedence. All package
 /// sources that declare the winning pattern are returned.
 /// </summary>
-internal sealed class PackageSourceMappingResolver
+internal sealed class PackageSourceMappingResolver : IPackageSourceMappingResolver
 {
     /// <summary>
     /// Resolves the package sources that may be queried for each package identifier.

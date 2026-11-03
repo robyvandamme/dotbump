@@ -263,7 +263,7 @@ public class BumpPackagesCommandTests
                 var handler = new BumpPackagesHandler(
                     new PackageFileService(logger),
                     new NuGetConfigFileService(logger),
-                    new PackageVersionResolver(new NuGetClientFactory(logger), new NuGetReleaseFinder(logger), logger),
+                    new PackageVersionResolver(new PackageSourceMappingResolver(), new NuGetClientFactory(logger), new NuGetReleaseFinder(logger), logger),
                     new NuGetConfigValidator(logger),
                     logger);
                 var command = new BumpPackagesCommand(testConsole, logger, handler);
@@ -302,7 +302,7 @@ public class BumpPackagesCommandTests
                 var handler = new BumpPackagesHandler(
                     new PackageFileService(logger),
                     new NuGetConfigFileService(logger),
-                    new PackageVersionResolver(new NuGetClientFactory(logger), new NuGetReleaseFinder(logger), logger),
+                    new PackageVersionResolver(new PackageSourceMappingResolver(), new NuGetClientFactory(logger), new NuGetReleaseFinder(logger), logger),
                     new NuGetConfigValidator(logger),
                     logger);
                 var command = new BumpPackagesCommand(testConsole, logger, handler);
@@ -382,6 +382,7 @@ public class BumpPackagesCommandTests
 
             var handlerLogger = new Mock<ILogger>().Object;
             var resolver = new PackageVersionResolver(
+                new PackageSourceMappingResolver(),
                 clientFactory.Object,
                 new NuGetReleaseFinder(handlerLogger),
                 handlerLogger);

@@ -333,6 +333,7 @@ public class PackageVersionResolverTests
                 .Setup(f => f.CreateNuGetClient(It.Is<NuGetClientConfig>(config => config.Url == privateUrl)))
                 .Returns(privateClient.Object);
             var resolver = new PackageVersionResolver(
+                new PackageSourceMappingResolver(),
                 clientFactory.Object,
                 new NuGetReleaseFinder(loggerMock),
                 loggerMock);
@@ -367,6 +368,7 @@ public class PackageVersionResolverTests
                 .Setup(f => f.CreateNuGetClient(It.Is<NuGetClientConfig>(config => config.Url == feed2Url)))
                 .Returns(CreateClientMock(["1.2.0"]).Object);
             var resolver = new PackageVersionResolver(
+                new PackageSourceMappingResolver(),
                 clientFactory.Object,
                 new NuGetReleaseFinder(loggerMock),
                 loggerMock);
@@ -389,6 +391,7 @@ public class PackageVersionResolverTests
             var loggerMock = new Mock<ILogger>().Object;
             var clientFactory = new Mock<INuGetClientFactory>(MockBehavior.Strict);
             var resolver = new PackageVersionResolver(
+                new PackageSourceMappingResolver(),
                 clientFactory.Object,
                 new NuGetReleaseFinder(loggerMock),
                 loggerMock);
@@ -414,6 +417,7 @@ public class PackageVersionResolverTests
             var loggerMock = new Mock<ILogger>().Object;
             var clientFactory = new Mock<INuGetClientFactory>(MockBehavior.Strict);
             var resolver = new PackageVersionResolver(
+                new PackageSourceMappingResolver(),
                 clientFactory.Object,
                 new NuGetReleaseFinder(loggerMock),
                 loggerMock);
@@ -439,6 +443,7 @@ public class PackageVersionResolverTests
             var loggerMock = new Mock<ILogger>().Object;
             var clientFactory = new Mock<INuGetClientFactory>(MockBehavior.Strict);
             var resolver = new PackageVersionResolver(
+                new PackageSourceMappingResolver(),
                 clientFactory.Object,
                 new NuGetReleaseFinder(loggerMock),
                 loggerMock);
@@ -511,7 +516,11 @@ public class PackageVersionResolverTests
                 .Returns(CreateClientMock(versions).Object);
         }
 
-        return new PackageVersionResolver(clientFactoryMock.Object, releaseFinder, loggerMock);
+        return new PackageVersionResolver(
+            new PackageSourceMappingResolver(),
+            clientFactoryMock.Object,
+            releaseFinder,
+            loggerMock);
     }
 
     private static Mock<INuGetClient> CreateClientMock(string[] versions)

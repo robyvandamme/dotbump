@@ -11,12 +11,11 @@ using Serilog;
 namespace DotBump.NuGet;
 
 internal class PackageVersionResolver(
+    IPackageSourceMappingResolver packageSourceMappingResolver,
     INuGetClientFactory nuGetClientFactory,
     INuGetReleaseFinder nuGetReleaseFinder,
     ILogger logger) : IPackageVersionResolver
 {
-    private readonly PackageSourceMappingResolver _packageSourceMappingResolver = new();
-
     public async Task<PackageResolutionResult> ResolveAsync(
         IReadOnlyCollection<PackageToBump> packages,
         BumpType bumpType,
@@ -32,7 +31,7 @@ internal class PackageVersionResolver(
         var bestVersions = new Dictionary<PackageToBump, SemanticVersion>();
         var packageList = packages.ToList();
 
-        var mappingResult = _packageSourceMappingResolver.Resolve(
+        var mappingResult = packageSourceMappingResolver.Resolve(
             packageList.Select(o => o.PackageId).ToList(),
             nuGetConfiguration);
 
