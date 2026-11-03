@@ -26,6 +26,18 @@ the lowercased package id (`{id-lower}`); a mixed-case id that is not lowercased
 If `Newtonsoft.Json 12.0.3` ever becomes unlisted or a newer `12.x` is published, update the expectation here and in
 the test together rather than removing the test.
 
+## Package Source Mapping Tests
+
+`PackageSourceMappingResolverTests` covers the matching rules: no mapping returns all sources, exact patterns beat
+prefix patterns, the longest prefix wins, multiple sources with the same winning pattern are all returned, and
+unmapped packages or unknown source keys produce warnings.
+
+`PackageVersionResolverTests` covers the integration: only mapped sources are queried (unused sources are not even
+created), unmapped packages produce no version and a warning, and unknown mapping source keys produce a warning even
+when there are no packages to resolve. `NuGetConfigFileServiceTests` covers parsing the `packageSourceMapping`
+section, including `<clear/>`, missing keys, and empty pattern lists. Handler tests verify that resolver warnings are
+added to the JSON and markdown report.
+
 ## Release Finder Tests
 
 For the different NuGet test cases I have added example json result files to be able to easily test the logic to 

@@ -180,7 +180,7 @@ public class NuGetConfigFileServiceTests
         }
 
         [Fact]
-        public void With_Invalid_Xml_Content_Throws_XmlException()
+        public void With_Invalid_Xml_Content_Throws_DotBumpException()
         {
             // Arrange
             var xmlContent = "Just some text";
@@ -191,7 +191,13 @@ public class NuGetConfigFileServiceTests
             try
             {
                 // Act
-                Should.Throw<XmlException>(() => service.GetNuGetConfiguration(s_defaultNugetConfig));
+                var exception = Should.Throw<DotBumpException>(
+                    () => service.GetNuGetConfiguration(s_defaultNugetConfig));
+
+                // Assert
+                exception.ShouldSatisfyAllConditions(
+                    () => exception.Message.ShouldContain(s_defaultNugetConfig),
+                    () => exception.InnerException.ShouldBeOfType<XmlException>());
             }
             finally
             {
@@ -366,6 +372,217 @@ public class NuGetConfigFileServiceTests
                     () => rendered.ShouldNotContain("mypassword"),
                     () => rendered.ShouldNotContain("myuser"),
                     () => rendered.ShouldContain("***"));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void With_No_Package_Source_Mapping_Returns_Empty_Mappings()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" protocolVersion=""3"" />
+                    </packageSources>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.PackageSourceMappings.ShouldBeEmpty();
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void With_Package_Source_Mapping_Returns_Mappings()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" protocolVersion=""3"" />
+                        <add key=""robyvandamme"" value=""https://nuget.pkg.github.com/robyvandamme/index.json"" protocolVersion=""3"" />
+                    </packageSources>
+                    <packageSourceMapping>
+                        <packageSource key=""nuget.org"">
+                            <package pattern=""*"" />
+                        </packageSource>
+                        <packageSource key=""robyvandamme"">
+                            <package pattern=""dotbump"" />
+                            <package pattern=""dotadr"" />
+                        </packageSource>
+                    </packageSourceMapping>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.PackageSourceMappings.Count.ShouldBe(2);
+                result.PackageSourceMappings[0].ShouldSatisfyAllConditions(
+                    () => result.PackageSourceMappings[0].SourceKey.ShouldBe("nuget.org"),
+                    () => result.PackageSourceMappings[0].Patterns.ShouldBe(["*"]));
+                result.PackageSourceMappings[1].ShouldSatisfyAllConditions(
+                    () => result.PackageSourceMappings[1].SourceKey.ShouldBe("robyvandamme"),
+                    () => result.PackageSourceMappings[1].Patterns.ShouldBe(["dotbump", "dotadr"]));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void With_Duplicate_Package_Source_Mapping_Keys_Merges_Patterns()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" protocolVersion=""3"" />
+                    </packageSources>
+                    <packageSourceMapping>
+                        <packageSource key=""nuget.org"">
+                            <package pattern=""*"" />
+                        </packageSource>
+                        <packageSource key=""nuget.org"">
+                            <package pattern=""dotbump"" />
+                        </packageSource>
+                    </packageSourceMapping>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.PackageSourceMappings.ShouldHaveSingleItem();
+                result.PackageSourceMappings[0].ShouldSatisfyAllConditions(
+                    () => result.PackageSourceMappings[0].SourceKey.ShouldBe("nuget.org"),
+                    () => result.PackageSourceMappings[0].Patterns.ShouldBe(["*", "dotbump"]));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void With_Package_Source_Mapping_Clear_Is_Ignored()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" protocolVersion=""3"" />
+                    </packageSources>
+                    <packageSourceMapping>
+                        <clear />
+                        <packageSource key=""nuget.org"">
+                            <package pattern=""*"" />
+                        </packageSource>
+                    </packageSourceMapping>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.PackageSourceMappings.ShouldHaveSingleItem();
+                result.PackageSourceMappings[0].SourceKey.ShouldBe("nuget.org");
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void With_Package_Source_Mapping_Entry_Without_Patterns_Returns_Empty_Patterns()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" protocolVersion=""3"" />
+                    </packageSources>
+                    <packageSourceMapping>
+                        <packageSource key=""nuget.org"" />
+                    </packageSourceMapping>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.PackageSourceMappings.ShouldHaveSingleItem();
+                result.PackageSourceMappings[0].Patterns.ShouldBeEmpty();
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void With_Package_Source_Mapping_Entry_Without_Key_Is_Ignored()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" protocolVersion=""3"" />
+                    </packageSources>
+                    <packageSourceMapping>
+                        <packageSource>
+                            <package pattern=""*"" />
+                        </packageSource>
+                    </packageSourceMapping>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.PackageSourceMappings.ShouldBeEmpty();
             }
             finally
             {

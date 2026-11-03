@@ -505,6 +505,41 @@ Example:
 </configuration>
 ```
 
+### Package source mapping
+
+The `tools` and `packages` commands honour the [`packageSourceMapping`](https://learn.microsoft.com/en-us/nuget/consume-packages/package-source-mapping)
+section of the nuget.config file. When the section is present, only the package sources mapped to a package or tool id
+are queried. This avoids unnecessary calls to private feeds and matches the sources `dotnet restore` would use.
+
+```xml
+<packageSourceMapping>
+  <clear />
+  <packageSource key="nuget.org">
+    <package pattern="*" />
+  </packageSource>
+  <packageSource key="robyvandamme">
+    <package pattern="dotbump" />
+    <package pattern="dotadr" />
+  </packageSource>
+</packageSourceMapping>
+```
+
+Matching rules:
+
+* Package ids and patterns are matched case-insensitively.
+* An exact package id pattern has the highest precedence, then the longest prefix pattern (for example
+  `Microsoft.Extensions.*` before `Microsoft.*`), and `*` has the lowest precedence.
+* When several sources declare the winning pattern, all of them are queried and the highest eligible version wins.
+* Sources that are not mapped to any package are not queried at all.
+
+If a mapping is configured but a package or tool id does not match any pattern, it is skipped and a warning is added
+to the report. Mapping entries that reference a source key that is not declared in `packageSources` are ignored and
+also reported as warnings. If the nuget.config file has no `packageSourceMapping` section, all configured sources are
+queried as before.
+
+Only the nuget.config file passed via `--config` (by default `./nuget.config`) is read. Mappings from parent, user or
+machine-wide configuration files are not merged.
+
 ### Logging
 
 All commands accept `--debug` and `--logfile`.

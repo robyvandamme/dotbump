@@ -82,6 +82,7 @@ internal static class CommandConfiguration
             config.Settings.Registrar.Register<IToolManifestLocator, ToolManifestLocator>();
             config.Settings.Registrar.Register<INuGetConfigFileService, NuGetConfigFileService>();
             config.Settings.Registrar.Register<INuGetReleaseFinder, NuGetReleaseFinder>();
+            config.Settings.Registrar.Register<IPackageSourceMappingResolver, PackageSourceMappingResolver>();
             config.Settings.Registrar.Register<IBumpToolsHandler, BumpToolsHandler>();
             config.Settings.Registrar.Register<INuGetClientFactory, NuGetClientFactory>();
             config.Settings.Registrar.Register<INuGetConfigValidator, NuGetConfigValidator>();

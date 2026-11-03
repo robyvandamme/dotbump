@@ -44,9 +44,110 @@ internal class NuGetConfigFileService(ILogger logger) : INuGetConfigFileService
         return config;
     }
 
+    private static void ParsePackageSources(XElement root, NuGetConfig config)
+    {
+        var sourceElements = root.Element("packageSources")?.Elements("add");
+        if (sourceElements == null)
+        {
+            return;
+        }
+
+        foreach (var element in sourceElements)
+        {
+            config.PackageSources.Add(
+                new PackageSource
+                {
+                    Key = element.Attribute("key")?.Value ?? string.Empty,
+                    Value = element.Attribute("value")?.Value ?? string.Empty,
+                    ProtocolVersion = element.Attribute("protocolVersion")?.Value ?? string.Empty,
+                });
+        }
+    }
+
+    private static List<string> ParsePackagePatterns(XElement sourceElement)
+    {
+        return sourceElement
+            .Elements("package")
+            .Select(element => element.Attribute("pattern")?.Value.Trim())
+            .OfType<string>()
+            .Where(pattern => !string.IsNullOrWhiteSpace(pattern))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static void AddOrMergePackageSourceMapping(
+        NuGetConfig config,
+        string sourceKey,
+        List<string> patterns)
+    {
+        var existingMapping = config.PackageSourceMappings.FirstOrDefault(o => o.SourceKey.Equals(
+            sourceKey,
+            StringComparison.OrdinalIgnoreCase));
+        if (existingMapping == null)
+        {
+            config.PackageSourceMappings.Add(
+                new PackageSourceMappingEntry
+                {
+                    SourceKey = sourceKey,
+                    Patterns = patterns,
+                });
+            return;
+        }
+
+        existingMapping.Patterns.AddRange(
+            patterns.Where(pattern => !existingMapping.Patterns.Contains(
+                pattern,
+                StringComparer.OrdinalIgnoreCase)));
+    }
+
+    private static void ParseCredentials(XElement root, NuGetConfig config)
+    {
+        var credentialsElement = root.Element("packageSourceCredentials");
+        if (credentialsElement == null)
+        {
+            return;
+        }
+
+        foreach (var sourceCredElement in credentialsElement.Elements())
+        {
+            ParseCredentialsForSource(sourceCredElement, config);
+        }
+    }
+
+    private static void ParseCredentialsForSource(XElement sourceCredElement, NuGetConfig config)
+    {
+        // The element name itself is the source name (like "myorg")
+        var sourceName = sourceCredElement.Name.LocalName;
+        var sourceCred = new SourceCredential { SourceName = sourceName };
+
+        foreach (var addElement in sourceCredElement.Elements("add"))
+        {
+            sourceCred.Credentials.Add(
+                new Credential
+                {
+                    Key = addElement.Attribute("key")?.Value ?? string.Empty,
+                    Value = addElement.Attribute("value")?.Value ?? string.Empty,
+                });
+        }
+
+        config.Credentials[sourceName] = sourceCred;
+    }
+
     private NuGetConfig ReadFromConfigFile(string filePath)
     {
+        var root = LoadConfigRoot(filePath);
         var config = new NuGetConfig();
+
+        ParsePackageSources(root, config);
+        ThrowIfNoPackageSources(root, config, filePath);
+        ParsePackageSourceMappings(root, config, filePath);
+        ParseCredentials(root, config);
+
+        return config;
+    }
+
+    private XElement LoadConfigRoot(string filePath)
+    {
         XDocument doc;
         try
         {
@@ -54,8 +155,7 @@ internal class NuGetConfigFileService(ILogger logger) : INuGetConfigFileService
         }
         catch (XmlException exception)
         {
-            logger.Error(exception, "An error occurred trying to load the NuGet config file {FilePath}", filePath);
-            throw;
+            throw new DotBumpException($"Failed to read the NuGet config file at '{filePath}'.", exception);
         }
 
         if (doc.Root == null)
@@ -64,63 +164,51 @@ internal class NuGetConfigFileService(ILogger logger) : INuGetConfigFileService
             throw new DotBumpException($"Unable to read the nuget config file at {filePath}.");
         }
 
-        // Parse package sources
-        var sourceElements = doc.Root.Element("packageSources")?.Elements("add");
-        if (sourceElements != null)
+        return doc.Root;
+    }
+
+    private void ThrowIfNoPackageSources(XElement root, NuGetConfig config, string filePath)
+    {
+        if (config.PackageSources.Count > 0)
         {
-            foreach (var element in sourceElements)
+            return;
+        }
+
+        // No package sources found...
+        var credentialSectionNames = root.Element("packageSourceCredentials")?
+            .Elements()
+            .Select(element => element.Name.LocalName)
+            .ToList() ?? [];
+        var credentialSections = credentialSectionNames.Count > 0
+            ? string.Join(", ", credentialSectionNames)
+            : "none";
+        logger.Error(
+            "No package sources were found in the NuGet config {FilePath} (credential sections: {CredentialSections})",
+            filePath,
+            credentialSections);
+        throw new DotBumpException($"No package sources were found in the NuGet config  {filePath}");
+    }
+
+    private void ParsePackageSourceMappings(XElement root, NuGetConfig config, string filePath)
+    {
+        var mappingElement = root.Element("packageSourceMapping");
+        if (mappingElement == null)
+        {
+            return;
+        }
+
+        foreach (var sourceElement in mappingElement.Elements("packageSource"))
+        {
+            var sourceKey = sourceElement.Attribute("key")?.Value?.Trim();
+            if (string.IsNullOrWhiteSpace(sourceKey))
             {
-                config.PackageSources.Add(
-                    new PackageSource
-                    {
-                        Key = element.Attribute("key")?.Value ?? string.Empty,
-                        Value = element.Attribute("value")?.Value ?? string.Empty,
-                        ProtocolVersion = element.Attribute("protocolVersion")?.Value ?? string.Empty,
-                    });
+                logger.Warning(
+                    "A packageSource element in the packageSourceMapping section of {FilePath} is missing a key and will be ignored",
+                    filePath);
+                continue;
             }
+
+            AddOrMergePackageSourceMapping(config, sourceKey, ParsePackagePatterns(sourceElement));
         }
-
-        if (config.PackageSources.Count == 0)
-        {
-            // No package sources found...
-            var credentialSectionNames = doc.Root.Element("packageSourceCredentials")?
-                .Elements()
-                .Select(element => element.Name.LocalName)
-                .ToList() ?? [];
-            var credentialSections = credentialSectionNames.Count > 0
-                ? string.Join(", ", credentialSectionNames)
-                : "none";
-            logger.Error(
-                "No package sources were found in the NuGet config {FilePath} (credential sections: {CredentialSections})",
-                filePath,
-                credentialSections);
-            throw new DotBumpException($"No package sources were found in the NuGet config  {filePath}");
-        }
-
-        // Parse credentials
-        var credentialsElement = doc.Root.Element("packageSourceCredentials");
-        if (credentialsElement != null)
-        {
-            foreach (var sourceCredElement in credentialsElement.Elements())
-            {
-                // The element name itself is the source name (like "myorg")
-                var sourceName = sourceCredElement.Name.LocalName;
-                var sourceCred = new SourceCredential { SourceName = sourceName };
-
-                foreach (var addElement in sourceCredElement.Elements("add"))
-                {
-                    sourceCred.Credentials.Add(
-                        new Credential
-                        {
-                            Key = addElement.Attribute("key")?.Value ?? string.Empty,
-                            Value = addElement.Attribute("value")?.Value ?? string.Empty,
-                        });
-                }
-
-                config.Credentials[sourceName] = sourceCred;
-            }
-        }
-
-        return config;
     }
 }

@@ -11,11 +11,12 @@ using Serilog;
 namespace DotBump.NuGet;
 
 internal class PackageVersionResolver(
+    IPackageSourceMappingResolver packageSourceMappingResolver,
     INuGetClientFactory nuGetClientFactory,
     INuGetReleaseFinder nuGetReleaseFinder,
     ILogger logger) : IPackageVersionResolver
 {
-    public async Task<IReadOnlyDictionary<PackageToBump, SemanticVersion>> ResolveAsync(
+    public async Task<PackageResolutionResult> ResolveAsync(
         IReadOnlyCollection<PackageToBump> packages,
         BumpType bumpType,
         NuGetConfig nuGetConfiguration,
@@ -26,47 +27,43 @@ internal class PackageVersionResolver(
         ArgumentNullException.ThrowIfNull(packages);
         ArgumentNullException.ThrowIfNull(nuGetConfiguration);
 
-        var usePreRelease = preRelease && bumpType == BumpType.Major;
-        var bestVersions = new Dictionary<PackageToBump, SemanticVersion>();
+        var packageList = packages.ToList();
+        var mappingResult = packageSourceMappingResolver.Resolve(
+            packageList.Select(o => o.PackageId).ToList(),
+            nuGetConfiguration);
 
-        if (packages.Count == 0 || nuGetConfiguration.PackageSources.Count == 0)
+        LogMappingWarnings(mappingResult.Warnings);
+
+        var bestVersions = new Dictionary<PackageToBump, SemanticVersion>();
+        if (packageList.Count == 0 || nuGetConfiguration.PackageSources.Count == 0)
         {
-            logger.MethodReturn(nameof(PackageVersionResolver), nameof(ResolveAsync), bestVersions);
-            return bestVersions;
+            return CompleteResolution(bestVersions, mappingResult.Warnings);
         }
 
-        var packageList = packages.ToList();
+        var usePreRelease = preRelease && bumpType == BumpType.Major;
+        var packagesBySource = BuildPackagesBySource(packageList, mappingResult);
 
         foreach (var nugetPackageSource in nuGetConfiguration.PackageSources)
         {
-            var clientConfig = new NuGetClientConfig(nugetPackageSource.Key, nuGetConfiguration, logger);
-
-            using var nuGetClient = nuGetClientFactory.CreateNuGetClient(clientConfig);
-            var index = await nuGetClient.GetServiceIndexAsync(clientConfig.Url).ConfigureAwait(false);
-            var baseUrl = nuGetReleaseFinder.GetRegistrationsBaseUrl(index);
-
-            foreach (var package in packageList)
+            if (!packagesBySource.TryGetValue(nugetPackageSource.Key, out var packagesForSource))
             {
-                bestVersions.TryGetValue(package, out var currentBest);
-
-                var candidateVersion = await ResolvePackageVersionAsync(
-                        nuGetClient,
-                        baseUrl,
-                        package,
-                        bumpType,
-                        usePreRelease)
-                    .ConfigureAwait(false);
-
-                if (candidateVersion != null && IsBetterCandidate(candidateVersion, currentBest, usePreRelease))
-                {
-                    bestVersions[package] = candidateVersion;
-                }
+                logger.Debug(
+                    "Skipping package source {PackageSource} because no package is mapped to it",
+                    nugetPackageSource.Key);
+                continue;
             }
+
+            await ResolveFromSourceAsync(
+                    nugetPackageSource,
+                    packagesForSource,
+                    nuGetConfiguration,
+                    bestVersions,
+                    bumpType,
+                    usePreRelease)
+                .ConfigureAwait(false);
         }
 
-        logger.MethodReturn(nameof(PackageVersionResolver), nameof(ResolveAsync), bestVersions);
-
-        return bestVersions;
+        return CompleteResolution(bestVersions, mappingResult.Warnings);
     }
 
     private static bool IsBetterCandidate(SemanticVersion candidate, SemanticVersion? currentBest, bool preRelease)
@@ -92,6 +89,126 @@ internal class PackageVersionResolver(
         }
 
         return candidate > currentBest;
+    }
+
+    private static void AddPackageToSource(
+        Dictionary<string, List<PackageToBump>> packagesBySource,
+        string sourceKey,
+        PackageToBump package)
+    {
+        if (!packagesBySource.TryGetValue(sourceKey, out var packagesForSource))
+        {
+            packagesForSource = [];
+            packagesBySource[sourceKey] = packagesForSource;
+        }
+
+        packagesForSource.Add(package);
+    }
+
+    private void LogMappingWarnings(IReadOnlyList<string> warnings)
+    {
+        foreach (var warning in warnings)
+        {
+            logger.Warning("{Warning}", warning);
+        }
+    }
+
+    private void LogMappingMatch(PackageToBump package, PackageSourceMappingMatch match)
+    {
+        if (match.MatchedPattern == null)
+        {
+            return;
+        }
+
+        logger.Debug(
+            "Package {PackageId} is mapped to package source(s) {PackageSources} by pattern {Pattern}",
+            package.PackageId,
+            match.Sources.Select(o => o.Key).ToArray(),
+            match.MatchedPattern);
+    }
+
+    private Dictionary<string, List<PackageToBump>> BuildPackagesBySource(
+        IReadOnlyList<PackageToBump> packageList,
+        PackageSourceMappingResult mappingResult)
+    {
+        var packagesBySource = new Dictionary<string, List<PackageToBump>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var package in packageList)
+        {
+            if (!mappingResult.Matches.TryGetValue(package.PackageId, out var match) || match.Sources.Count == 0)
+            {
+                continue;
+            }
+
+            LogMappingMatch(package, match);
+
+            foreach (var matchSource in match.Sources)
+            {
+                AddPackageToSource(packagesBySource, matchSource.Key, package);
+            }
+        }
+
+        return packagesBySource;
+    }
+
+    private async Task ResolveFromSourceAsync(
+        PackageSource nugetPackageSource,
+        IReadOnlyList<PackageToBump> packagesForSource,
+        NuGetConfig nuGetConfiguration,
+        Dictionary<PackageToBump, SemanticVersion> bestVersions,
+        BumpType bumpType,
+        bool usePreRelease)
+    {
+        var clientConfig = new NuGetClientConfig(nugetPackageSource.Key, nuGetConfiguration, logger);
+
+        using var nuGetClient = nuGetClientFactory.CreateNuGetClient(clientConfig);
+        var index = await nuGetClient.GetServiceIndexAsync(clientConfig.Url).ConfigureAwait(false);
+        var baseUrl = nuGetReleaseFinder.GetRegistrationsBaseUrl(index);
+
+        foreach (var package in packagesForSource)
+        {
+            await ResolvePackageFromSourceAsync(
+                    nuGetClient,
+                    baseUrl,
+                    package,
+                    bestVersions,
+                    bumpType,
+                    usePreRelease)
+                .ConfigureAwait(false);
+        }
+    }
+
+    private async Task ResolvePackageFromSourceAsync(
+        INuGetClient nuGetClient,
+        string baseUrl,
+        PackageToBump package,
+        Dictionary<PackageToBump, SemanticVersion> bestVersions,
+        BumpType bumpType,
+        bool usePreRelease)
+    {
+        bestVersions.TryGetValue(package, out var currentBest);
+
+        var candidateVersion = await ResolvePackageVersionAsync(
+                nuGetClient,
+                baseUrl,
+                package,
+                bumpType,
+                usePreRelease)
+            .ConfigureAwait(false);
+
+        if (candidateVersion != null && IsBetterCandidate(candidateVersion, currentBest, usePreRelease))
+        {
+            bestVersions[package] = candidateVersion;
+        }
+    }
+
+    private PackageResolutionResult CompleteResolution(
+        IReadOnlyDictionary<PackageToBump, SemanticVersion> versions,
+        IReadOnlyList<string> warnings)
+    {
+        var result = new PackageResolutionResult(versions, warnings);
+        logger.MethodReturn(nameof(PackageVersionResolver), nameof(ResolveAsync), result);
+        return result;
     }
 
     /// <summary>
