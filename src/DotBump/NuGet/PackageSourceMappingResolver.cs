@@ -88,71 +88,97 @@ internal sealed class PackageSourceMappingResolver : IPackageSourceMappingResolv
         string packageId,
         IReadOnlyList<PackageSourceMappingEntry> mappings)
     {
+        return FindExactMatch(packageId, mappings) ?? FindPrefixMatch(packageId, mappings);
+    }
+
+    private static WinningPattern? FindExactMatch(
+        string packageId,
+        IReadOnlyList<PackageSourceMappingEntry> mappings)
+    {
         string? exactPattern = null;
-        var exactSourceKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var sourceKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var mapping in mappings)
         {
             foreach (var pattern in mapping.Patterns)
             {
-                if (pattern.Contains('*') || !pattern.Equals(packageId, StringComparison.OrdinalIgnoreCase))
+                if (!IsExactMatch(packageId, pattern))
                 {
                     continue;
                 }
 
                 exactPattern ??= pattern;
-                exactSourceKeys.Add(mapping.SourceKey);
+                sourceKeys.Add(mapping.SourceKey);
             }
         }
 
-        if (exactSourceKeys.Count > 0)
-        {
-            return new WinningPattern(exactPattern!, exactSourceKeys);
-        }
+        return sourceKeys.Count > 0
+            ? new WinningPattern(exactPattern!, sourceKeys)
+            : null;
+    }
 
-        var winningPattern = (string?)null;
-        var winningPrefixLength = -1;
-        var prefixSourceKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private static bool IsExactMatch(string packageId, string pattern)
+    {
+        return !pattern.Contains('*')
+            && pattern.Equals(packageId, StringComparison.OrdinalIgnoreCase);
+    }
 
-        foreach (var mapping in mappings)
-        {
-            foreach (var pattern in mapping.Patterns)
-            {
-                var wildcardIndex = pattern.IndexOf('*');
-                if (wildcardIndex < 0)
-                {
-                    continue;
-                }
-
-                // NuGet treats a '*' as the end of the prefix pattern, even when other characters
-                // follow it, so only the part before the first '*' participates in the match.
-                var prefix = pattern[..wildcardIndex];
-                if (!packageId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                if (prefix.Length > winningPrefixLength)
-                {
-                    winningPrefixLength = prefix.Length;
-                    winningPattern = prefix + "*";
-                    prefixSourceKeys.Clear();
-                }
-
-                if (prefix.Length == winningPrefixLength)
-                {
-                    prefixSourceKeys.Add(mapping.SourceKey);
-                }
-            }
-        }
-
-        if (winningPattern == null)
+    private static WinningPattern? FindPrefixMatch(
+        string packageId,
+        IReadOnlyList<PackageSourceMappingEntry> mappings)
+    {
+        var candidates = GetPrefixCandidates(packageId, mappings).ToList();
+        if (candidates.Count == 0)
         {
             return null;
         }
 
-        return new WinningPattern(winningPattern, prefixSourceKeys);
+        var longestPrefixLength = candidates.Max(o => o.Prefix.Length);
+        var sourceKeys = new HashSet<string>(
+            candidates
+                .Where(o => o.Prefix.Length == longestPrefixLength)
+                .Select(o => o.SourceKey),
+            StringComparer.OrdinalIgnoreCase);
+
+        var winningPattern = candidates
+            .First(o => o.Prefix.Length == longestPrefixLength)
+            .Prefix + "*";
+
+        return new WinningPattern(winningPattern, sourceKeys);
     }
+
+    private static IEnumerable<PrefixCandidate> GetPrefixCandidates(
+        string packageId,
+        IReadOnlyList<PackageSourceMappingEntry> mappings)
+    {
+        foreach (var mapping in mappings)
+        {
+            foreach (var pattern in mapping.Patterns)
+            {
+                var prefix = GetMatchingPrefix(packageId, pattern);
+                if (prefix != null)
+                {
+                    yield return new PrefixCandidate(prefix, mapping.SourceKey);
+                }
+            }
+        }
+    }
+
+    private static string? GetMatchingPrefix(string packageId, string pattern)
+    {
+        var wildcardIndex = pattern.IndexOf('*');
+        if (wildcardIndex < 0)
+        {
+            return null;
+        }
+
+        // NuGet treats a '*' as the end of the prefix pattern, even when other characters
+        // follow it, so only the part before the first '*' participates in the match.
+        var prefix = pattern[..wildcardIndex];
+        return packageId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ? prefix : null;
+    }
+
+    private sealed record PrefixCandidate(string Prefix, string SourceKey);
 
     private sealed record WinningPattern(string Pattern, HashSet<string> SourceKeys);
 }
