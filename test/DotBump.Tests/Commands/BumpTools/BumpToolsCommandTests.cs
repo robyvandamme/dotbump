@@ -50,7 +50,16 @@ public class BumpToolsCommandTests
             var clientFactory = new NuGetClientFactory(loggerMock);
             var releaseService = new NuGetReleaseFinder(loggerMock);
             var validator = new NuGetConfigValidator(loggerMock);
-            var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(new PackageSourceMappingResolver(), clientFactory, releaseService, loggerMock), validator, loggerMock);
+            var handler = new BumpToolsHandler(
+                fileService,
+                nugetConfigFileService,
+                new PackageVersionResolver(
+                    new PackageSourceMappingResolver(),
+                    clientFactory,
+                    releaseService,
+                    loggerMock),
+                validator,
+                loggerMock);
 
             var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
             var arguments = new[] { "bump", "tools" };
@@ -78,7 +87,16 @@ public class BumpToolsCommandTests
             var clientFactory = new NuGetClientFactory(loggerMock);
             var releaseService = new NuGetReleaseFinder(loggerMock);
             var validator = new NuGetConfigValidator(loggerMock);
-            var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(new PackageSourceMappingResolver(), clientFactory, releaseService, loggerMock), validator, loggerMock);
+            var handler = new BumpToolsHandler(
+                fileService,
+                nugetConfigFileService,
+                new PackageVersionResolver(
+                    new PackageSourceMappingResolver(),
+                    clientFactory,
+                    releaseService,
+                    loggerMock),
+                validator,
+                loggerMock);
 
             var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
             var arguments = new[] { "bump", "tools" };
@@ -109,7 +127,16 @@ public class BumpToolsCommandTests
             var clientFactory = new NuGetClientFactory(loggerMock);
             var releaseService = new NuGetReleaseFinder(loggerMock);
             var validator = new NuGetConfigValidator(loggerMock);
-            var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(new PackageSourceMappingResolver(), clientFactory, releaseService, loggerMock), validator, loggerMock);
+            var handler = new BumpToolsHandler(
+                fileService,
+                nugetConfigFileService,
+                new PackageVersionResolver(
+                    new PackageSourceMappingResolver(),
+                    clientFactory,
+                    releaseService,
+                    loggerMock),
+                validator,
+                loggerMock);
 
             var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
             var arguments = new[] { "bump", "tools" };
@@ -145,7 +172,16 @@ public class BumpToolsCommandTests
                 var clientFactory = new NuGetClientFactory(loggerMock);
                 var releaseService = new NuGetReleaseFinder(loggerMock);
                 var validator = new NuGetConfigValidator(loggerMock);
-                var handler = new BumpToolsHandler(fileService, nugetConfigFileService, new PackageVersionResolver(new PackageSourceMappingResolver(), clientFactory, releaseService, loggerMock), validator, loggerMock);
+                var handler = new BumpToolsHandler(
+                    fileService,
+                    nugetConfigFileService,
+                    new PackageVersionResolver(
+                        new PackageSourceMappingResolver(),
+                        clientFactory,
+                        releaseService,
+                        loggerMock),
+                    validator,
+                    loggerMock);
 
                 var command = new BumpToolsCommand(testConsole, loggerMock, handler, new ToolManifestLocator(loggerMock));
                 var arguments = new[] { "bump", "tools" };
@@ -202,7 +238,11 @@ public class BumpToolsCommandTests
                 var handler = new BumpToolsHandler(
                     fileService,
                     nugetConfigFileService,
-                    new PackageVersionResolver(new PackageSourceMappingResolver(), clientFactory, releaseService, loggerMock),
+                    new PackageVersionResolver(
+                        new PackageSourceMappingResolver(),
+                        clientFactory,
+                        releaseService,
+                        loggerMock),
                     validator,
                     loggerMock);
 
