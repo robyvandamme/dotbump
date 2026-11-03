@@ -38,7 +38,7 @@ internal class BumpToolsHandler(
         }
 
         var skipMatcher = NamePatternMatcher.Create(skipTools);
-        var skipWarnings = new List<string>();
+        var warnings = new List<string>();
         var packagesToBump = new List<PackageToBump>();
 
         foreach (var tool in manifest.Tools)
@@ -48,24 +48,26 @@ internal class BumpToolsHandler(
                 var skipWarning =
                     $"Skipping tool '{tool.Key}' because it matches --skip-tool pattern '{matchedPattern}'.";
                 logger.Warning("{Warning}", skipWarning);
-                skipWarnings.Add(skipWarning);
+                warnings.Add(skipWarning);
                 continue;
             }
 
             packagesToBump.Add(new PackageToBump(tool.Key, tool.Value.SemanticVersion));
         }
 
-        var bestVersions = await packageVersionResolver
+        var resolution = await packageVersionResolver
             .ResolveAsync(packagesToBump, bumpType, nuGetConfiguration, preRelease)
             .ConfigureAwait(false);
 
-        foreach (var (package, newVersion) in bestVersions)
+        warnings.AddRange(resolution.Warnings);
+
+        foreach (var (package, newVersion) in resolution.Versions)
         {
             manifest.Tools[package.PackageId].Version = newVersion.ToString();
         }
 
         bumpReport.ReportChanges(manifest);
-        bumpReport.ReportWarnings(skipWarnings);
+        bumpReport.ReportWarnings(warnings);
 
         if (bumpReport.HasChanges)
         {

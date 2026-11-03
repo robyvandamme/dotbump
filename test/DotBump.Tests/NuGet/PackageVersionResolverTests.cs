@@ -192,7 +192,7 @@ public class PackageVersionResolverTests
                 nugetConfig,
                 preRelease: true);
 
-            result.ShouldBeEmpty();
+            result.Versions.ShouldBeEmpty();
         }
 
         [Fact]
@@ -209,7 +209,7 @@ public class PackageVersionResolverTests
                 BumpType.Patch,
                 nugetConfig);
 
-            result.ShouldBeEmpty();
+            result.Versions.ShouldBeEmpty();
         }
 
         [Fact]
@@ -252,7 +252,7 @@ public class PackageVersionResolverTests
                 nugetConfig);
 
             result.ShouldSatisfyAllConditions(
-                () => result.Count.ShouldBe(2),
+                () => result.Versions.Count.ShouldBe(2),
                 () => GetVersion(result, "mypackage", "10.0.14").Version.ShouldBe("10.0.15"),
                 () => GetVersion(result, "mypackage", "11.0.0-rc.3").Version.ShouldBe("11.0.0-rc.4"));
         }
@@ -275,7 +275,7 @@ public class PackageVersionResolverTests
                 nugetConfig);
 
             result.ShouldSatisfyAllConditions(
-                () => result.Count.ShouldBe(1),
+                () => result.Versions.Count.ShouldBe(1),
                 () => GetVersion(result, "mypackage").Version.ShouldBe("1.0.1"));
         }
 
@@ -287,7 +287,7 @@ public class PackageVersionResolverTests
 
             var result = await resolver.ResolveAsync([], BumpType.Minor, nugetConfig);
 
-            result.ShouldBeEmpty();
+            result.Versions.ShouldBeEmpty();
         }
 
         [Fact]
@@ -300,7 +300,7 @@ public class PackageVersionResolverTests
                 BumpType.Minor,
                 new NuGetConfig());
 
-            result.ShouldBeEmpty();
+            result.Versions.ShouldBeEmpty();
         }
 
         [Fact]
@@ -310,27 +310,172 @@ public class PackageVersionResolverTests
 
             await Should.ThrowAsync<ArgumentNullException>(() => resolver.ResolveAsync(null!, BumpType.Minor, new NuGetConfig()));
         }
+
+        [Fact]
+        public async Task With_Package_Source_Mapping_Queries_Only_Mapped_Source()
+        {
+            // The public feed has a higher version, but 'mytool' is mapped to the private feed only.
+            var publicUrl = "https://feeds.example.com/public";
+            var privateUrl = "https://feeds.example.com/private";
+            var nugetConfig = CreateConfigWithMapping(
+                [("public", publicUrl), ("private", privateUrl)],
+                ("public", ["*"]),
+                ("private", ["mytool"]));
+
+            var loggerMock = new Mock<ILogger>().Object;
+            var publicClient = CreateClientMock(["1.9.0"]);
+            var privateClient = CreateClientMock(["1.5.0"]);
+            var clientFactory = new Mock<INuGetClientFactory>();
+            clientFactory
+                .Setup(f => f.CreateNuGetClient(It.Is<NuGetClientConfig>(config => config.Url == publicUrl)))
+                .Returns(publicClient.Object);
+            clientFactory
+                .Setup(f => f.CreateNuGetClient(It.Is<NuGetClientConfig>(config => config.Url == privateUrl)))
+                .Returns(privateClient.Object);
+            var resolver = new PackageVersionResolver(
+                clientFactory.Object,
+                new NuGetReleaseFinder(loggerMock),
+                loggerMock);
+
+            var result = await resolver.ResolveAsync(
+                [new PackageToBump("mytool", new SemanticVersion("1.0.0"))],
+                BumpType.Minor,
+                nugetConfig);
+
+            GetVersion(result, "mytool").Version.ShouldBe("1.5.0");
+            clientFactory.Verify(
+                f => f.CreateNuGetClient(It.Is<NuGetClientConfig>(config => config.Url == publicUrl)),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task With_Mapping_And_Multiple_Eligible_Sources_Returns_Highest_Stable()
+        {
+            var feed1Url = "https://feeds.example.com/feed1";
+            var feed2Url = "https://feeds.example.com/feed2";
+            var nugetConfig = CreateConfigWithMapping(
+                [("feed1", feed1Url), ("feed2", feed2Url)],
+                ("feed1", ["mytool"]),
+                ("feed2", ["mytool"]));
+
+            var loggerMock = new Mock<ILogger>().Object;
+            var clientFactory = new Mock<INuGetClientFactory>();
+            clientFactory
+                .Setup(f => f.CreateNuGetClient(It.Is<NuGetClientConfig>(config => config.Url == feed1Url)))
+                .Returns(CreateClientMock(["1.1.0"]).Object);
+            clientFactory
+                .Setup(f => f.CreateNuGetClient(It.Is<NuGetClientConfig>(config => config.Url == feed2Url)))
+                .Returns(CreateClientMock(["1.2.0"]).Object);
+            var resolver = new PackageVersionResolver(
+                clientFactory.Object,
+                new NuGetReleaseFinder(loggerMock),
+                loggerMock);
+
+            var result = await resolver.ResolveAsync(
+                [new PackageToBump("mytool", new SemanticVersion("1.0.0"))],
+                BumpType.Minor,
+                nugetConfig);
+
+            GetVersion(result, "mytool").Version.ShouldBe("1.2.0");
+        }
+
+        [Fact]
+        public async Task With_Unmapped_Package_Returns_No_Version_And_Warning()
+        {
+            var nugetConfig = CreateConfigWithMapping(
+                [("private", "https://feeds.example.com/private")],
+                ("private", ["dotbump"]));
+
+            var loggerMock = new Mock<ILogger>().Object;
+            var clientFactory = new Mock<INuGetClientFactory>(MockBehavior.Strict);
+            var resolver = new PackageVersionResolver(
+                clientFactory.Object,
+                new NuGetReleaseFinder(loggerMock),
+                loggerMock);
+
+            var result = await resolver.ResolveAsync(
+                [new PackageToBump("Newtonsoft.Json", new SemanticVersion("1.0.0"))],
+                BumpType.Minor,
+                nugetConfig);
+
+            result.Versions.ShouldBeEmpty();
+            result.Warnings.ShouldContain(warning => warning.Contains(
+                "does not match any packageSourceMapping pattern",
+                StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public async Task With_Unknown_Mapping_Source_Key_Returns_Warning()
+        {
+            var nugetConfig = CreateConfigWithMapping(
+                [("nuget.org", "https://api.nuget.org/v3/index.json")],
+                ("ghost", ["mytool"]));
+
+            var loggerMock = new Mock<ILogger>().Object;
+            var clientFactory = new Mock<INuGetClientFactory>(MockBehavior.Strict);
+            var resolver = new PackageVersionResolver(
+                clientFactory.Object,
+                new NuGetReleaseFinder(loggerMock),
+                loggerMock);
+
+            var result = await resolver.ResolveAsync(
+                [new PackageToBump("mytool", new SemanticVersion("1.0.0"))],
+                BumpType.Minor,
+                nugetConfig);
+
+            result.Versions.ShouldBeEmpty();
+            result.Warnings.ShouldContain(warning => warning.Contains(
+                "package source 'ghost' does not match any package source",
+                StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public async Task With_Empty_Package_List_And_Unknown_Mapping_Source_Returns_Warning()
+        {
+            var nugetConfig = CreateConfigWithMapping(
+                [("nuget.org", "https://api.nuget.org/v3/index.json")],
+                ("ghost", ["mytool"]));
+
+            var loggerMock = new Mock<ILogger>().Object;
+            var clientFactory = new Mock<INuGetClientFactory>(MockBehavior.Strict);
+            var resolver = new PackageVersionResolver(
+                clientFactory.Object,
+                new NuGetReleaseFinder(loggerMock),
+                loggerMock);
+
+            var result = await resolver.ResolveAsync([], BumpType.Minor, nugetConfig);
+
+            result.Versions.ShouldBeEmpty();
+            result.Warnings.ShouldContain(warning => warning.Contains(
+                "package source 'ghost' does not match any package source",
+                StringComparison.Ordinal));
+        }
     }
 
-    private static SemanticVersion GetVersion(
-        IReadOnlyDictionary<PackageToBump, SemanticVersion> result,
-        string packageId)
+    private static SemanticVersion GetVersion(PackageResolutionResult result, string packageId)
     {
-        return result.Single(entry =>
+        return result.Versions.Single(entry =>
             string.Equals(entry.Key.PackageId, packageId, StringComparison.OrdinalIgnoreCase)).Value;
     }
 
     private static SemanticVersion GetVersion(
-        IReadOnlyDictionary<PackageToBump, SemanticVersion> result,
+        PackageResolutionResult result,
         string packageId,
         string currentVersion)
     {
-        return result.Single(entry =>
+        return result.Versions.Single(entry =>
             string.Equals(entry.Key.PackageId, packageId, StringComparison.OrdinalIgnoreCase)
             && entry.Key.CurrentVersion == new SemanticVersion(currentVersion)).Value;
     }
 
     private static NuGetConfig CreateConfig(params (string Key, string Url)[] sources)
+    {
+        return CreateConfigWithMapping(sources);
+    }
+
+    private static NuGetConfig CreateConfigWithMapping(
+        (string Key, string Url)[] sources,
+        params (string SourceKey, string[] Patterns)[] mappings)
     {
         return new NuGetConfig
         {
@@ -340,6 +485,13 @@ public class PackageVersionResolverTests
                     Key = source.Key,
                     Value = source.Url,
                     ProtocolVersion = "3",
+                })
+                .ToList(),
+            PackageSourceMappings = mappings
+                .Select(mapping => new PackageSourceMappingEntry
+                {
+                    SourceKey = mapping.SourceKey,
+                    Patterns = mapping.Patterns.ToList(),
                 })
                 .ToList(),
         };
@@ -354,30 +506,35 @@ public class PackageVersionResolverTests
         var clientFactoryMock = new Mock<INuGetClientFactory>();
         foreach (var (_, (feedUrl, versions)) in feedPackages)
         {
-            var clientMock = new Mock<INuGetClient>();
-            clientMock
-                .Setup(c => c.GetServiceIndexAsync(It.IsAny<string>()))
-                .ReturnsAsync(
-                    new ServiceIndex
-                    {
-                        Version = "3.0.0",
-                        Resources =
-                        [
-                            new Resource { Id = "https://example.com/reg", Type = "RegistrationsBaseUrl" }
-                        ],
-                    });
-
-            var registrationIndex = CreateRegistrationIndex(versions);
-            clientMock
-                .Setup(c => c.GetPackageInformationAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(registrationIndex);
-
             clientFactoryMock
                 .Setup(f => f.CreateNuGetClient(It.Is<NuGetClientConfig>(config => config.Url == feedUrl)))
-                .Returns(clientMock.Object);
+                .Returns(CreateClientMock(versions).Object);
         }
 
         return new PackageVersionResolver(clientFactoryMock.Object, releaseFinder, loggerMock);
+    }
+
+    private static Mock<INuGetClient> CreateClientMock(string[] versions)
+    {
+        var clientMock = new Mock<INuGetClient>();
+        clientMock
+            .Setup(c => c.GetServiceIndexAsync(It.IsAny<string>()))
+            .ReturnsAsync(
+                new ServiceIndex
+                {
+                    Version = "3.0.0",
+                    Resources =
+                    [
+                        new Resource { Id = "https://example.com/reg", Type = "RegistrationsBaseUrl" }
+                    ],
+                });
+
+        var registrationIndex = CreateRegistrationIndex(versions);
+        clientMock
+            .Setup(c => c.GetPackageInformationAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(registrationIndex);
+
+        return clientMock;
     }
 
     private static RegistrationIndex CreateRegistrationIndex(params string[] versions)

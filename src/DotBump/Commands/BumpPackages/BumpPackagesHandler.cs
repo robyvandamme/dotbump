@@ -45,11 +45,16 @@ internal class BumpPackagesHandler(
         var variantsByPackage = GetPackagesToBump(manifest, skipPackages);
         var packagesToBump = variantsByPackage.Keys.ToList();
 
-        var bestVersions = await packageVersionResolver
+        var resolution = await packageVersionResolver
             .ResolveAsync(packagesToBump, bumpType, nuGetConfiguration, preRelease)
             .ConfigureAwait(false);
 
-        foreach (var (package, newVersion) in bestVersions)
+        foreach (var warning in resolution.Warnings)
+        {
+            manifest.AddWarning(warning);
+        }
+
+        foreach (var (package, newVersion) in resolution.Versions)
         {
             // Never downgrade: only apply a target higher than every current occurrence in the variant.
             if (newVersion <= package.CurrentVersion)

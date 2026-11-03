@@ -15,7 +15,9 @@ internal class PackageVersionResolver(
     INuGetReleaseFinder nuGetReleaseFinder,
     ILogger logger) : IPackageVersionResolver
 {
-    public async Task<IReadOnlyDictionary<PackageToBump, SemanticVersion>> ResolveAsync(
+    private readonly PackageSourceMappingResolver _packageSourceMappingResolver = new();
+
+    public async Task<PackageResolutionResult> ResolveAsync(
         IReadOnlyCollection<PackageToBump> packages,
         BumpType bumpType,
         NuGetConfig nuGetConfiguration,
@@ -28,24 +30,70 @@ internal class PackageVersionResolver(
 
         var usePreRelease = preRelease && bumpType == BumpType.Major;
         var bestVersions = new Dictionary<PackageToBump, SemanticVersion>();
+        var packageList = packages.ToList();
 
-        if (packages.Count == 0 || nuGetConfiguration.PackageSources.Count == 0)
+        var mappingResult = _packageSourceMappingResolver.Resolve(
+            packageList.Select(o => o.PackageId).ToList(),
+            nuGetConfiguration);
+
+        foreach (var warning in mappingResult.Warnings)
         {
-            logger.MethodReturn(nameof(PackageVersionResolver), nameof(ResolveAsync), bestVersions);
-            return bestVersions;
+            logger.Warning("{Warning}", warning);
         }
 
-        var packageList = packages.ToList();
+        if (packageList.Count == 0 || nuGetConfiguration.PackageSources.Count == 0)
+        {
+            var emptyResult = new PackageResolutionResult(bestVersions, mappingResult.Warnings);
+            logger.MethodReturn(nameof(PackageVersionResolver), nameof(ResolveAsync), emptyResult);
+            return emptyResult;
+        }
+
+        var packagesBySource = new Dictionary<string, List<PackageToBump>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var package in packageList)
+        {
+            if (!mappingResult.Matches.TryGetValue(package.PackageId, out var match) || match.Sources.Count == 0)
+            {
+                continue;
+            }
+
+            if (match.MatchedPattern != null)
+            {
+                logger.Debug(
+                    "Package {PackageId} is mapped to package source(s) {PackageSources} by pattern {Pattern}",
+                    package.PackageId,
+                    match.Sources.Select(o => o.Key),
+                    match.MatchedPattern);
+            }
+
+            foreach (var matchSource in match.Sources)
+            {
+                if (!packagesBySource.TryGetValue(matchSource.Key, out var packagesForSource))
+                {
+                    packagesForSource = [];
+                    packagesBySource[matchSource.Key] = packagesForSource;
+                }
+
+                packagesForSource.Add(package);
+            }
+        }
 
         foreach (var nugetPackageSource in nuGetConfiguration.PackageSources)
         {
+            if (!packagesBySource.TryGetValue(nugetPackageSource.Key, out var packagesForSource))
+            {
+                logger.Debug(
+                    "Skipping package source {PackageSource} because no package is mapped to it",
+                    nugetPackageSource.Key);
+                continue;
+            }
+
             var clientConfig = new NuGetClientConfig(nugetPackageSource.Key, nuGetConfiguration, logger);
 
             using var nuGetClient = nuGetClientFactory.CreateNuGetClient(clientConfig);
             var index = await nuGetClient.GetServiceIndexAsync(clientConfig.Url).ConfigureAwait(false);
             var baseUrl = nuGetReleaseFinder.GetRegistrationsBaseUrl(index);
 
-            foreach (var package in packageList)
+            foreach (var package in packagesForSource)
             {
                 bestVersions.TryGetValue(package, out var currentBest);
 
@@ -64,9 +112,10 @@ internal class PackageVersionResolver(
             }
         }
 
-        logger.MethodReturn(nameof(PackageVersionResolver), nameof(ResolveAsync), bestVersions);
+        var result = new PackageResolutionResult(bestVersions, mappingResult.Warnings);
+        logger.MethodReturn(nameof(PackageVersionResolver), nameof(ResolveAsync), result);
 
-        return bestVersions;
+        return result;
     }
 
     private static bool IsBetterCandidate(SemanticVersion candidate, SemanticVersion? currentBest, bool preRelease)

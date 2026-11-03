@@ -97,6 +97,51 @@ internal class NuGetConfigFileService(ILogger logger) : INuGetConfigFileService
             throw new DotBumpException($"No package sources were found in the NuGet config  {filePath}");
         }
 
+        // Parse package source mapping
+        var mappingElement = doc.Root.Element("packageSourceMapping");
+        if (mappingElement != null)
+        {
+            foreach (var sourceElement in mappingElement.Elements("packageSource"))
+            {
+                var sourceKey = sourceElement.Attribute("key")?.Value?.Trim();
+                if (string.IsNullOrWhiteSpace(sourceKey))
+                {
+                    logger.Warning(
+                        "A packageSource element in the packageSourceMapping section of {FilePath} is missing a key and will be ignored",
+                        filePath);
+                    continue;
+                }
+
+                var patterns = sourceElement
+                    .Elements("package")
+                    .Select(element => element.Attribute("pattern")?.Value?.Trim())
+                    .Where(pattern => !string.IsNullOrWhiteSpace(pattern))
+                    .Select(pattern => pattern!)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var existingMapping = config.PackageSourceMappings.FirstOrDefault(o => o.SourceKey.Equals(
+                    sourceKey,
+                    StringComparison.OrdinalIgnoreCase));
+                if (existingMapping != null)
+                {
+                    existingMapping.Patterns.AddRange(
+                        patterns.Where(pattern => !existingMapping.Patterns.Contains(
+                            pattern,
+                            StringComparer.OrdinalIgnoreCase)));
+                }
+                else
+                {
+                    config.PackageSourceMappings.Add(
+                        new PackageSourceMappingEntry
+                        {
+                            SourceKey = sourceKey,
+                            Patterns = patterns,
+                        });
+                }
+            }
+        }
+
         // Parse credentials
         var credentialsElement = doc.Root.Element("packageSourceCredentials");
         if (credentialsElement != null)

@@ -88,7 +88,7 @@ public class BumpPackagesHandlerTests
                     It.IsAny<BumpType>(),
                     It.IsAny<NuGetConfig>(),
                     It.IsAny<bool>()))
-                .ReturnsAsync(new Dictionary<PackageToBump, SemanticVersion>());
+                .ReturnsAsync(new PackageResolutionResult(new Dictionary<PackageToBump, SemanticVersion>(), []));
             var handler = CreateHandler(fileService, resolver);
 
             await handler.HandleAsync(BumpType.Major, "./repo", "nuget.config", preRelease: true);
@@ -325,6 +325,31 @@ public class BumpPackagesHandlerTests
         }
 
         [Fact]
+        public async Task With_Resolver_Warnings_Reports_Warnings()
+        {
+            const string mappingWarning =
+                "Package 'Other.Package' does not match any packageSourceMapping pattern; skipping it.";
+            var manifest = TestPackageManifestFactory.CreateManifest(("MyPackage", "1.0.0"));
+            var fileService = CreateFileService(manifest);
+            var resolver = new Mock<IPackageVersionResolver>();
+            resolver
+                .Setup(r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync(
+                    new PackageResolutionResult(
+                        new Dictionary<PackageToBump, SemanticVersion>(),
+                        [mappingWarning]));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "./repo", "nuget.config");
+
+            report.Warnings.ShouldContain(mappingWarning);
+        }
+
+        [Fact]
         public async Task With_Validation_Errors_Still_Reports_Read_Warnings()
         {
             const string readWarning =
@@ -487,7 +512,7 @@ public class BumpPackagesHandlerTests
                         }
                     }
 
-                    return Task.FromResult<IReadOnlyDictionary<PackageToBump, SemanticVersion>>(bestVersions);
+                    return Task.FromResult(new PackageResolutionResult(bestVersions, []));
                 });
             return resolver;
         }
@@ -516,7 +541,7 @@ public class BumpPackagesHandlerTests
                         }
                     }
 
-                    return Task.FromResult<IReadOnlyDictionary<PackageToBump, SemanticVersion>>(bestVersions);
+                    return Task.FromResult(new PackageResolutionResult(bestVersions, []));
                 });
             return resolver;
         }

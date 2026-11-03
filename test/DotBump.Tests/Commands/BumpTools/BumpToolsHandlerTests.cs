@@ -204,6 +204,31 @@ public class BumpToolsHandlerTests
         }
 
         [Fact]
+        public async Task With_Resolver_Warnings_Reports_Warnings()
+        {
+            const string mappingWarning =
+                "Package 'mytool' does not match any packageSourceMapping pattern; skipping it.";
+            var manifest = CreateManifest(("mytool", "1.0.0"));
+            var fileService = CreateFileService(manifest);
+            var resolver = new Mock<IPackageVersionResolver>();
+            resolver
+                .Setup(r => r.ResolveAsync(
+                    It.IsAny<IReadOnlyCollection<PackageToBump>>(),
+                    It.IsAny<BumpType>(),
+                    It.IsAny<NuGetConfig>(),
+                    It.IsAny<bool>()))
+                .ReturnsAsync(
+                    new PackageResolutionResult(
+                        new Dictionary<PackageToBump, SemanticVersion>(),
+                        [mappingWarning]));
+            var handler = CreateHandler(fileService, resolver);
+
+            var report = await handler.HandleAsync(BumpType.Minor, "nuget.config", "dotnet-tools.json");
+
+            report.Warnings.ShouldContain(mappingWarning);
+        }
+
+        [Fact]
         public async Task With_Skipped_Tool_Wildcard_Matches_Case_Insensitively()
         {
             var manifest = CreateManifest(("DotNet-Tool", "1.0.0"), ("Other.Tool", "1.0.0"));
@@ -267,12 +292,14 @@ public class BumpToolsHandlerTests
                 Times.Never);
         }
 
-        private static IReadOnlyDictionary<PackageToBump, SemanticVersion> CreateResolved(
+        private static PackageResolutionResult CreateResolved(
             params (string Id, string CurrentVersion, string ResolvedVersion)[] resolved)
         {
-            return resolved.ToDictionary(
+            var versions = resolved.ToDictionary(
                 item => new PackageToBump(item.Id, new SemanticVersion(item.CurrentVersion)),
                 item => new SemanticVersion(item.ResolvedVersion));
+
+            return new PackageResolutionResult(versions, []);
         }
 
         private static ToolsManifest CreateManifest(params (string Key, string Version)[] tools)
