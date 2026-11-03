@@ -545,7 +545,13 @@ machine-wide configuration files are not merged.
 All commands accept `--debug` and `--logfile`.
 
 `--debug` enables debug logging for troubleshooting, which includes response data. It can be passed as a bare
-flag; `--debug false` explicitly disables it.
+flag; `--debug false` explicitly disables it. The `--debug=true` and `--debug=false` forms are also accepted.
+
+`--logfile` sends log output to the given file, specified either as `--logfile path` or `--logfile=path`.
+
+Logging is configured after the command line has been parsed, so arguments that fail to parse are reported on the
+console but are not written to `--logfile`. Errors raised while a command runs are logged once logging has been
+configured.
 
 ### Scanning and file handling
 

@@ -22,16 +22,14 @@ internal static class LoggerConfigurator
             .Destructure.UsingAttributes();
     }
 
-    internal static void Configure(string[] args)
+    internal static void Configure(bool debug, string? logFile)
     {
         var defaultLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Error);
 
-        if (ArgumentHandler.IsDebugMode(args))
+        if (debug)
         {
             defaultLevelSwitch.MinimumLevel = LogEventLevel.Debug;
         }
-
-        var logFile = ArgumentHandler.LogFile(args);
 
         var configuration = CreateConfiguration(defaultLevelSwitch);
 #if DEBUG

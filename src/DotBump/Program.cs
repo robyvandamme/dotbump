@@ -2,7 +2,6 @@
 
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using DotBump;
 using DotBump.Common;
 using Serilog;
@@ -14,27 +13,15 @@ using Spectre.Console.Cli;
 SelfLog.Enable(msg => Debug.WriteLine(msg));
 #endif
 
-LoggerConfigurator.Configure(args);
-
-var versionInfo = new VersionInfo(Assembly.GetExecutingAssembly());
-var platform = PlatformInfo.GetPlatform();
-
-Log.Debug(
-    "DotBump {Version} running on {Runtime}, {Platform} {Architecture} (OS details: {OSDescription})",
-    versionInfo.Version,
-    RuntimeInformation.FrameworkDescription,
-    platform,
-    RuntimeInformation.ProcessArchitecture,
-    RuntimeInformation.OSDescription);
-Log.Debug("Configuring app");
-
-var commandApp = new CommandApp();
-
-commandApp.Configure(Log.Logger, versionInfo);
-
 try
 {
-    Log.Debug("Starting app");
+    var versionInfo = new VersionInfo(Assembly.GetExecutingAssembly());
+    var commandApp = new CommandApp();
+
+    // Logging is configured by LoggingInterceptor once Spectre has parsed the command line, so the registered logger
+    // forwards to the active Log.Logger at call time. See LoggingInterceptor for the lifecycle.
+    commandApp.Configure(new DelegatingLogger(), versionInfo);
+
     return await commandApp.RunAsync(args);
 }
 #pragma warning disable CA1031
