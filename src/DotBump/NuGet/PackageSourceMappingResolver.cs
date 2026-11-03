@@ -112,9 +112,12 @@ internal sealed class PackageSourceMappingResolver : IPackageSourceMappingResolv
             }
         }
 
-        return sourceKeys.Count > 0
-            ? new WinningPattern(exactPattern!, sourceKeys)
-            : null;
+        if (exactPattern == null)
+        {
+            return null;
+        }
+
+        return new WinningPattern(exactPattern, sourceKeys);
     }
 
     private static bool IsExactMatch(string packageId, string pattern)
