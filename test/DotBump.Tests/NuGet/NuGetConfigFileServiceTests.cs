@@ -446,6 +446,45 @@ public class NuGetConfigFileServiceTests
         }
 
         [Fact]
+        public void With_Duplicate_Package_Source_Mapping_Keys_Merges_Patterns()
+        {
+            // Arrange
+            var xmlContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <configuration>
+                    <packageSources>
+                        <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" protocolVersion=""3"" />
+                    </packageSources>
+                    <packageSourceMapping>
+                        <packageSource key=""nuget.org"">
+                            <package pattern=""*"" />
+                        </packageSource>
+                        <packageSource key=""nuget.org"">
+                            <package pattern=""dotbump"" />
+                        </packageSource>
+                    </packageSourceMapping>
+                </configuration>";
+
+            var tempFile = CreateTempConfigFile(xmlContent);
+            var service = new NuGetConfigFileService(new Mock<ILogger>().Object);
+
+            try
+            {
+                // Act
+                var result = service.GetNuGetConfiguration(s_defaultNugetConfig);
+
+                // Assert
+                result.PackageSourceMappings.ShouldHaveSingleItem();
+                result.PackageSourceMappings[0].ShouldSatisfyAllConditions(
+                    () => result.PackageSourceMappings[0].SourceKey.ShouldBe("nuget.org"),
+                    () => result.PackageSourceMappings[0].Patterns.ShouldBe(["*", "dotbump"]));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
         public void With_Package_Source_Mapping_Clear_Is_Ignored()
         {
             // Arrange

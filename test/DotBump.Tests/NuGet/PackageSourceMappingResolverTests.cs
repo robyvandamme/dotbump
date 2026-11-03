@@ -131,6 +131,26 @@ public class PackageSourceMappingResolverTests
         }
 
         [Fact]
+        public void With_Exact_Pattern_On_Multiple_Sources_Returns_All_Sources()
+        {
+            // Arrange
+            var nugetConfig = CreateConfig(
+                [("feed1", "https://feed1/index.json"), ("feed2", "https://feed2/index.json")],
+                ("feed1", ["mytool"]),
+                ("feed2", ["mytool"]));
+            var resolver = new PackageSourceMappingResolver();
+
+            // Act
+            var result = resolver.Resolve(["mytool"], nugetConfig);
+
+            // Assert
+            result.Warnings.ShouldBeEmpty();
+            result.Matches["mytool"].ShouldSatisfyAllConditions(
+                () => GetSourceKeys(result, "mytool").ShouldBe(["feed1", "feed2"]),
+                () => result.Matches["mytool"].MatchedPattern.ShouldBe("mytool"));
+        }
+
+        [Fact]
         public void With_Unmapped_Package_Returns_No_Sources_And_Warning()
         {
             // Arrange
@@ -168,6 +188,31 @@ public class PackageSourceMappingResolverTests
                 "package source 'ghost' does not match any package source",
                 StringComparison.Ordinal));
             result.Warnings.ShouldContain(warning => warning.Contains(
+                "only mapped to undefined package source",
+                StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void With_Package_Mapped_To_Defined_And_Unknown_Sources_Returns_Defined_Source()
+        {
+            // Arrange
+            var nugetConfig = CreateConfig(
+                [("nuget.org", "https://api.nuget.org/v3/index.json")],
+                ("nuget.org", ["mytool"]),
+                ("ghost", ["mytool"]));
+            var resolver = new PackageSourceMappingResolver();
+
+            // Act
+            var result = resolver.Resolve(["mytool"], nugetConfig);
+
+            // Assert
+            result.Matches["mytool"].ShouldSatisfyAllConditions(
+                () => GetSourceKeys(result, "mytool").ShouldBe(["nuget.org"]),
+                () => result.Matches["mytool"].MatchedPattern.ShouldBe("mytool"));
+            result.Warnings.ShouldContain(warning => warning.Contains(
+                "package source 'ghost' does not match any package source",
+                StringComparison.Ordinal));
+            result.Warnings.ShouldNotContain(warning => warning.Contains(
                 "only mapped to undefined package source",
                 StringComparison.Ordinal));
         }
@@ -261,6 +306,26 @@ public class PackageSourceMappingResolverTests
             // Assert
             result.Warnings.ShouldBeEmpty();
             GetSourceKeys(result, "dotadr").ShouldBe(["private"]);
+        }
+
+        [Fact]
+        public void With_Null_Package_Ids_Throws_ArgumentNullException()
+        {
+            // Arrange
+            var resolver = new PackageSourceMappingResolver();
+
+            // Act & Assert
+            Should.Throw<ArgumentNullException>(() => resolver.Resolve(null!, new NuGetConfig()));
+        }
+
+        [Fact]
+        public void With_Null_Configuration_Throws_ArgumentNullException()
+        {
+            // Arrange
+            var resolver = new PackageSourceMappingResolver();
+
+            // Act & Assert
+            Should.Throw<ArgumentNullException>(() => resolver.Resolve(["mytool"], null!));
         }
 
         [Fact]
