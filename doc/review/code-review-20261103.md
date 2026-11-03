@@ -39,7 +39,7 @@ Findings below contain no blockers.
 
 ## Findings
 
-### 1. [Moderate] `PackageSourceMappingResolver` is hard-wired instead of injected —
+### 1. [Moderate] `PackageSourceMappingResolver` is hard-wired instead of injected — ✅ Fixed
 `src/DotBump/NuGet/PackageVersionResolver.cs:18`
 
 ```csharp
@@ -65,7 +65,11 @@ internal class PackageVersionResolver(
     ILogger logger) : IPackageVersionResolver
 ```
 
-### 2. [Minor] `MatchedPattern` only reports the first-encountered co-winning pattern —
+**Status: fixed in `f74a948`.** Added `IPackageSourceMappingResolver`, implemented it on
+`PackageSourceMappingResolver`, injected it into `PackageVersionResolver`, and registered the implementation in
+`CommandConfiguration`.
+
+### 2. [Minor] `MatchedPattern` only reports the first-encountered co-winning pattern — ✅ Fixed
 `src/DotBump/NuGet/PackageSourceMappingResolver.cs:139-149`
 
 When two patterns share the same prefix but differ after the wildcard (e.g., `Contoso.*` from `feed1` and
@@ -78,7 +82,11 @@ package id must be the identical prefix string. Options: report the prefix (e.g.
 or document that `MatchedPattern` is representative. Not worth complexity given the meta-character nuance is already
 documented in a comment.
 
-### 3. [Minor] Unmapped packages produce one warning per package —
+**Status: fixed in `2ffd573`.** `MatchedPattern` now reports the exact package id or the prefix followed by `*`, so
+co-winning patterns render deterministically. Covered by
+`With_Different_Patterns_Sharing_Longest_Prefix_Returns_All_Sources`.
+
+### 3. [Minor] Unmapped packages produce one warning per package — ✅ Accepted
 `src/DotBump/NuGet/PackageSourceMappingResolver.cs:65-67`
 
 Suggested tweak. For a repository with many packages that fail to match (e.g., after locking a config down to a specific
@@ -94,7 +102,12 @@ Consider collapsing these into a single warning per unmatched prefix or a summar
 priority; current behavior is at least deterministic and deduplicated at the unknown-source-key level
 (`reportedUnknownSourceKeys`).
 
-### 4. [Minor] Deferred enumerable passed to the logger — `src/DotBump/NuGet/PackageVersionResolver.cs:61-66`
+**Status: accepted.** One warning per unmapped package remains intentional: the messages are deterministic,
+deduplicated per package id, and tell the user exactly which packages are skipped. A cap or summary can be added later
+if real reports become noisy.
+
+### 4. [Minor] Deferred enumerable passed to the logger — ✅ Fixed
+`src/DotBump/NuGet/PackageVersionResolver.cs:61-66`
 
 ```csharp
 logger.Debug(
@@ -113,7 +126,10 @@ match.Sources.Select(o => o.Key).ToArray(),
 
 Nit-level; apply only if you touch the method for finding 1.
 
-### 5. [Minor] Test coverage gaps
+**Status: fixed in `24c66b8`.** The mapped source keys are materialized with `ToArray()` before being passed to
+Serilog.
+
+### 5. [Minor] Test coverage gaps — ✅ Fixed
 
 Good baseline coverage exists, but a few paths are untested:
 
@@ -131,17 +147,29 @@ Good baseline coverage exists, but a few paths are untested:
    `ArgumentNullException.ThrowIfNull`, consistent with the rest of the codebase, but there are no
    `With_Null_Input_Throws_ArgumentNullException` tests for it.
 
-### 6. [Nit] Misleading helper name — `test/DotBump.Tests/NuGet/PackageVersionResolverTests.cs`
+**Status: fixed in `c41874f`.** Added coverage for exact-pattern ties across sources, duplicate `<packageSource>` keys
+in the parser, mixed defined/undefined source keys, and null arguments to the resolver.
+
+### 6. [Nit] Misleading helper name — ✅ Fixed
+`test/DotBump.Tests/NuGet/PackageVersionResolverTests.cs`
 
 `CreateConfig` now just forwards to `CreateConfigWithMapping`, even when no mappings are passed. Consider renaming the
 combined helper (e.g., `CreateNuGetConfig(... mappings = [])`) and deleting the shim, so the factory name does not imply
 a mapping was configured.
 
-### 7. [Nit] Test name underpromises — `test/DotBump.Tests/NuGet/PackageSourceMappingResolverTests.cs:152`
+**Status: fixed in `3b9dc74`.** `CreateConfigWithMapping` was removed and `CreateConfig` now accepts optional mappings
+directly.
+
+### 7. [Nit] Test name underpromises — ✅ Fixed
+`test/DotBump.Tests/NuGet/PackageSourceMappingResolverTests.cs:152`
 
 `With_Unknown_Source_Key_Returns_Warning` asserts two distinct outcomes (the unknown-source-key warning *and* the
 unmapped-package warning for `ghost.package`). Per the repo's "one logical outcome per test" guideline, consider
 splitting it, or renaming to reflect that both warnings are exercised.
+
+**Status: fixed in `c72cb1e`.** The test was split into
+`With_Unknown_Source_Key_Returns_Unknown_Source_Warning` and
+`With_Package_Mapped_Only_To_Unknown_Source_Returns_Undefined_Source_Warning`.
 
 ## Verified Non-Issues (checked, no action needed)
 
@@ -161,6 +189,7 @@ splitting it, or renaming to reflect that both warnings are exercised.
 
 ## Conclusion
 
-Small, cohesive feature with strong test coverage and careful attention to NuGet-compatible edge semantics. The only
-finding I would ask to be addressed before merge is the injectability of `PackageSourceMappingResolver` (finding 1); the
-remaining items are polish. No findings discovered that block the branch.
+Small, cohesive feature with strong test coverage and careful attention to NuGet-compatible edge semantics. All
+findings are now addressed or explicitly accepted: finding 1 via dependency injection (`f74a948`), the pattern
+reporting and logging nits (`2ffd573`, `24c66b8`), the coverage gaps (`c41874f`), and the test cleanups (`3b9dc74`,
+`c72cb1e`). Finding 3 is accepted as intentional behaviour. The branch is ready to merge.
