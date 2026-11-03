@@ -207,7 +207,7 @@ public class PackageSourceMappingResolverTests
         }
 
         [Fact]
-        public void With_Wildcard_Not_At_End_Uses_Prefix_Before_Wildcard()
+        public void With_Wildcard_Not_At_End_Returns_Prefix_Pattern()
         {
             // Arrange
             var nugetConfig = CreateConfig(
@@ -221,8 +221,28 @@ public class PackageSourceMappingResolverTests
             // Assert
             result.ShouldSatisfyAllConditions(
                 () => GetSourceKeys(result, "Contoso.Core").ShouldBe(["private"]),
-                () => result.Matches["Contoso.Core"].MatchedPattern.ShouldBe("Contoso*Suffix"),
+                () => result.Matches["Contoso.Core"].MatchedPattern.ShouldBe("Contoso*"),
                 () => result.Matches["Other"].Sources.ShouldBeEmpty());
+        }
+
+        [Fact]
+        public void With_Different_Patterns_Sharing_Longest_Prefix_Returns_All_Sources()
+        {
+            // Arrange
+            var nugetConfig = CreateConfig(
+                [("feed1", "https://feed1/index.json"), ("feed2", "https://feed2/index.json")],
+                ("feed1", ["Contoso.*"]),
+                ("feed2", ["Contoso.*Legacy"]));
+            var resolver = new PackageSourceMappingResolver();
+
+            // Act
+            var result = resolver.Resolve(["Contoso.Core"], nugetConfig);
+
+            // Assert
+            result.Warnings.ShouldBeEmpty();
+            result.Matches["Contoso.Core"].ShouldSatisfyAllConditions(
+                () => GetSourceKeys(result, "Contoso.Core").ShouldBe(["feed1", "feed2"]),
+                () => result.Matches["Contoso.Core"].MatchedPattern.ShouldBe("Contoso.*"));
         }
 
         [Fact]

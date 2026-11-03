@@ -140,7 +140,7 @@ internal sealed class PackageSourceMappingResolver : IPackageSourceMappingResolv
                 if (prefix.Length > winningPrefixLength)
                 {
                     winningPrefixLength = prefix.Length;
-                    winningPattern = pattern;
+                    winningPattern = prefix + "*";
                     prefixSourceKeys.Clear();
                 }
 
