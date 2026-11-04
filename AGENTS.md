@@ -146,6 +146,23 @@ Every `.cs` file must begin with the copyright header without a year:
   boundaries.
 - For expected domain error conditions, throw or handle `DotBumpException`.
 
+#### Logging Flow
+
+- `Program` registers a `DelegatingLogger` as the `ILogger` given to the commands; `CommandConfiguration` registers the
+  `LoggingInterceptor`.
+- Spectre parses the arguments and binds `BumpSettings` (`--debug`, `--logfile`), then runs interceptors, then creates
+  the command.
+- `LoggingInterceptor` configures Serilog from the bound settings; `DelegatingLogger` forwards to `Log.Logger` at call
+  time because the DI container is built before interception.
+- Do not configure Serilog in `Program` or pre-parse `--debug` / `--logfile`: Spectre has no public parse-only API, and
+  a pre-parser duplicates its grammar.
+- Parse errors and `--help` / `--version` bypass interceptors, so they are not written to `--logfile`.
+- `--logfile` is not validated up front. An unwritable path or a sink failure at write time is not surfaced: Serilog
+  reports it through `SelfLog`, which is only wired to the debugger output in Debug builds. This is a documented
+  limitation, not a reason to reintroduce a pre-parser.
+- References: [command lifecycle](https://spectreconsole.net/cli/explanation/command-lifecycle-and-execution-flow),
+  [interceptors](https://spectreconsole.net/cli/how-to/intercepting-command-execution).
+
 ---
 
 ## 5. Testing Guidelines

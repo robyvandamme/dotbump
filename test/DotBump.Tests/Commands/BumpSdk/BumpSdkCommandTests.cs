@@ -522,9 +522,14 @@ public class BumpSdkCommandTests
 
         [Theory]
         [InlineData("--debug")]
+        [InlineData("--debug", "true")]
+        [InlineData("--debug", "false")]
         [InlineData("--debug=true")]
         [InlineData("--debug=false")]
-        public async Task With_Debug_Syntax_Accepted_By_Spectre_Returns_0(string debugArgument)
+        [InlineData("--logfile", "app.log")]
+        [InlineData("--logfile=app.log")]
+        [InlineData("--debug", "--logfile", "app.log")]
+        public async Task With_Logging_Syntax_Accepted_By_Spectre_Returns_0(params string[] loggingArguments)
         {
             using var testConsole = new TestConsole();
             var handler = new Mock<IBumpSdkHandler>();
@@ -547,7 +552,7 @@ public class BumpSdkCommandTests
                 config.AddCommand<BumpSdkCommand>("sdk");
             });
 
-            var result = await app.RunAsync(["sdk", debugArgument]);
+            var result = await app.RunAsync(["sdk", ..loggingArguments]);
 
             result.ShouldBe(0);
         }

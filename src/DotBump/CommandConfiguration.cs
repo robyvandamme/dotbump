@@ -52,6 +52,7 @@ internal static class CommandConfiguration
             config.SetApplicationVersion(versionInfo.Version ?? "not available");
             config.Settings.Registrar.RegisterInstance(logger);
             config.Settings.Registrar.RegisterInstance(new HttpClient());
+            config.SetInterceptor(new LoggingInterceptor(versionInfo));
 
             config.Settings.Registrar.Register<ISdkFileService, SdkFileService>();
             config.Settings.Registrar.Register<IReleaseService, ReleaseWebService>();
