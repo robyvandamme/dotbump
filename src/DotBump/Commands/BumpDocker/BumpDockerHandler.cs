@@ -194,17 +194,31 @@ internal class BumpDockerHandler(
         var referenceEntry = group.OrderByDescending(entry => entry.ParsedVersion).First();
         var channel = GetChannel(referenceEntry.ParsedVersion);
 
-        if (!channelReleases.TryGetValue(channel, out var channelRelease))
-        {
-            // The channel was skipped while loading the release history; the warning is recorded.
-            return;
-        }
+        IEnumerable<ChannelRelease> candidates;
 
-        // A major bump can move images to any loaded channel, which includes newer channels that
-        // the manifest does not use yet.
-        var candidates = bumpType == BumpType.Major
-            ? channelReleases.Values.SelectMany(item => item.Releases)
-            : channelRelease.Releases;
+        if (bumpType == BumpType.Major)
+        {
+            // A major bump can move images to any loaded channel, including channels the manifest
+            // does not use yet. It still requires the image's own channel to be resolvable: when
+            // that history was skipped, the image is left untouched so the recorded warning stays
+            // accurate instead of bumping it from unrelated channel data.
+            if (!channelReleases.ContainsKey(channel))
+            {
+                return;
+            }
+
+            candidates = channelReleases.Values.SelectMany(item => item.Releases);
+        }
+        else
+        {
+            if (!channelReleases.TryGetValue(channel, out var channelRelease))
+            {
+                // The channel was skipped while loading the release history; the warning is recorded.
+                return;
+            }
+
+            candidates = channelRelease.Releases;
+        }
 
         var newRelease = ReleaseSelector.TryFindNewest(
             referenceEntry.ParsedVersion,

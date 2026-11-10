@@ -489,6 +489,31 @@ public class BumpDockerHandlerTests
         }
 
         [Fact]
+        public async Task With_Channel_History_Failure_And_Major_Bump_Skips_Only_That_Channel()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS legacy\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:11.0.100 AS build\n");
+            var releaseService = new FakeReleaseService(
+                    CreateRelease("10.0", "10.0.101"),
+                    CreateRelease("11.0", "11.0.101"))
+                .WithChannelReleases("11.0", CreateChannelRelease("11.0.101", "11.0.1"))
+                .WithChannelReleasesException("10.0", new DotBumpException("boom"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Major, TempDirectory.AbsolutePath);
+
+            report.ShouldSatisfyAllConditions(
+                () => report.Warnings.ShouldHaveSingleItem().ShouldContain("could not be read"),
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "11.0.100" && result.NewVersion == "11.0.101"),
+                () => ReadDockerfile().ShouldBe(
+                    "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS legacy\n" +
+                    "FROM mcr.microsoft.com/dotnet/sdk:11.0.101 AS build\n"));
+        }
+
+        [Fact]
         public async Task With_Channel_History_Requested_Once_Per_Channel()
         {
             ResetTempDirectory();
