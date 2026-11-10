@@ -308,9 +308,10 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
                 relativePath,
                 filePath,
                 lineNumber,
-                tag,
-                imageToken.Start + tagSeparator + 1,
-                tag.Length));
+                new DockerTagSpan(
+                    tag,
+                    imageToken.Start + tagSeparator + 1,
+                    tag.Length)));
     }
 
     private void AddWarning(DockerfileManifest manifest, string warning)

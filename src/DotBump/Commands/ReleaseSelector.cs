@@ -33,9 +33,8 @@ internal static class ReleaseSelector
         ArgumentNullException.ThrowIfNull(versionSelector);
 
         var available = candidates
-            .Select(candidate => (Candidate: candidate, Version: versionSelector(candidate)))
-            .Where(item => item.Version is { IsValid: true })
-            .Select(item => new VersionedCandidate<T>(item.Candidate, item.Version!))
+            .Select(candidate => TryCreateCandidate(candidate, versionSelector(candidate)))
+            .OfType<VersionedCandidate<T>>()
             .ToList();
 
         return bumpType switch
@@ -96,6 +95,14 @@ internal static class ReleaseSelector
                 .Select(candidate => candidate.Candidate)
                 .FirstOrDefault()
             : null;
+    }
+
+    private static VersionedCandidate<T>? TryCreateCandidate<T>(
+        T candidate,
+        SemanticVersion? version)
+        where T : class
+    {
+        return version is { IsValid: true } ? new VersionedCandidate<T>(candidate, version) : null;
     }
 
     private readonly record struct VersionedCandidate<T>(T Candidate, SemanticVersion Version)

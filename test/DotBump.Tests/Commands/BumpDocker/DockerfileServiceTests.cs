@@ -422,9 +422,7 @@ public class DockerfileServiceTests
                 "Dockerfile",
                 "/repo/Dockerfile",
                 1,
-                "10.0.100",
-                0,
-                8);
+                new DockerTagSpan("10.0.100", 0, 8));
             manifest.Add(entry);
             manifest.SetTag(entry, "10.0.101");
             var service = CreateService();

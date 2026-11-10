@@ -97,9 +97,7 @@ public class BumpReportTests
                 "Dockerfile",
                 "/repo/Dockerfile",
                 1,
-                "10.0.100",
-                0,
-                8);
+                new DockerTagSpan("10.0.100", 0, 8));
             manifest.Add(entry);
             manifest.SetTag(entry, "10.0.101");
 
@@ -126,18 +124,14 @@ public class BumpReportTests
                 "Dockerfile",
                 "/repo/Dockerfile",
                 2,
-                "10.0.404",
-                0,
-                8);
+                new DockerTagSpan("10.0.404", 0, 8));
             var aspNetEntry = new DockerImageEntry(
                 "mcr.microsoft.com/dotnet/aspnet",
                 DotnetImageVersionSource.AspNetCore,
                 "Dockerfile",
                 "/repo/Dockerfile",
                 1,
-                "10.0.15",
-                0,
-                7);
+                new DockerTagSpan("10.0.15", 0, 7));
             manifest.Add(sdkEntry);
             manifest.Add(aspNetEntry);
             manifest.SetTag(sdkEntry, "10.0.405");

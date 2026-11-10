@@ -129,6 +129,15 @@ internal class BumpDockerHandler(
         return groups;
     }
 
+    private static ReleaseCandidate? TryCreateCandidate(
+        ChannelRelease release,
+        DotnetImageVersionSource versionSource)
+    {
+        var version = ChannelReleaseVersions.GetVersion(release, versionSource);
+
+        return version == null ? null : new ReleaseCandidate(release, version);
+    }
+
     /// <summary>
     /// Loads the release history for every channel needed by the bump. A channel that cannot be
     /// resolved is skipped with a warning so one unavailable channel does not block the others.
@@ -221,11 +230,8 @@ internal class BumpDockerHandler(
         }
 
         var supportedCandidates = candidates
-            .Select(release => (
-                Release: release,
-                Version: ChannelReleaseVersions.GetVersion(release, group.Key.VersionSource)))
-            .Where(candidate => candidate.Version != null)
-            .Select(candidate => new ReleaseCandidate(candidate.Release, candidate.Version!))
+            .Select(release => TryCreateCandidate(release, group.Key.VersionSource))
+            .OfType<ReleaseCandidate>()
             .ToList();
 
         if (supportedCandidates.Count == 0)
