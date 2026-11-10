@@ -5,12 +5,13 @@ using DotBump.Common;
 namespace DotBump.Commands.BumpDocker.DataModel;
 
 /// <summary>
-/// Represents a supported .NET SDK base image occurrence found in a Dockerfile.
+/// Represents a supported .NET base image occurrence found in a Dockerfile.
 /// </summary>
 internal sealed class DockerImageEntry
 {
     public DockerImageEntry(
         string image,
+        DotnetImageVersionSource versionSource,
         string relativePath,
         string filePath,
         int lineNumber,
@@ -19,6 +20,7 @@ internal sealed class DockerImageEntry
         int tagLength)
     {
         Image = image;
+        VersionSource = versionSource;
         RelativePath = relativePath;
         FilePath = filePath;
         LineNumber = lineNumber;
@@ -33,6 +35,11 @@ internal sealed class DockerImageEntry
     /// Gets the image name used in reports, for example <c>mcr.microsoft.com/dotnet/sdk</c>.
     /// </summary>
     public string Image { get; }
+
+    /// <summary>
+    /// Gets the release component the image is tagged with.
+    /// </summary>
+    public DotnetImageVersionSource VersionSource { get; }
 
     /// <summary>
     /// Gets the path of the Dockerfile relative to the repository root.

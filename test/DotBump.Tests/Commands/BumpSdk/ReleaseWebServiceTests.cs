@@ -60,6 +60,10 @@ public class ReleaseWebServiceTests
                 () => result.Releases.Count.ShouldBe(3),
                 () => result.Releases[0].Security.ShouldBeFalse(),
                 () => result.Releases[0].Sdks.ShouldNotBeNull().Count.ShouldBe(2),
+                () => result.Releases[0].Sdk.ShouldNotBeNull().Version.ShouldBe("10.0.404"),
+                () => result.Releases[0].Runtime.ShouldNotBeNull().Version.ShouldBe("10.0.15"),
+                () => result.Releases[0].AspNetCoreRuntime.ShouldNotBeNull().Version.ShouldBe("10.0.15"),
+                () => result.Releases[0].ReleaseVersion.ShouldBe("10.0.15"),
                 () => result.Releases[1].Security.ShouldBeTrue(),
                 () => result.Releases[1].Sdks.ShouldNotBeNull()
                     .ShouldContain(sdk => sdk.Version == "10.0.403"),

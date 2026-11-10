@@ -193,13 +193,14 @@ internal static class CommandConfiguration
 
             config.AddCommand<BumpDockerCommand>(name: BumpCommandNames.Docker)
                 .WithDescription(
-                    "Bump the .NET SDK base image tag in Dockerfiles. " +
-                    "Only the `mcr.microsoft.com/dotnet/sdk` image is supported. " +
-                    "Each Dockerfile is bumped within its own current SDK major (and minor for 'patch'); " +
-                    "the 'major' type moves every Dockerfile to the latest release. " +
+                    "Bump .NET base image tags in Dockerfiles and Containerfiles. " +
+                    "Supports the `mcr.microsoft.com/dotnet/sdk`, `aspnet`, `runtime` and `runtime-deps` images. " +
+                    "Each image is bumped within its own current .NET channel (and its own minor for 'patch'); " +
+                    "the 'major' type moves every image to the latest release. " +
                     "Use the 'minor' type option to bump each image to the latest minor or patch version for its current major version. " +
                     "Use the 'patch' type option to bump each image to the latest patch version for its current minor version. " +
                     "Use the 'major' type option to bump every image to the latest version, including versions with a higher major version. " +
+                    "A channel whose release history cannot be read is skipped with a warning. " +
                     PreReleaseDescription)
                 .WithExample(BumpCommandNames.Docker)
                 .WithExample(BumpCommandNames.Docker, TypeOptionName, PatchBumpType)

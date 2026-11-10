@@ -12,6 +12,12 @@
       "release-date": "2026-11-10",
       "release-version": "10.0.15",
       "security": false,
+      "runtime": {
+        "version": "10.0.15"
+      },
+      "sdk": {
+        "version": "10.0.404"
+      },
       "sdks": [
         {
           "version": "10.0.404",
@@ -21,7 +27,10 @@
           "version": "10.0.115",
           "runtime-version": "10.0.15"
         }
-      ]
+      ],
+      "aspnetcore-runtime": {
+        "version": "10.0.15"
+      }
     },
     {
       "release-date": "2026-10-25",
@@ -33,6 +42,12 @@
           "cve-url": "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-111497"
         }
       ],
+      "runtime": {
+        "version": "10.0.14"
+      },
+      "sdk": {
+        "version": "10.0.403"
+      },
       "sdks": [
         {
           "version": "10.0.403",
@@ -42,12 +57,21 @@
           "version": "10.0.114",
           "runtime-version": "10.0.14"
         }
-      ]
+      ],
+      "aspnetcore-runtime": {
+        "version": "10.0.14"
+      }
     },
     {
       "release-date": "2026-10-13",
       "release-version": "10.0.13",
       "security": true,
+      "runtime": {
+        "version": "10.0.13"
+      },
+      "sdk": {
+        "version": "10.0.402"
+      },
       "sdks": [
         {
           "version": "10.0.402",
@@ -57,7 +81,10 @@
           "version": "10.0.113",
           "runtime-version": "10.0.13"
         }
-      ]
+      ],
+      "aspnetcore-runtime": {
+        "version": "10.0.13"
+      }
     }
   ]
 }

@@ -10,8 +10,6 @@ namespace DotBump.Commands.BumpDocker;
 
 internal sealed class DockerfileService(ILogger logger) : IDockerfileService
 {
-    internal const string SupportedImage = "mcr.microsoft.com/dotnet/sdk";
-
     private static readonly Regex s_fromPattern = new(
         @"^\s*FROM\s+(?<args>.*?)\s*$",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
@@ -61,13 +59,13 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
 
                 AddWarning(
                     manifest,
-                    $"Could not update SDK image tags in '{relativePath}' because the file content was not available.");
+                    $"Could not update base image tags in '{relativePath}' because the file content was not available.");
                 continue;
             }
 
             var updatedText = ApplyChanges(manifest, filePath, text);
             FileText.WriteText(filePath, updatedText);
-            logger.Debug("Updated SDK image tags in {File}", filePath);
+            logger.Debug("Updated base image tags in {File}", filePath);
         }
 
         logger.MethodReturn(nameof(DockerfileService), nameof(SaveDockerfileManifest));
@@ -265,7 +263,7 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
         var image = hasTag ? nameAndTag[..tagSeparator] : nameAndTag;
         var tag = hasTag ? nameAndTag[(tagSeparator + 1)..] : null;
 
-        if (!string.Equals(image, SupportedImage, StringComparison.OrdinalIgnoreCase))
+        if (!DotnetImages.TryGetVersionSource(image, out var versionSource))
         {
             logger.Debug("Skipping unsupported image {Image} in {File}", image, relativePath);
             return;
@@ -295,17 +293,18 @@ internal sealed class DockerfileService(ILogger logger) : IDockerfileService
             return;
         }
 
-        if (!SdkImageTag.TryParse(tag, out _))
+        if (!DotnetImageTag.TryParse(tag, out _))
         {
             AddWarning(
                 manifest,
-                $"Skipping image '{image}:{tag}' in '{relativePath}' (line {lineNumber}) because only fully versioned .NET SDK tags are supported.");
+                $"Skipping image '{image}:{tag}' in '{relativePath}' (line {lineNumber}) because only fully versioned .NET image tags are supported.");
             return;
         }
 
         manifest.Add(
             new DockerImageEntry(
                 image,
+                versionSource,
                 relativePath,
                 filePath,
                 lineNumber,

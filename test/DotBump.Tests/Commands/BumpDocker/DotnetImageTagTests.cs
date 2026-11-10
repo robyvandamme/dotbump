@@ -5,7 +5,7 @@ using Shouldly;
 
 namespace DotBump.Tests.Commands.BumpDocker;
 
-public class SdkImageTagTests
+public class DotnetImageTagTests
 {
     public class TryParse
     {
@@ -14,9 +14,10 @@ public class SdkImageTagTests
         [InlineData("11.0.100-rc.3")]
         [InlineData("11.0.100-preview.1")]
         [InlineData("10.0.403")]
+        [InlineData("10.0.15")]
         public void With_Supported_Tag_Returns_True(string tag)
         {
-            var result = SdkImageTag.TryParse(tag, out var version);
+            var result = DotnetImageTag.TryParse(tag, out var version);
 
             result.ShouldSatisfyAllConditions(
                 () => result.ShouldBeTrue(),
@@ -32,7 +33,7 @@ public class SdkImageTagTests
         [InlineData("11.0.100-servicing.25256.1")]
         public void With_Unsupported_Tag_Returns_False(string tag)
         {
-            var result = SdkImageTag.TryParse(tag, out _);
+            var result = DotnetImageTag.TryParse(tag, out _);
 
             result.ShouldBeFalse();
         }
@@ -40,21 +41,22 @@ public class SdkImageTagTests
         [Fact]
         public void With_Empty_Tag_Throws_ArgumentException()
         {
-            Should.Throw<ArgumentException>(() => SdkImageTag.TryParse(string.Empty, out _));
+            Should.Throw<ArgumentException>(() => DotnetImageTag.TryParse(string.Empty, out _));
         }
     }
 
-    public class TryMapFromSdkVersion
+    public class TryMapFromVersion
     {
         [Theory]
         [InlineData("10.0.403", "10.0.403")]
+        [InlineData("10.0.15", "10.0.15")]
         [InlineData("11.0.100-rc.3", "11.0.100-rc.3")]
         [InlineData("11.0.100-rc.3.26522.148", "11.0.100-rc.3")]
         [InlineData("11.0.100-preview.1.25120.13", "11.0.100-preview.1")]
         [InlineData("10.0.100-beta.2.25120.1", "10.0.100-beta.2")]
-        public void With_Supported_Sdk_Version_Returns_Image_Tag(string sdkVersion, string expected)
+        public void With_Supported_Release_Version_Returns_Image_Tag(string releaseVersion, string expected)
         {
-            var result = SdkImageTag.TryMapFromSdkVersion(sdkVersion);
+            var result = DotnetImageTag.TryMapFromVersion(releaseVersion);
 
             result.ShouldBe(expected);
         }
@@ -63,9 +65,9 @@ public class SdkImageTagTests
         [InlineData("11.0.100-servicing.26522.148")]
         [InlineData("11.0.100-custom.1")]
         [InlineData("not-a-version")]
-        public void With_Unsupported_Sdk_Version_Returns_Null(string sdkVersion)
+        public void With_Unsupported_Release_Version_Returns_Null(string releaseVersion)
         {
-            var result = SdkImageTag.TryMapFromSdkVersion(sdkVersion);
+            var result = DotnetImageTag.TryMapFromVersion(releaseVersion);
 
             result.ShouldBeNull();
         }
