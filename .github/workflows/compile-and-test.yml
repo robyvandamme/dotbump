@@ -17,6 +17,8 @@ on:
       - '!scripts/**'
       - '!.config/**'
       - '!AGENTS.md'
+      - '!opencode.json*'
+      - '!.gitignore'
   workflow_dispatch:
 
 permissions:
