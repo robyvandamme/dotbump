@@ -52,7 +52,7 @@
 
     // Rules are last-match-wins: broad allows first, specific overrides after.
     // These override the shell rules in the global config.
-    // Overrides for the .NET
+    // Overrides for .NET.
     { "action": "shell", "resource": "dotnet *", "effect": "allow" },
     { "action": "shell", "resource": "dotnet user-secrets*", "effect": "deny" },
     { "action": "shell", "resource": "dotnet ef database*", "effect": "ask" },
