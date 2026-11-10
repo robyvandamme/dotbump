@@ -135,12 +135,20 @@ thread-safe: parallel loads must return their warnings and have them appended se
 ordering ever gains semantic meaning, sort by the parsed major/minor instead; otherwise consider
 dropping the `OrderBy` or adding a comment that order is not semantic.
 
+**Status: Deferred.** Ordering currently affects only warning and fetch order, and it is
+deterministic. If channel loading is ever parallelised (finding 3), sort by parsed major/minor at
+that point so the warning output stays natural and stable.
+
 ### 5. [Nit] `DotnetImages.TryGetVersionSource` could be a dictionary
 
 The four `string.Equals(..., StringComparison.OrdinalIgnoreCase)` branches work, but a static
 `Dictionary<string, DotnetImageVersionSource>(StringComparer.OrdinalIgnoreCase)` lookup is shorter
 and makes adding future image families (e.g., `aspire`, `worker`) a one-line change. Behavior would
 be identical.
+
+**Status: Resolved in `b152807`.** `DotnetImages` now uses a static
+`Dictionary<string, DotnetImageVersionSource>(StringComparer.OrdinalIgnoreCase)`, so a new family is
+one entry. `DotnetImagesTests` still covers the full mapping matrix.
 
 ### 6. [Nit] Structured logging: avoid `ToString()` in message arguments
 
@@ -155,6 +163,11 @@ Call `ToString()` only when the template forces it (this pattern is used elsewhe
 formats it via `ToString()` anyway, and passing the raw value keeps the event property typed
 (`SemanticVersion`) rather than baked to a string.
 
+**Status: Deferred.** The same `.ToString()` pattern appears at three call sites (`ReleaseFinder`,
+`ReleaseWebService`, `BumpSdkHandler`). Changing only this one would leave the codebase inconsistent,
+and passing the objects directly changes the structured event property type — that is a separate
+logging decision rather than a docker follow-up.
+
 ### 7. [Nit] Double validation inside `DotnetImageTag.TryParse`
 
 ```csharp
@@ -168,6 +181,10 @@ factor when the regex matches. Not harmful (the regex also guards against pathol
 `SemanticVersion` construction is cheap and never throws for non-null input), but if the intent is
 "regex is the gate", the `IsValid` check is dead weight; if the intent is "both must agree", a short
 comment would clarify.
+
+**Status: Resolved in `b152807`.** The `IsValid` check was removed; `s_imageTagPattern` is the gate,
+with a comment noting it is stricter than `SemanticVersion`. `DotnetImageTagTests` pins the accepted
+and rejected tag matrix.
 
 ### 8. [Nit, tests] `CreateHandler(params Release[])` fabricates channel history from SDK versions
 
@@ -184,6 +201,8 @@ aspnet-viability inputs. That is fine for the SDK-focused tests, but any future 
 helper while asserting runtime-tag mapping could end up testing the fixture rather than the code.
 A one-line comment on the helper noting "SDK-version history is fabricated; use
 `WithChannelReleases` for runtime/aspnet expectations" would make the design explicit.
+
+**Status: Resolved in `b152807`.** Added the comment to the `CreateHandler(params Release[])` helper.
 
 ---
 
@@ -206,7 +225,6 @@ A one-line comment on the helper noting "SDK-version history is fabricated; use
 
 ## Conclusion
 
-No blocking findings. Findings 1 and 2 are resolved (`568d329`, `6287777`); finding 3 is deferred
-— all network calls are currently sequential and the request volume for `docker` is low, so
-concurrency should be a cross-cutting change starting with package/tool resolution. Findings 4–8
-are cosmetic. Approved with these as optional improvements.
+No blocking findings. Findings 1, 2, 5, 7 and 8 are resolved (`568d329`, `6287777`, `b152807`);
+findings 3 and 4 are deferred with the future concurrency work, and finding 6 is deferred as a
+cross-cutting logging decision. Approved with these as optional improvements.
