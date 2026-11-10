@@ -220,43 +220,40 @@ internal class BumpDockerHandler(
             candidates = channelRelease.Releases;
         }
 
+        var supportedCandidates = candidates
+            .Select(release => (
+                Release: release,
+                Version: ChannelReleaseVersions.GetVersion(release, group.Key.VersionSource)))
+            .Where(candidate => candidate.Version != null)
+            .Select(candidate => new ReleaseCandidate(candidate.Release, candidate.Version!))
+            .ToList();
+
+        if (supportedCandidates.Count == 0)
+        {
+            AddWarning(
+                manifest,
+                $"Skipping .NET {channel} {group.Key.VersionSource} images because the release history does not contain a supported version.");
+            return;
+        }
+
         var newRelease = ReleaseSelector.TryFindNewest(
             referenceEntry.ParsedVersion,
-            candidates,
-            release => ChannelReleaseVersions.GetVersion(release, group.Key.VersionSource),
+            supportedCandidates,
+            candidate => candidate.Version,
             bumpType,
             preRelease);
 
         if (newRelease == null)
         {
-            if (!candidates.Any(release =>
-                    ChannelReleaseVersions.GetVersion(release, group.Key.VersionSource) != null))
-            {
-                AddWarning(
-                    manifest,
-                    $"Skipping .NET {channel} {group.Key.VersionSource} images because the release history does not contain a supported version.");
-            }
-            else
-            {
-                logger.Debug(
-                    "No new .NET {Channel} release found for {VersionSource} images (current tag {Tag})",
-                    channel,
-                    group.Key.VersionSource,
-                    referenceEntry.OriginalTag);
-            }
-
+            logger.Debug(
+                "No new .NET {Channel} release found for {VersionSource} images (current tag {Tag})",
+                channel,
+                group.Key.VersionSource,
+                referenceEntry.OriginalTag);
             return;
         }
 
-        var newVersion = ChannelReleaseVersions.GetVersion(newRelease, group.Key.VersionSource);
-        if (newVersion == null)
-        {
-            AddWarning(
-                manifest,
-                $"Skipping .NET {channel} {group.Key.VersionSource} images because the selected release does not contain a supported version.");
-            return;
-        }
-
+        var newVersion = newRelease.Version;
         var newTag = DotnetImageTag.TryMapFromVersion(newVersion.Version);
         if (newTag == null || !DotnetImageTag.TryParse(newTag, out var parsedNewVersion))
         {
@@ -271,7 +268,7 @@ internal class BumpDockerHandler(
             channel,
             group.Key.VersionSource,
             newTag,
-            newRelease.ReleaseVersion ?? newVersion.Version);
+            newRelease.Release.ReleaseVersion ?? newVersion.Version);
 
         // Never downgrade: only update occurrences below the resolved target version.
         foreach (var entry in group.Where(entry => parsedNewVersion > entry.ParsedVersion))
@@ -285,6 +282,8 @@ internal class BumpDockerHandler(
         logger.Warning("{Warning}", warning);
         manifest.AddWarning(warning);
     }
+
+    private sealed record ReleaseCandidate(ChannelRelease Release, SemanticVersion Version);
 
     private readonly record struct ImageGroup(
         DotnetImageVersionSource VersionSource,

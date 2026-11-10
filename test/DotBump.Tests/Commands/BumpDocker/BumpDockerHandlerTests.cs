@@ -428,6 +428,29 @@ public class BumpDockerHandlerTests
         }
 
         [Fact]
+        public async Task With_Some_Releases_Missing_AspNetCore_Version_Uses_Remaining_Rows()
+        {
+            ResetTempDirectory();
+            WriteDockerfile("FROM mcr.microsoft.com/dotnet/aspnet:10.0.14 AS base\n");
+            var releaseService = new FakeReleaseService(CreateRelease("10.0", "10.0.404"))
+                .WithChannelReleases(
+                    "10.0",
+                    new ChannelRelease(
+                        Security: false,
+                        Sdks: null,
+                        ReleaseVersion: "10.0.15",
+                        Sdk: new ChannelComponent("10.0.404"),
+                        Runtime: new ChannelComponent("10.0.15")),
+                    CreateChannelRelease("10.0.404", "10.0.15", "10.0.16"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldHaveSingleItem().NewVersion.ShouldBe("10.0.16");
+            ReadDockerfile().ShouldContain("aspnet:10.0.16");
+        }
+
+        [Fact]
         public async Task With_Channel_History_Failure_Adds_Warning_And_Skips_Channel()
         {
             ResetTempDirectory();
