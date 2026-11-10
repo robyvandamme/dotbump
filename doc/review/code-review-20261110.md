@@ -98,6 +98,13 @@ the candidates into `(ChannelRelease, SemanticVersion?)` pairs once, pass them t
 target. This removes redundant parsing and keeps the selection warning logic on the same data it
 actually evaluated.
 
+**Status: Resolved in `6287777`.** `ApplyBump` now projects the candidates and their parsed versions
+once into `ReleaseCandidate` instances, passes that list to `ReleaseSelector`, and reuses the
+selected candidate's version. The "no supported version" check is a `Count == 0` test on the same
+list, and the lazy `SelectMany` is no longer enumerated twice.
+`With_Some_Releases_Missing_AspNetCore_Version_Uses_Remaining_Rows` covers the mixed
+supported/unsupported row case.
+
 ### 3. [Low, performance] Channel histories are fetched sequentially
 
 `GetChannelReleasesAsync` awaits each channel's `releases.json` in a `foreach` loop. For a major
@@ -112,6 +119,14 @@ var results = await Task.WhenAll(lookups).ConfigureAwait(false);
 ```
 
 Not urgent for a CLI tool, but it becomes visible when many channels are involved.
+
+**Status: Deferred.** Every network call in the tool is currently sequential — there is no
+`Task.WhenAll` or `Parallel` usage in `src` — and `docker` makes at most one request per channel
+(typically one, sometimes two). `packages`/`tools` make one or more requests per package per
+source, so if concurrency is introduced it should be a cross-cutting change starting there rather
+than a docker-only optimisation. If this is picked up later, note that `manifest.Warnings` is not
+thread-safe: parallel loads must return their warnings and have them appended sequentially after
+`Task.WhenAll`.
 
 ### 4. [Nit] Channel "ordering" is ordinal string order, not numeric
 
@@ -191,6 +206,7 @@ A one-line comment on the helper noting "SDK-version history is fabricated; use
 
 ## Conclusion
 
-No blocking findings. Finding 1 is resolved in `568d329`; findings 2–3 are worth a small follow-up
-(intent consolidation in `ApplyBump`, parallel channel fetches); 4–8 are cosmetic. Approved with
-these as optional improvements.
+No blocking findings. Findings 1 and 2 are resolved (`568d329`, `6287777`); finding 3 is deferred
+— all network calls are currently sequential and the request volume for `docker` is low, so
+concurrency should be a cross-cutting change starting with package/tool resolution. Findings 4–8
+are cosmetic. Approved with these as optional improvements.
