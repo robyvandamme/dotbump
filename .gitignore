@@ -368,3 +368,7 @@ MigrationBackup/
 
 # Local nuke parameter configuration
 .nuke/parameters.Local.json
+
+## Local environment variables
+.envrc
+.env
