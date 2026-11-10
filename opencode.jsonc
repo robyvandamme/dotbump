@@ -1,0 +1,80 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Sensible defaults are configured in the global config.
+  // Override them here if you need to.
+
+  "mcp": {
+    // A higher-precedence project config replaces the entire server object
+    // with the same name, so repeat every required field here.
+    "servers": {
+      "sonarqube": {
+        "type": "local",
+        "command": [
+          "docker",
+          "run",
+          "--init",
+          "--pull=always",
+          "-i",
+          "--rm",
+          "-e",
+          "SONARQUBE_TOKEN",
+          "-e",
+          "SONARQUBE_ORG",
+          "-e",
+          "SONARQUBE_TOOLSETS",
+          "-e",
+          "SONARQUBE_READ_ONLY",
+          "sonarsource/sonarqube-mcp"
+        ],
+        "environment": {
+          "SONARQUBE_TOKEN": "{env:SONARQUBE_TOKEN}",
+          "SONARQUBE_ORG": "robyvandamme",
+          // Keeps the catalog small and skips the analyzer/vortex toolsets,
+          // whose downloads the sandbox network policy blocks. `projects` is
+          // always enabled.
+          "SONARQUBE_TOOLSETS": "issues,quality-gates,security-hotspots,measures,duplications,rules",
+          // Removes the issue and hotspot write tools. Drop this to triage
+          // findings from an agent session.
+          "SONARQUBE_READ_ONLY": "true"
+        },
+        // A cold image pull in a fresh sandbox can exceed the 30s default.
+        "timeout": {
+          "startup": 120000
+        }
+      }
+    }
+  },
+  "permissions": [
+    // add any relevant additional permissions here.
+    // Below are set to ask in the global config. Set to allow for convenience.
+    { "action": "webfetch", "resource": "*", "effect": "allow" },
+    { "action": "websearch", "resource": "*", "effect": "allow" },
+
+    // Rules are last-match-wins: broad allows first, specific overrides after.
+    // These override the shell rules in the global config.
+    // Overrides for the .NET
+    { "action": "shell", "resource": "dotnet *", "effect": "allow" },
+    { "action": "shell", "resource": "dotnet user-secrets*", "effect": "deny" },
+    { "action": "shell", "resource": "dotnet ef database*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet ef database drop*", "effect": "deny" },
+    { "action": "shell", "resource": "dotnet ef migrations add*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet ef migrations remove*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet ef dbcontext scaffold*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet dev-certs*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet new*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet nuget push*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet nuget delete*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet tool install*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet tool uninstall*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet tool update*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet workload install*", "effect": "ask" },
+    { "action": "shell", "resource": "dotnet workload remove*", "effect": "ask" },
+
+    // Below are set to deny in the global config.
+    // Overrides since we typically need them in a regular workflow.
+    { "action": "shell", "resource": "rm *", "effect": "ask" },
+    { "action": "shell", "resource": "rmdir *", "effect": "ask" },
+    { "action": "shell", "resource": "git rm*", "effect": "ask" },
+    { "action": "shell", "resource": "chmod *", "effect": "ask" }
+  ]
+}
