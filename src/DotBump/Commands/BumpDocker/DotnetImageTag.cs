@@ -37,7 +37,9 @@ internal static class DotnetImageTag
 
         version = new SemanticVersion(tag);
 
-        return version.IsValid && s_imageTagPattern.IsMatch(tag);
+        // The image tag pattern is stricter than SemanticVersion (it rejects build metadata and
+        // four-part versions), so it is the only gate required here.
+        return s_imageTagPattern.IsMatch(tag);
     }
 
     /// <summary>

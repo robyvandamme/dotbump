@@ -638,6 +638,8 @@ public class BumpDockerHandlerTests
 
         foreach (var group in releases.GroupBy(release => release.ChannelVersion))
         {
+            // SDK-focused tests only: runtime and ASP.NET Core versions are fabricated from the SDK
+            // version. Use WithChannelReleases(...) when asserting those mappings.
             releaseService.WithChannelReleases(
                 group.Key,
                 group

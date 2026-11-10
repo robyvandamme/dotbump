@@ -12,6 +12,15 @@ internal static class DotnetImages
     internal const string Runtime = "mcr.microsoft.com/dotnet/runtime";
     internal const string RuntimeDeps = "mcr.microsoft.com/dotnet/runtime-deps";
 
+    private static readonly Dictionary<string, DotnetImageVersionSource> s_versionSources =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            [Sdk] = DotnetImageVersionSource.Sdk,
+            [AspNet] = DotnetImageVersionSource.AspNetCore,
+            [Runtime] = DotnetImageVersionSource.Runtime,
+            [RuntimeDeps] = DotnetImageVersionSource.Runtime,
+        };
+
     /// <summary>
     /// Tries to resolve the version source for a supported image.
     /// </summary>
@@ -26,26 +35,6 @@ internal static class DotnetImages
             return false;
         }
 
-        if (string.Equals(image, Sdk, StringComparison.OrdinalIgnoreCase))
-        {
-            versionSource = DotnetImageVersionSource.Sdk;
-            return true;
-        }
-
-        if (string.Equals(image, AspNet, StringComparison.OrdinalIgnoreCase))
-        {
-            versionSource = DotnetImageVersionSource.AspNetCore;
-            return true;
-        }
-
-        if (string.Equals(image, Runtime, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(image, RuntimeDeps, StringComparison.OrdinalIgnoreCase))
-        {
-            versionSource = DotnetImageVersionSource.Runtime;
-            return true;
-        }
-
-        versionSource = default;
-        return false;
+        return s_versionSources.TryGetValue(image, out versionSource);
     }
 }
