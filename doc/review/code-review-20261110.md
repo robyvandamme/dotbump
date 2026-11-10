@@ -74,6 +74,13 @@ The "does not list that channel" / "could not be read" checks in
 particular interaction between a failed channel load and a major bump, which makes the intent hard
 to verify.
 
+**Status: Resolved in `568d329`.** The gate is intentional: an image whose own channel history was
+skipped is left untouched so the recorded warning stays accurate. `ApplyBump` now branches on the
+bump type and documents that rule next to the check. The "no test" observation was incorrect —
+`With_Channel_Missing_From_Index_And_Major_Bump_Adds_Warning_And_Leaves_Tags` already pinned the
+gate; `With_Channel_History_Failure_And_Major_Bump_Skips_Only_That_Channel` now also pins the
+failed-fetch variant.
+
 ### 2. [Low] `ApplyBump` resolves candidate versions up to three times
 
 `src/DotBump/Commands/BumpDocker/BumpDockerHandler.cs` — `ApplyBump` calls
@@ -184,6 +191,6 @@ A one-line comment on the helper noting "SDK-version history is fabricated; use
 
 ## Conclusion
 
-No blocking findings. Findings 1–3 are worth a small follow-up (intent comment or consolidation in
-`ApplyBump`, parallel channel fetches); 4–8 are cosmetic. Approved with these as optional
-improvements.
+No blocking findings. Finding 1 is resolved in `568d329`; findings 2–3 are worth a small follow-up
+(intent consolidation in `ApplyBump`, parallel channel fetches); 4–8 are cosmetic. Approved with
+these as optional improvements.
