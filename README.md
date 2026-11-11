@@ -349,15 +349,17 @@ Only existing numeric `<LangVersion>` values are considered, and they are bumped
 
 ```text
 DESCRIPTION:
-Bump the .NET SDK base image tag in Dockerfiles. Only the
-`mcr.microsoft.com/dotnet/sdk` image is supported. Each Dockerfile is bumped
-within its own current SDK major (and minor for 'patch'); the 'major' type moves
-every Dockerfile to the latest release. Use the 'minor' type option to bump each
-image to the latest minor or patch version for its current major version. Use
-the 'patch' type option to bump each image to the latest patch version for its
-current minor version. Use the 'major' type option to bump every image to the
-latest version, including versions with a higher major version. Use
-'--prerelease' with the 'major' type to include pre-release versions.
+Bump .NET base image tags in Dockerfiles and Containerfiles. Supports the
+`mcr.microsoft.com/dotnet/sdk`, `aspnet`, `runtime` and `runtime-deps` images.
+Each image is bumped within its own current .NET channel (and its own minor for
+'patch'); the 'major' type moves every image to the latest release. Use the
+'minor' type option to bump each image to the latest minor or patch version for
+its current major version. Use the 'patch' type option to bump each image to
+the latest patch version for its current minor version. Use the 'major' type
+option to bump every image to the latest version, including versions with a
+higher major version. A channel whose release history cannot be read is skipped
+with a warning. Use '--prerelease' with the 'major' type to include pre-release
+versions.
 
 USAGE:
     dotnet dotbump docker [OPTIONS]
@@ -390,21 +392,26 @@ OPTIONS:
 ```
 
 The command scans `Dockerfile`, `Dockerfile.*`, `*.dockerfile` (including `*.Dockerfile`) and `Containerfile`, and
-updates the tag of every `FROM mcr.microsoft.com/dotnet/sdk:<tag>` instruction. The target version is resolved from the
-same .NET release index as the `sdk` command, and the image tag is the SDK version without build metadata:
-`11.0.100-rc.3.26522.148` becomes `11.0.100-rc.3`.
+updates the tag of every supported `FROM` instruction: `mcr.microsoft.com/dotnet/sdk`, `aspnet`, `runtime` and
+`runtime-deps`. Each image version comes from the release history (`releases.json`) of its channel; the release index
+is used to find and validate that history URL. The SDK image is tagged with the release's SDK version, `aspnet` with
+the ASP.NET Core runtime version, and `runtime`/`runtime-deps` with the runtime version.
 
-Images are bumped per SDK channel rather than all to a single version. With `minor` and `patch`, each Dockerfile stays
-on its current SDK major (and, for `patch`, its current minor) and is updated to the latest release in that channel. A
-repository with images on .NET 8 and .NET 10 therefore keeps both majors and moves each to its own latest version.
-`major` removes the cap and moves every image to the latest release. Pre-release versions follow the shared version
-selection rules.
+Images are bumped per channel rather than all to a single version. With `minor` and `patch`, each image stays on its
+current .NET channel and is updated to the latest release in that channel. A repository with images on .NET 10 and
+.NET 11 therefore keeps both channels and moves each to its own latest version. `major` removes the channel cap and
+moves every image to the latest release. For `aspnet`, `runtime` and `runtime-deps`, `minor` and `patch` are
+equivalent because those images have no SDK feature bands. Pre-release versions follow the shared version selection
+rules.
+
+If a channel's release history cannot be loaded, that channel is skipped: its images keep their current tags, a
+warning is added to the report, and the other channels are still bumped. The command still exits normally.
 
 Only fully versioned tags are supported: `major.minor.patch` with an optional `alpha`, `beta`, `rc` or `preview`
-suffix. All other images are ignored. For the SDK image, the following are left unchanged and listed under `warnings`
-in the output report:
+suffix. All other images are ignored. For a supported image, the following are left unchanged and listed under
+`warnings` in the output report:
 
-* `latest`, floating tags such as `11.0`, and variant tags such as `10.0.101-noble` or `10.0.101-alpine3.24`.
+* `latest`, floating tags such as `10.0`, and variant tags such as `10.0.15-noble` or `10.0.15-alpine3.24`.
 * Digest-pinned images (`...@sha256:...`).
 * Tags that use build arguments (`${SDK_VERSION}`).
 
@@ -413,11 +420,13 @@ reliably without joining physical lines.
 
 #### Limitations
 
-* Only the `mcr.microsoft.com/dotnet/sdk` image is supported. Other .NET images, other registries,
-  `docker-compose.yml` and `.devcontainer` files are left untouched.
+* Only the `mcr.microsoft.com/dotnet/sdk`, `aspnet`, `runtime` and `runtime-deps` images are supported. Other .NET
+  images, other registries, `docker-compose.yml` and `.devcontainer` files are left untouched.
+* Floating tags are not pinned to a fully versioned release. Projects that want the command to update an image must
+  use a fully versioned tag.
 * The resolved image tag is not validated against the Microsoft Container Registry, because the version comes from the
-  .NET release index. The index and the published images are released together, but an unavailable image tag would only
-  surface when the image is pulled.
+  .NET release history. The history and the published images are released together, but an unavailable image tag would
+  only surface when the image is pulled.
 * Variant and OS suffixes (for example `-noble`, `-alpine3.24`) are not supported yet and are reported as warnings.
 
 ## Common behaviour
@@ -425,7 +434,7 @@ reliably without joining physical lines.
 ### Version selection and pre-releases
 
 The `sdk`, `tools`, `packages` and `docker` commands share the same version selection rules. For `docker`, the rules
-are applied per SDK major, and per major.minor for `patch` bumps.
+are applied per channel and per image family (SDK, ASP.NET Core, runtime).
 
 * `minor` and `patch` stay within the current major or minor version.
 * `major` removes the major-version cap, consistent with how `minor` includes patch releases. It therefore also selects

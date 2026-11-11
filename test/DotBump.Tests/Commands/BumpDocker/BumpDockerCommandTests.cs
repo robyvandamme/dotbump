@@ -4,7 +4,6 @@ using DotBump.Commands;
 using DotBump.Commands.BumpDocker;
 using DotBump.Commands.BumpDocker.DataModel;
 using DotBump.Commands.BumpDocker.Interfaces;
-using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.DataModel;
 using DotBump.Common;
 using DotBump.Reports;
@@ -126,10 +125,23 @@ public class BumpDockerCommandTests
             File.WriteAllText(dockerfilePath, dockerfileContent);
 
             var logger = Mock.Of<ILogger>();
+            var releaseService = new FakeReleaseService(
+                    new Release("10.0", "10.0.101", "lts", false)
+                    {
+                        ReleasesJson =
+                            "https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json",
+                    })
+                .WithChannelReleases(
+                    "10.0",
+                    new ChannelRelease(
+                        Security: false,
+                        Sdks: null,
+                        ReleaseVersion: "10.0.4",
+                        Sdk: new ChannelComponent("10.0.101"),
+                        Runtime: new ChannelComponent("10.0.4")));
             var handler = new BumpDockerHandler(
                 new DockerfileService(logger),
-                new FakeReleaseService(new Release("10.0", "10.0.101", "lts", false)),
-                new ReleaseFinder(logger),
+                releaseService,
                 logger);
 
             using var testConsole = new TestConsole();
@@ -160,12 +172,11 @@ public class BumpDockerCommandTests
             var manifest = new DockerfileManifest();
             var entry = new DockerImageEntry(
                 "mcr.microsoft.com/dotnet/sdk",
+                DotnetImageVersionSource.Sdk,
                 "Dockerfile",
                 "/repo/Dockerfile",
                 1,
-                "10.0.100",
-                0,
-                8);
+                new DockerTagSpan("10.0.100", 0, 8));
             manifest.Add(entry);
             manifest.SetTag(entry, "10.0.101");
             return manifest;

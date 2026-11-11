@@ -2,6 +2,7 @@
 
 using System.Text.Json;
 using DotBump.Commands;
+using DotBump.Commands.BumpDocker;
 using DotBump.Commands.BumpDocker.DataModel;
 using DotBump.Commands.BumpFrameworks.DataModel;
 using DotBump.Commands.BumpLanguage.DataModel;
@@ -92,12 +93,11 @@ public class BumpReportTests
             var manifest = new DockerfileManifest();
             var entry = new DockerImageEntry(
                 "mcr.microsoft.com/dotnet/sdk",
+                DotnetImageVersionSource.Sdk,
                 "Dockerfile",
                 "/repo/Dockerfile",
                 1,
-                "10.0.100",
-                0,
-                8);
+                new DockerTagSpan("10.0.100", 0, 8));
             manifest.Add(entry);
             manifest.SetTag(entry, "10.0.101");
 
@@ -112,6 +112,43 @@ public class BumpReportTests
                 () => result.Id.ShouldBe("mcr.microsoft.com/dotnet/sdk"),
                 () => result.OldVersion.ShouldBe("10.0.100"),
                 () => result.NewVersion.ShouldBe("10.0.101"));
+        }
+
+        [Fact]
+        public void With_Mixed_Image_Families_Reports_One_Row_Per_Image()
+        {
+            var manifest = new DockerfileManifest();
+            var sdkEntry = new DockerImageEntry(
+                "mcr.microsoft.com/dotnet/sdk",
+                DotnetImageVersionSource.Sdk,
+                "Dockerfile",
+                "/repo/Dockerfile",
+                2,
+                new DockerTagSpan("10.0.404", 0, 8));
+            var aspNetEntry = new DockerImageEntry(
+                "mcr.microsoft.com/dotnet/aspnet",
+                DotnetImageVersionSource.AspNetCore,
+                "Dockerfile",
+                "/repo/Dockerfile",
+                1,
+                new DockerTagSpan("10.0.15", 0, 7));
+            manifest.Add(sdkEntry);
+            manifest.Add(aspNetEntry);
+            manifest.SetTag(sdkEntry, "10.0.405");
+            manifest.SetTag(aspNetEntry, "10.0.16");
+
+            var report = new BumpReport(manifest, BumpType.Minor);
+            report.ReportChanges(manifest);
+
+            report.Results.Count.ShouldBe(2);
+            report.Results.ShouldContain(result =>
+                result.Id == "mcr.microsoft.com/dotnet/sdk"
+                && result.OldVersion == "10.0.404"
+                && result.NewVersion == "10.0.405");
+            report.Results.ShouldContain(result =>
+                result.Id == "mcr.microsoft.com/dotnet/aspnet"
+                && result.OldVersion == "10.0.15"
+                && result.NewVersion == "10.0.16");
         }
     }
 

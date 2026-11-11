@@ -1,9 +1,11 @@
 // Copyright © Roby Van Damme.
 
+using System.Collections.ObjectModel;
 using DotBump.Commands;
 using DotBump.Commands.BumpDocker;
-using DotBump.Commands.BumpSdk;
 using DotBump.Commands.BumpSdk.DataModel;
+using DotBump.Commands.BumpSdk.Interfaces;
+using DotBump.Common;
 using DotBump.Tests.Commands.BumpDocker.Fakes;
 using DotBump.Tests.TestHelpers;
 using Moq;
@@ -14,6 +16,9 @@ namespace DotBump.Tests.Commands.BumpDocker;
 
 public class BumpDockerHandlerTests
 {
+    private const string ReleaseMetadataBaseUrl =
+        "https://builds.dotnet.microsoft.com/dotnet/release-metadata";
+
     public class HandleAsync
     {
         [Fact]
@@ -21,7 +26,7 @@ public class BumpDockerHandlerTests
         {
             ResetTempDirectory();
             WriteDockerfile("FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build\n");
-            var handler = CreateHandler(new Release("10.0", "10.0.101", "lts", false));
+            var handler = CreateHandler(CreateRelease("10.0", "10.0.101"));
 
             var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
 
@@ -40,7 +45,7 @@ public class BumpDockerHandlerTests
             ResetTempDirectory();
             const string content = "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build\n";
             WriteDockerfile(content);
-            var handler = CreateHandler(new Release("10.0", "10.0.100", "lts", false));
+            var handler = CreateHandler(CreateRelease("10.0", "10.0.100"));
 
             var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
 
@@ -55,8 +60,8 @@ public class BumpDockerHandlerTests
             ResetTempDirectory();
             WriteDockerfile("FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build\n");
             var handler = CreateHandler(
-                new Release("10.0", "10.0.101", "lts", false),
-                new Release("11.0", "11.0.100", "sts", false));
+                CreateRelease("10.0", "10.0.101"),
+                CreateRelease("11.0", "11.0.100"));
 
             var report = await handler.HandleAsync(BumpType.Major, TempDirectory.AbsolutePath);
 
@@ -69,7 +74,7 @@ public class BumpDockerHandlerTests
         {
             ResetTempDirectory();
             WriteDockerfile("FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.1 AS build\n");
-            var handler = CreateHandler(new Release("11.0", "11.0.100-rc.3.26522.148", "go-live", false));
+            var handler = CreateHandler(CreateRelease("11.0", "11.0.100-rc.3.26522.148"));
 
             var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
 
@@ -84,7 +89,7 @@ public class BumpDockerHandlerTests
             WriteDockerfile(
                 "FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.1 AS build\n" +
                 "FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.3 AS publish\n");
-            var handler = CreateHandler(new Release("11.0", "11.0.100-rc.3.26522.148", "go-live", false));
+            var handler = CreateHandler(CreateRelease("11.0", "11.0.100-rc.3.26522.148"));
 
             var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
 
@@ -102,8 +107,8 @@ public class BumpDockerHandlerTests
                 "FROM mcr.microsoft.com/dotnet/sdk:8.0.404 AS legacy\n" +
                 "FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build\n");
             var handler = CreateHandler(
-                new Release("8.0", "8.0.427", "maintenance", true),
-                new Release("10.0", "10.0.406", "lts", false));
+                CreateRelease("8.0", "8.0.427"),
+                CreateRelease("10.0", "10.0.406"));
 
             var report = await handler.HandleAsync(BumpType.Patch, TempDirectory.AbsolutePath);
 
@@ -126,8 +131,8 @@ public class BumpDockerHandlerTests
                 "FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build\n" +
                 "FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.1 AS publish\n");
             var handler = CreateHandler(
-                new Release("10.0", "10.0.406", "lts", false),
-                new Release("11.0", "11.0.100-rc.3.26522.148", "go-live", false));
+                CreateRelease("10.0", "10.0.406"),
+                CreateRelease("11.0", "11.0.100-rc.3.26522.148"));
 
             var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
 
@@ -150,9 +155,9 @@ public class BumpDockerHandlerTests
                 "FROM mcr.microsoft.com/dotnet/sdk:8.0.404 AS legacy\n" +
                 "FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build\n");
             var handler = CreateHandler(
-                new Release("8.0", "8.0.427", "maintenance", true),
-                new Release("10.0", "10.0.406", "lts", false),
-                new Release("11.0", "11.0.100", "sts", false));
+                CreateRelease("8.0", "8.0.427"),
+                CreateRelease("10.0", "10.0.406"),
+                CreateRelease("11.0", "11.0.100"));
 
             var report = await handler.HandleAsync(BumpType.Major, TempDirectory.AbsolutePath);
 
@@ -170,9 +175,9 @@ public class BumpDockerHandlerTests
                 "FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build\n" +
                 "FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.1 AS publish\n");
             var handler = CreateHandler(
-                new Release("10.0", "10.0.406", "lts", false),
-                new Release("11.0", "11.0.100", "sts", false),
-                new Release("12.0", "12.0.100-preview.1.26522.200", "go-live", false));
+                CreateRelease("10.0", "10.0.406"),
+                CreateRelease("11.0", "11.0.100"),
+                CreateRelease("12.0", "12.0.100-preview.1.26522.200"));
 
             var report = await handler.HandleAsync(
                 BumpType.Major,
@@ -193,8 +198,8 @@ public class BumpDockerHandlerTests
                 "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build\n" +
                 "FROM mcr.microsoft.com/dotnet/sdk:10.1.100 AS publish\n");
             var handler = CreateHandler(
-                new Release("10.0", "10.0.406", "lts", false),
-                new Release("10.1", "10.1.103", "lts", false));
+                CreateRelease("10.0", "10.0.406"),
+                CreateRelease("10.1", "10.1.103"));
 
             var report = await handler.HandleAsync(BumpType.Patch, TempDirectory.AbsolutePath);
 
@@ -216,7 +221,7 @@ public class BumpDockerHandlerTests
             WriteDockerfile(
                 "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build\n" +
                 "FROM mcr.microsoft.com/dotnet/sdk:10.0.404 AS publish\n");
-            var handler = CreateHandler(new Release("10.0", "10.0.406", "lts", false));
+            var handler = CreateHandler(CreateRelease("10.0", "10.0.406"));
 
             var report = await handler.HandleAsync(BumpType.Patch, TempDirectory.AbsolutePath);
 
@@ -232,8 +237,8 @@ public class BumpDockerHandlerTests
             ResetTempDirectory();
             WriteDockerfile("FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.3 AS build\n");
             var handler = CreateHandler(
-                new Release("11.0", "11.0.100-rc.4.26522.200", "go-live", false),
-                new Release("11.0", "11.0.100", "sts", false));
+                CreateRelease("11.0", "11.0.100-rc.4.26522.200"),
+                CreateRelease("11.0", "11.0.100"));
 
             var report = await handler.HandleAsync(BumpType.Major, TempDirectory.AbsolutePath);
 
@@ -246,8 +251,8 @@ public class BumpDockerHandlerTests
             ResetTempDirectory();
             WriteDockerfile("FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.3 AS build\n");
             var handler = CreateHandler(
-                new Release("11.0", "11.0.100", "sts", false),
-                new Release("11.1", "11.1.0-preview.1.26522.200", "go-live", false));
+                CreateRelease("11.0", "11.0.100"),
+                CreateRelease("11.1", "11.1.0-preview.1.26522.200"));
 
             var report = await handler.HandleAsync(
                 BumpType.Major,
@@ -255,6 +260,305 @@ public class BumpDockerHandlerTests
                 preRelease: true);
 
             report.Results.ShouldHaveSingleItem().NewVersion.ShouldBe("11.1.0-preview.1");
+        }
+
+        [Fact]
+        public async Task With_AspNetCore_Image_Uses_AspNetCore_Runtime_Version()
+        {
+            ResetTempDirectory();
+            WriteDockerfile("FROM mcr.microsoft.com/dotnet/aspnet:10.0.15 AS base\n");
+            var releaseService = new FakeReleaseService(CreateRelease("10.0", "10.0.404"))
+                .WithChannelReleases(
+                    "10.0",
+                    CreateChannelRelease("10.0.404", "10.0.15", "10.0.16"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            var result = report.Results.ShouldHaveSingleItem();
+            report.ShouldSatisfyAllConditions(
+                () => result.Id.ShouldBe("mcr.microsoft.com/dotnet/aspnet"),
+                () => result.NewVersion.ShouldBe("10.0.16"),
+                () => ReadDockerfile().ShouldContain("aspnet:10.0.16"));
+        }
+
+        [Fact]
+        public async Task With_Runtime_Image_Uses_Runtime_Version()
+        {
+            ResetTempDirectory();
+            WriteDockerfile("FROM mcr.microsoft.com/dotnet/runtime:10.0.14 AS base\n");
+            var releaseService = new FakeReleaseService(CreateRelease("10.0", "10.0.404"))
+                .WithChannelReleases(
+                    "10.0",
+                    CreateChannelRelease("10.0.404", "10.0.15", "10.0.16"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldHaveSingleItem().NewVersion.ShouldBe("10.0.15");
+            ReadDockerfile().ShouldContain("runtime:10.0.15");
+        }
+
+        [Fact]
+        public async Task With_RuntimeDeps_Image_Uses_Runtime_Version()
+        {
+            ResetTempDirectory();
+            WriteDockerfile("FROM mcr.microsoft.com/dotnet/runtime-deps:10.0.14 AS base\n");
+            var releaseService = new FakeReleaseService(CreateRelease("10.0", "10.0.404"))
+                .WithChannelReleases(
+                    "10.0",
+                    CreateChannelRelease("10.0.404", "10.0.15", "10.0.16"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldHaveSingleItem().NewVersion.ShouldBe("10.0.15");
+            ReadDockerfile().ShouldContain("runtime-deps:10.0.15");
+        }
+
+        [Fact]
+        public async Task With_Mixed_Families_In_One_File_Bumps_Each_Family()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/aspnet:10.0.15 AS base\n" +
+                "FROM mcr.microsoft.com/dotnet/runtime:10.0.14 AS tools\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.404 AS build\n");
+            var releaseService = new FakeReleaseService(CreateRelease("10.0", "10.0.404"))
+                .WithChannelReleases(
+                    "10.0",
+                    CreateChannelRelease("10.0.405", "10.0.15", "10.0.16"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.Results.Count.ShouldBe(3);
+            ReadDockerfile().ShouldBe(
+                "FROM mcr.microsoft.com/dotnet/aspnet:10.0.16 AS base\n" +
+                "FROM mcr.microsoft.com/dotnet/runtime:10.0.15 AS tools\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.405 AS build\n");
+        }
+
+        [Fact]
+        public async Task With_AspNetCore_Already_At_Target_Leaves_Tag_Unchanged()
+        {
+            ResetTempDirectory();
+            const string content = "FROM mcr.microsoft.com/dotnet/aspnet:10.0.16 AS base\n";
+            WriteDockerfile(content);
+            var releaseService = new FakeReleaseService(CreateRelease("10.0", "10.0.404"))
+                .WithChannelReleases(
+                    "10.0",
+                    CreateChannelRelease("10.0.404", "10.0.15", "10.0.16"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.ShouldSatisfyAllConditions(
+                () => report.HasChanges.ShouldBeFalse(),
+                () => ReadDockerfile().ShouldBe(content));
+        }
+
+        [Fact]
+        public async Task With_Mixed_Majors_And_AspNetCore_Patch_Bump_Bumps_Each_Channel()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/aspnet:10.0.14 AS legacy\n" +
+                "FROM mcr.microsoft.com/dotnet/aspnet:11.0.1 AS current\n");
+            var releaseService = new FakeReleaseService(
+                    CreateRelease("10.0", "10.0.404"),
+                    CreateRelease("11.0", "11.0.100"))
+                .WithChannelReleases("10.0", CreateChannelRelease("10.0.404", "10.0.15"))
+                .WithChannelReleases("11.0", CreateChannelRelease("11.0.100", "11.0.2"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Patch, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldSatisfyAllConditions(
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "10.0.14" && result.NewVersion == "10.0.15"),
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "11.0.1" && result.NewVersion == "11.0.2"));
+
+            ReadDockerfile().ShouldBe(
+                "FROM mcr.microsoft.com/dotnet/aspnet:10.0.15 AS legacy\n" +
+                "FROM mcr.microsoft.com/dotnet/aspnet:11.0.2 AS current\n");
+        }
+
+        [Fact]
+        public async Task With_Full_PreRelease_AspNetCore_Version_Maps_To_Image_Tag()
+        {
+            ResetTempDirectory();
+            WriteDockerfile("FROM mcr.microsoft.com/dotnet/aspnet:10.0.0-preview.1 AS base\n");
+            var releaseService = new FakeReleaseService(CreateRelease("10.0", "10.0.404"))
+                .WithChannelReleases(
+                    "10.0",
+                    CreateChannelRelease("10.0.404", "10.0.15", "10.0.0-preview.2.25120.3"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldHaveSingleItem().NewVersion.ShouldBe("10.0.0-preview.2");
+            ReadDockerfile().ShouldContain("aspnet:10.0.0-preview.2");
+        }
+
+        [Fact]
+        public async Task With_AspNetCore_Release_Missing_Version_Adds_Warning()
+        {
+            ResetTempDirectory();
+            const string content = "FROM mcr.microsoft.com/dotnet/aspnet:10.0.14 AS base\n";
+            WriteDockerfile(content);
+            var releaseService = new FakeReleaseService(CreateRelease("10.0", "10.0.404"))
+                .WithChannelReleases(
+                    "10.0",
+                    new ChannelRelease(
+                        Security: false,
+                        Sdks: null,
+                        ReleaseVersion: "10.0.15",
+                        Sdk: new ChannelComponent("10.0.404"),
+                        Runtime: new ChannelComponent("10.0.15")));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.ShouldSatisfyAllConditions(
+                () => report.HasChanges.ShouldBeFalse(),
+                () => report.Warnings.ShouldHaveSingleItem().ShouldContain("does not contain a supported version"),
+                () => ReadDockerfile().ShouldBe(content));
+        }
+
+        [Fact]
+        public async Task With_Some_Releases_Missing_AspNetCore_Version_Uses_Remaining_Rows()
+        {
+            ResetTempDirectory();
+            WriteDockerfile("FROM mcr.microsoft.com/dotnet/aspnet:10.0.14 AS base\n");
+            var releaseService = new FakeReleaseService(CreateRelease("10.0", "10.0.404"))
+                .WithChannelReleases(
+                    "10.0",
+                    new ChannelRelease(
+                        Security: false,
+                        Sdks: null,
+                        ReleaseVersion: "10.0.15",
+                        Sdk: new ChannelComponent("10.0.404"),
+                        Runtime: new ChannelComponent("10.0.15")),
+                    CreateChannelRelease("10.0.404", "10.0.15", "10.0.16"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.Results.ShouldHaveSingleItem().NewVersion.ShouldBe("10.0.16");
+            ReadDockerfile().ShouldContain("aspnet:10.0.16");
+        }
+
+        [Fact]
+        public async Task With_Channel_History_Failure_Adds_Warning_And_Skips_Channel()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS legacy\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:11.0.100 AS build\n");
+            var releaseService = new FakeReleaseService(
+                    CreateRelease("10.0", "10.0.101"),
+                    CreateRelease("11.0", "11.0.101"))
+                .WithChannelReleases("11.0", CreateChannelRelease("11.0.101", "11.0.1"))
+                .WithChannelReleasesException("10.0", new DotBumpException("boom"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.ShouldSatisfyAllConditions(
+                () => report.Warnings.ShouldHaveSingleItem().ShouldContain("could not be read"),
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "11.0.100" && result.NewVersion == "11.0.101"),
+                () => ReadDockerfile().ShouldBe(
+                    "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS legacy\n" +
+                    "FROM mcr.microsoft.com/dotnet/sdk:11.0.101 AS build\n"));
+        }
+
+        [Fact]
+        public async Task With_Channel_Missing_From_Index_Adds_Warning_And_Leaves_Tags()
+        {
+            ResetTempDirectory();
+            const string content = "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build\n";
+            WriteDockerfile(content);
+            var releaseService = new FakeReleaseService(CreateRelease("11.0", "11.0.100"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            report.ShouldSatisfyAllConditions(
+                () => report.HasChanges.ShouldBeFalse(),
+                () => report.Warnings.ShouldHaveSingleItem().ShouldContain("does not list that channel"),
+                () => ReadDockerfile().ShouldBe(content));
+        }
+
+        [Fact]
+        public async Task With_Channel_Missing_From_Index_And_Major_Bump_Adds_Warning_And_Leaves_Tags()
+        {
+            ResetTempDirectory();
+            const string content = "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build\n";
+            WriteDockerfile(content);
+            var releaseService = new FakeReleaseService(CreateRelease("11.0", "11.0.100"))
+                .WithChannelReleases("11.0", CreateChannelRelease("11.0.100", "11.0.1"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Major, TempDirectory.AbsolutePath);
+
+            report.ShouldSatisfyAllConditions(
+                () => report.HasChanges.ShouldBeFalse(),
+                () => report.Warnings.ShouldContain(warning =>
+                    warning.Contains("does not list that channel", StringComparison.Ordinal)),
+                () => ReadDockerfile().ShouldBe(content));
+        }
+
+        [Fact]
+        public async Task With_Channel_History_Failure_And_Major_Bump_Skips_Only_That_Channel()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS legacy\n" +
+                "FROM mcr.microsoft.com/dotnet/sdk:11.0.100 AS build\n");
+            var releaseService = new FakeReleaseService(
+                    CreateRelease("10.0", "10.0.101"),
+                    CreateRelease("11.0", "11.0.101"))
+                .WithChannelReleases("11.0", CreateChannelRelease("11.0.101", "11.0.1"))
+                .WithChannelReleasesException("10.0", new DotBumpException("boom"));
+            var handler = CreateHandler(releaseService);
+
+            var report = await handler.HandleAsync(BumpType.Major, TempDirectory.AbsolutePath);
+
+            report.ShouldSatisfyAllConditions(
+                () => report.Warnings.ShouldHaveSingleItem().ShouldContain("could not be read"),
+                () => report.Results.ShouldContain(result =>
+                    result.OldVersion == "11.0.100" && result.NewVersion == "11.0.101"),
+                () => ReadDockerfile().ShouldBe(
+                    "FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS legacy\n" +
+                    "FROM mcr.microsoft.com/dotnet/sdk:11.0.101 AS build\n"));
+        }
+
+        [Fact]
+        public async Task With_Channel_History_Requested_Once_Per_Channel()
+        {
+            ResetTempDirectory();
+            WriteDockerfile(
+                "FROM mcr.microsoft.com/dotnet/sdk:10.0.404 AS build\n" +
+                "FROM mcr.microsoft.com/dotnet/aspnet:10.0.15 AS base\n" +
+                "FROM mcr.microsoft.com/dotnet/runtime:10.0.15 AS tools\n");
+            var releaseService = new Mock<IReleaseService>();
+            releaseService
+                .Setup(service => service.GetReleasesAsync())
+                .ReturnsAsync([CreateRelease("10.0", "10.0.404")]);
+            releaseService
+                .Setup(service => service.GetChannelReleasesAsync(It.IsAny<Uri>()))
+                .ReturnsAsync(new ChannelReleases(new Collection<ChannelRelease>(
+                    [CreateChannelRelease("10.0.405", "10.0.16")])));
+            var handler = CreateHandler(releaseService.Object);
+
+            await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
+
+            releaseService.Verify(
+                service => service.GetChannelReleasesAsync(It.IsAny<Uri>()),
+                Times.Once);
         }
 
         [Fact]
@@ -273,7 +577,7 @@ public class BumpDockerHandlerTests
         }
 
         [Fact]
-        public async Task With_No_Sdk_Image_Returns_No_Changes()
+        public async Task With_No_Supported_Image_Returns_No_Changes()
         {
             ResetTempDirectory();
             const string content = "FROM nginx:1.27.3\n";
@@ -295,7 +599,7 @@ public class BumpDockerHandlerTests
             ResetTempDirectory();
             const string content = "FROM mcr.microsoft.com/dotnet/sdk:11.0.100-rc.1 AS build\n";
             WriteDockerfile(content);
-            var handler = CreateHandler(new Release("11.0", "11.0.101-custom.1", "go-live", false));
+            var handler = CreateHandler(CreateRelease("11.0", "11.0.101-custom.1"));
 
             var report = await handler.HandleAsync(BumpType.Minor, TempDirectory.AbsolutePath);
 
@@ -304,27 +608,66 @@ public class BumpDockerHandlerTests
                 () => report.Warnings.ShouldHaveSingleItem().ShouldContain("cannot be mapped"),
                 () => ReadDockerfile().ShouldBe(content));
         }
+    }
 
-        private static BumpDockerHandler CreateHandler(params Release[] releases)
+    private static Release CreateRelease(string channel, string sdk)
+    {
+        return new Release(channel, sdk, "lts", false)
         {
-            var logger = Mock.Of<ILogger>();
+            ReleasesJson = $"{ReleaseMetadataBaseUrl}/{channel}/releases.json",
+        };
+    }
 
-            return new BumpDockerHandler(
-                new DockerfileService(logger),
-                new FakeReleaseService(releases),
-                new ReleaseFinder(logger),
-                logger);
+    private static ChannelRelease CreateChannelRelease(
+        string sdk,
+        string runtime,
+        string? aspNetCore = null)
+    {
+        return new ChannelRelease(
+            Security: false,
+            Sdks: null,
+            ReleaseVersion: runtime,
+            Sdk: new ChannelComponent(sdk),
+            Runtime: new ChannelComponent(runtime),
+            AspNetCoreRuntime: new ChannelComponent(aspNetCore ?? runtime));
+    }
+
+    private static BumpDockerHandler CreateHandler(params Release[] releases)
+    {
+        var releaseService = new FakeReleaseService(releases);
+
+        foreach (var group in releases.GroupBy(release => release.ChannelVersion))
+        {
+            // SDK-focused tests only: runtime and ASP.NET Core versions are fabricated from the SDK
+            // version. Use WithChannelReleases(...) when asserting those mappings.
+            releaseService.WithChannelReleases(
+                group.Key,
+                group
+                    .Select(release => CreateChannelRelease(release.LatestSdk, release.LatestSdk))
+                    .ToArray());
         }
 
-        private static void WriteDockerfile(string content)
-        {
-            File.WriteAllText(Path.Combine(TempDirectory.AbsolutePath, "Dockerfile"), content);
-        }
+        return CreateHandler(releaseService);
+    }
 
-        private static string ReadDockerfile()
-        {
-            return File.ReadAllText(Path.Combine(TempDirectory.AbsolutePath, "Dockerfile"));
-        }
+    private static BumpDockerHandler CreateHandler(IReleaseService releaseService)
+    {
+        var logger = Mock.Of<ILogger>();
+
+        return new BumpDockerHandler(
+            new DockerfileService(logger),
+            releaseService,
+            logger);
+    }
+
+    private static void WriteDockerfile(string content)
+    {
+        File.WriteAllText(Path.Combine(TempDirectory.AbsolutePath, "Dockerfile"), content);
+    }
+
+    private static string ReadDockerfile()
+    {
+        return File.ReadAllText(Path.Combine(TempDirectory.AbsolutePath, "Dockerfile"));
     }
 
     private static LocalDirectory TempDirectory => new("./temp/docker-handler");

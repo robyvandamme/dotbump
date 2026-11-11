@@ -5,34 +5,37 @@ using DotBump.Common;
 namespace DotBump.Commands.BumpDocker.DataModel;
 
 /// <summary>
-/// Represents a supported .NET SDK base image occurrence found in a Dockerfile.
+/// Represents a supported .NET base image occurrence found in a Dockerfile.
 /// </summary>
 internal sealed class DockerImageEntry
 {
     public DockerImageEntry(
         string image,
+        DotnetImageVersionSource versionSource,
         string relativePath,
         string filePath,
         int lineNumber,
-        string originalTag,
-        int tagStart,
-        int tagLength)
+        DockerTagSpan tag)
     {
         Image = image;
+        VersionSource = versionSource;
         RelativePath = relativePath;
         FilePath = filePath;
         LineNumber = lineNumber;
-        OriginalTag = originalTag;
-        ParsedVersion = new SemanticVersion(originalTag);
-        Tag = originalTag;
-        TagStart = tagStart;
-        TagLength = tagLength;
+        TagSpan = tag;
+        ParsedVersion = new SemanticVersion(tag.OriginalTag);
+        Tag = tag.OriginalTag;
     }
 
     /// <summary>
     /// Gets the image name used in reports, for example <c>mcr.microsoft.com/dotnet/sdk</c>.
     /// </summary>
     public string Image { get; }
+
+    /// <summary>
+    /// Gets the release component the image is tagged with.
+    /// </summary>
+    public DotnetImageVersionSource VersionSource { get; }
 
     /// <summary>
     /// Gets the path of the Dockerfile relative to the repository root.
@@ -50,9 +53,14 @@ internal sealed class DockerImageEntry
     public int LineNumber { get; }
 
     /// <summary>
+    /// Gets the image tag as it was found in the Dockerfile, together with its text span.
+    /// </summary>
+    public DockerTagSpan TagSpan { get; }
+
+    /// <summary>
     /// Gets the image tag as it was found in the Dockerfile.
     /// </summary>
-    public string OriginalTag { get; }
+    public string OriginalTag => TagSpan.OriginalTag;
 
     /// <summary>
     /// Gets the parsed semantic version of <see cref="OriginalTag"/>.
@@ -67,10 +75,10 @@ internal sealed class DockerImageEntry
     /// <summary>
     /// Gets the start offset of the raw image tag in the Dockerfile.
     /// </summary>
-    public int TagStart { get; }
+    public int TagStart => TagSpan.Start;
 
     /// <summary>
     /// Gets the length of the raw image tag in the Dockerfile.
     /// </summary>
-    public int TagLength { get; }
+    public int TagLength => TagSpan.Length;
 }

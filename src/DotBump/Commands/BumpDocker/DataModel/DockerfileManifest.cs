@@ -3,7 +3,7 @@
 namespace DotBump.Commands.BumpDocker.DataModel;
 
 /// <summary>
-/// Represents all supported .NET SDK base image tags discovered in a repository.
+/// Represents all supported .NET base image tags discovered in a repository.
 /// </summary>
 internal sealed class DockerfileManifest
 {

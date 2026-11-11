@@ -36,7 +36,7 @@ public class DockerfileServiceTests
         }
 
         [Fact]
-        public void With_Multi_Stage_Dockerfile_Returns_Only_Sdk_Entries()
+        public void With_Multi_Stage_Dockerfile_Returns_Supported_Image_Entries()
         {
             ResetTempDirectory();
             const string content =
@@ -49,11 +49,74 @@ public class DockerfileServiceTests
 
             var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
 
-            var entry = manifest.Entries.ShouldHaveSingleItem();
             manifest.Warnings.ShouldBeEmpty();
-            entry.ShouldSatisfyAllConditions(
-                () => entry.LineNumber.ShouldBe(2),
-                () => entry.OriginalTag.ShouldBe("10.0.101"));
+            manifest.Entries.Count.ShouldBe(2);
+            manifest.Entries.ShouldContain(entry =>
+                entry.LineNumber == 2
+                && entry.OriginalTag == "10.0.101"
+                && entry.VersionSource == DotnetImageVersionSource.Sdk);
+            manifest.Entries.ShouldContain(entry =>
+                entry.LineNumber == 3
+                && entry.OriginalTag == "10.0.3"
+                && entry.VersionSource == DotnetImageVersionSource.AspNetCore);
+        }
+
+        [Fact]
+        public void With_AspNetCore_Image_Returns_AspNetCore_Source_Entry()
+        {
+            ResetTempDirectory();
+            File.WriteAllText(
+                TempPath("Dockerfile"),
+                "FROM mcr.microsoft.com/dotnet/aspnet:10.0.15 AS base\n");
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.Entries.ShouldHaveSingleItem().ShouldSatisfyAllConditions(
+                entry => entry.Image.ShouldBe("mcr.microsoft.com/dotnet/aspnet"),
+                entry => entry.VersionSource.ShouldBe(DotnetImageVersionSource.AspNetCore));
+        }
+
+        [Fact]
+        public void With_Runtime_Image_Returns_Runtime_Source_Entry()
+        {
+            ResetTempDirectory();
+            File.WriteAllText(
+                TempPath("Dockerfile"),
+                "FROM mcr.microsoft.com/dotnet/runtime:10.0.15 AS base\n");
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.Entries.ShouldHaveSingleItem().VersionSource.ShouldBe(DotnetImageVersionSource.Runtime);
+        }
+
+        [Fact]
+        public void With_RuntimeDeps_Image_Returns_Runtime_Source_Entry()
+        {
+            ResetTempDirectory();
+            File.WriteAllText(
+                TempPath("Dockerfile"),
+                "FROM mcr.microsoft.com/dotnet/runtime-deps:10.0.15 AS base\n");
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.Entries.ShouldHaveSingleItem().VersionSource.ShouldBe(DotnetImageVersionSource.Runtime);
+        }
+
+        [Fact]
+        public void With_Mixed_Case_Image_Name_Returns_Entry()
+        {
+            ResetTempDirectory();
+            File.WriteAllText(
+                TempPath("Dockerfile"),
+                "FROM MCR.MICROSOFT.COM/dotnet/ASPNET:10.0.15 AS base\n");
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.Entries.ShouldHaveSingleItem().VersionSource.ShouldBe(DotnetImageVersionSource.AspNetCore);
         }
 
         [Fact]
@@ -75,7 +138,7 @@ public class DockerfileServiceTests
         {
             ResetTempDirectory();
             const string content =
-                "FROM mcr.microsoft.com/dotnet/aspnet:10.0.3 AS runtime\n" +
+                "FROM ubuntu:24.04 AS runtime\n" +
                 "FROM nginx:1.27.3\n";
             File.WriteAllText(TempPath("Dockerfile"), content);
             var service = CreateService();
@@ -85,6 +148,54 @@ public class DockerfileServiceTests
             manifest.ShouldSatisfyAllConditions(
                 () => manifest.Entries.ShouldBeEmpty(),
                 () => manifest.Warnings.ShouldBeEmpty());
+        }
+
+        [Fact]
+        public void With_Floating_AspNetCore_Tag_Adds_Warning()
+        {
+            ResetTempDirectory();
+            File.WriteAllText(
+                TempPath("Dockerfile"),
+                "FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base\n");
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Entries.ShouldBeEmpty(),
+                () => manifest.Warnings.ShouldHaveSingleItem().ShouldContain("fully versioned"));
+        }
+
+        [Fact]
+        public void With_AspNetCore_Variant_Tag_Adds_Warning()
+        {
+            ResetTempDirectory();
+            File.WriteAllText(
+                TempPath("Dockerfile"),
+                "FROM mcr.microsoft.com/dotnet/aspnet:10.0.15-noble AS base\n");
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Entries.ShouldBeEmpty(),
+                () => manifest.Warnings.ShouldHaveSingleItem().ShouldContain("fully versioned"));
+        }
+
+        [Fact]
+        public void With_Digest_Pinned_AspNetCore_Image_Adds_Warning()
+        {
+            ResetTempDirectory();
+            File.WriteAllText(
+                TempPath("Dockerfile"),
+                "FROM mcr.microsoft.com/dotnet/aspnet:10.0.15@sha256:abcdef AS base\n");
+            var service = CreateService();
+
+            var manifest = service.GetDockerfileManifest(TempDirectory.AbsolutePath);
+
+            manifest.ShouldSatisfyAllConditions(
+                () => manifest.Entries.ShouldBeEmpty(),
+                () => manifest.Warnings.ShouldHaveSingleItem().ShouldContain("digests are not supported"));
         }
 
         [Fact]
@@ -307,12 +418,11 @@ public class DockerfileServiceTests
             var manifest = new DockerfileManifest();
             var entry = new DockerImageEntry(
                 "mcr.microsoft.com/dotnet/sdk",
+                DotnetImageVersionSource.Sdk,
                 "Dockerfile",
                 "/repo/Dockerfile",
                 1,
-                "10.0.100",
-                0,
-                8);
+                new DockerTagSpan("10.0.100", 0, 8));
             manifest.Add(entry);
             manifest.SetTag(entry, "10.0.101");
             var service = CreateService();

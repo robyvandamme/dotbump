@@ -12,6 +12,12 @@
       "release-date": "2026-10-25",
       "release-version": "8.0.30",
       "security": false,
+      "runtime": {
+        "version": "8.0.30"
+      },
+      "sdk": {
+        "version": "8.0.406"
+      },
       "sdks": [
         {
           "version": "8.0.406",
@@ -21,7 +27,10 @@
           "version": "8.0.125",
           "runtime-version": "8.0.30"
         }
-      ]
+      ],
+      "aspnetcore-runtime": {
+        "version": "8.0.30"
+      }
     },
     {
       "release-date": "2026-10-13",
@@ -33,6 +42,12 @@
           "cve-url": "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-00000"
         }
       ],
+      "runtime": {
+        "version": "8.0.29"
+      },
+      "sdk": {
+        "version": "8.0.405"
+      },
       "sdks": [
         {
           "version": "8.0.405",
@@ -42,7 +57,10 @@
           "version": "8.0.124",
           "runtime-version": "8.0.29"
         }
-      ]
+      ],
+      "aspnetcore-runtime": {
+        "version": "8.0.29"
+      }
     }
   ]
 }
